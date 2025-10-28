@@ -1,0 +1,107 @@
+﻿@page "/signup"
+@using System.ComponentModel.DataAnnotations
+
+<style>
+    .darker-border-checkbox.form-check-input {
+        border-color: #929292;
+    }
+
+    .signup-container {
+        background: #141622;
+        color: #fff;
+        padding: 2rem;
+        border-radius: 12px;
+        box-shadow: 0px 4px 20px #0005;
+        max-width: 400px;
+        margin: 2rem auto;
+    }
+
+    .brand-green {
+        color: #BFFF27;
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 0.8rem;
+        border-radius: 6px;
+        border: 1px solid #222;
+        background: #232638;
+        color: #fff;
+        font-size: 1rem;
+    }
+
+    .signup-btn {
+        background: #BFFF27;
+        color: #111;
+        border: none;
+        border-radius: 6px;
+        padding: 0.8rem 2rem;
+        font-weight: bold;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+
+        .signup-btn:hover {
+            background: #ddff70;
+        }
+
+    label {
+        font-weight: 600;
+    }
+
+    .validation-message {
+        color: #BFFF27;
+        font-size: 0.9rem;
+    }
+</style>
+
+<EditForm Model="@signupModel" OnValidSubmit="HandleSignup">
+    <div class="signup-container">
+        <h2><span class="brand-green">Signup</span> for Smart Water System</h2>
+
+        <div class="form-group">
+            <label>Username</label>
+            <InputText @bind-Value="signupModel.Username" class="form-control" />
+            <ValidationMessage For="@(() => signupModel.Username)" />
+        </div>
+
+        <div class="form-group">
+            <label>Email</label>
+            <InputText @bind-Value="signupModel.Email" class="form-control" type="email" />
+            <ValidationMessage For="@(() => signupModel.Email)" />
+        </div>
+
+        <div class="form-group">
+            <label>Password</label>
+            <InputText @bind-Value="signupModel.Password" class="form-control" type="password" />
+            <ValidationMessage For="@(() => signupModel.Password)" />
+        </div>
+
+        <button type="submit" class="signup-btn">Signup</button>
+    </div>
+</EditForm>
+
+@code {
+    private SignupModel signupModel = new SignupModel();
+
+    private void HandleSignup()
+    {
+        // Add your signup logic here (e.g. call API, save user, etc.)
+    }
+
+    public class SignupModel
+    {
+        [Required]
+        public string Username { get; set; }
+
+        [Required, EmailAddress]
+        public string Email { get; set; }
+
+        [Required, MinLength(6)]
+        public string Password { get; set; }
+    }
+}
