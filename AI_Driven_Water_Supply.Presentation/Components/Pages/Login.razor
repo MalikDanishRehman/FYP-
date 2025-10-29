@@ -1,4 +1,4 @@
-﻿@page "/signup"
+﻿@page "/login"
 @using System.ComponentModel.DataAnnotations
 
 <!-- ✅ Bootstrap + Icons -->
@@ -8,7 +8,7 @@
 
 <style>
     .darker-border-checkbox.form-check-input {
-        border-color: #929292;
+        border-color: #0b0d17;
     }
 
     .signup-container {
@@ -64,49 +64,40 @@
     }
 </style>
 
-<EditForm Model="@signupModel" OnValidSubmit="HandleSignup">
+<EditForm Model="@loginModel" OnValidSubmit="HandleLogin">
     <div class="signup-container">
-        <h2><span class="brand-green">Signup</span> for Smart Water System</h2>
-
-        <div class="form-group">
-            <label>Username</label>
-            <InputText @bind-Value="signupModel.Username" class="form-control" />
-            <ValidationMessage For="@(() => signupModel.Username)" />
-        </div>
+        <h2><span class="brand-green">Login</span> to Smart Water System</h2>
 
         <div class="form-group">
             <label>Email</label>
-            <InputText @bind-Value="signupModel.Email" class="form-control" type="email" />
-            <ValidationMessage For="@(() => signupModel.Email)" />
+            <InputText @bind-Value="loginModel.Email" class="form-control" type="email" />
+            <ValidationMessage For="@(() => loginModel.Email)" />
         </div>
 
         <div class="form-group">
             <label>Password</label>
-            <InputText @bind-Value="signupModel.Password" class="form-control" type="password" />
-            <ValidationMessage For="@(() => signupModel.Password)" />
+            <InputText @bind-Value="loginModel.Password" class="form-control" type="password" />
+            <ValidationMessage For="@(() => loginModel.Password)" />
         </div>
 
-        <button type="submit" class="signup-btn">Signup</button>
+        <button type="submit" class="signup-btn">Login</button>
     </div>
 </EditForm>
 
 @code {
-    private SignupModel signupModel = new SignupModel();
+    private LoginModel loginModel = new LoginModel();
 
-    private void HandleSignup()
+    private void HandleLogin()
     {
-        // Add your signup logic here (e.g. call API, save user, etc.)
+        // Add login logic here (API call / auth)
     }
 
-    public class SignupModel
+    public class LoginModel
     {
-        [Required]
-        public string Username { get; set; }
-
         [Required, EmailAddress]
         public string Email { get; set; }
 
-        [Required, MinLength(6)]
+        [Required]
         public string Password { get; set; }
     }
 }

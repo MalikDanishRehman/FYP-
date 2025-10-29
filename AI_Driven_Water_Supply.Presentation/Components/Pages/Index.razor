@@ -1,5 +1,4 @@
 ﻿@page "/"
-@inherits LayoutComponentBase
 
 <!-- ✅ Bootstrap + Icons -->
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -10,17 +9,6 @@
         background-color: #0b0d17;
         color: #e4e6eb;
         font-family: 'Poppins', sans-serif;
-    }
-
-    /* 🔹 Navbar */
-    .navbar {
-        background-color: #0b0d17 !important;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    }
-
-    .navbar-brand {
-        font-weight: 700;
-        color: #b2f94e !important;
     }
 
     /* 🔹 Hero Section */
@@ -78,10 +66,6 @@
         color: #e4e6eb;
     }
 
-    .text-alice{
-        color:aliceblue;
-    }
-
     .card {
         background-color: #171a2b;
         border: none;
@@ -98,164 +82,58 @@
         color: #b2f94e;
         font-weight: 600;
     }
-
-    /* 🔹 Footer */
-    .footer {
-        background: linear-gradient(145deg, #0b0d17, #111325);
-        color: #e4e6eb;
-        font-family: 'Poppins', sans-serif;
-        border-top: 1px solid rgba(255, 255, 255, 0.1);
-        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.5);
-        padding: 50px 0 30px;
-        margin-top: auto;
-    }
-
-        .footer h5 {
-            color: #b2f94e;
-            letter-spacing: 1px;
-        }
-
-        .footer a {
-            color: #e4e6eb;
-            transition: color 0.3s ease, transform 0.2s ease;
-        }
-
-            .footer a:hover {
-                color: #b2f94e;
-                transform: translateY(-2px);
-                text-decoration: none;
-            }
-
-        .footer i {
-            font-size: 1.3rem;
-            background-color: rgba(255, 255, 255, 0.08);
-            padding: 10px;
-            border-radius: 50%;
-            transition: all 0.3s ease;
-        }
-
-            .footer i:hover {
-                background-color: #b2f94e;
-                color: #000;
-                transform: scale(1.15);
-                box-shadow: 0 0 10px #b2f94e;
-            }
-
-        .footer hr {
-            opacity: 0.15;
-            border-color: rgba(255, 255, 255, 0.1);
-            margin-top: 2rem;
-            margin-bottom: 1rem;
-        }
-
-        .footer .text-muted {
-            color: #b0b3c2 !important;
-        }
 </style>
 
-<!-- ✅ Main Layout -->
-<div class="d-flex flex-column min-vh-100">
-
-    <!-- 🔹 Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark py-3">
-        <div class="container">
-            <a class="navbar-brand d-flex align-items-center" href="/">
-                💧 AI-Driven
-            </a>
-            <div class="ms-auto">
-                <a class="btn btn-outline-light me-2" href="#">Login</a>
-                <a class="btn btn-primary" href="#">Signup</a>
-            </div>
-        </div>
-    </nav>
-
-    <!-- 🔹 Hero Section -->
-    <section class="hero">
-        <div class="container">
-            <div class="row align-items-center">
-                <div class="col-md-7">
-                    <h1>Smart Water Distribution System 💧</h1>
-                    <p class="mt-4">
-                        Harnessing AI for efficient, predictive, and sustainable water supply management.
-                    </p>
-                    <div class="mt-5">
-                        <a href="#" class="btn btn-primary me-3">Get Started</a>
-                        <a href="#" class="btn btn-outline-light">Learn More</a>
-                    </div>
-                </div>
-                <div class="col-md-5 text-center">
-                    <img src="favicon.png" alt="Water AI Logo" class="img-fluid" style="max-width: 300px; opacity: 0.9;">
+<!-- ✅ Hero Section -->
+<section class="hero">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-7">
+                <h1>Smart Water Distribution System 💧</h1>
+                <p class="mt-4">
+                    Harnessing AI for efficient, predictive, and sustainable water supply management.
+                </p>
+                <div class="mt-5">
+                    <a href="/Signup" class="btn btn-primary me-3">Get Started</a>
+                    <a href="#" class="btn btn-outline-light">Learn More</a>
                 </div>
             </div>
+            <div class="col-md-5 text-center">
+                <img src="/images/hero.png" alt="Water AI Logo" class="img-fluid" style="max-width: 300px; opacity: 0.9;">
+            </div>
+
         </div>
-    </section>
+    </div>
+</section>
 
-    <!-- 🔹 About Section -->
-    <section class="about">
-        <div class="container text-center">
-            <h2 class="fw-bold text-white mb-4">About Our System</h2>
-            <p class="text-muted mx-auto text-white" style="max-width: 800px;">
-                Our AI-Driven Water Supply system optimizes water flow, predicts shortages, and improves distribution using
-                real-time analytics. With machine learning algorithms, it minimizes wastage and ensures maximum coverage for communities.
-            </p>
+<!-- ✅ About Section -->
+<section class="about">
+    <div class="container text-center">
+        <h2 class="fw-bold text-white mb-4">About Our System</h2>
+        <p class="text-muted mx-auto text-white" style="max-width: 800px;">
+            Our AI-Driven Water Supply system optimizes water flow, predicts shortages, and improves distribution using
+            real-time analytics. With machine learning algorithms, it minimizes wastage and ensures maximum coverage for communities.
+        </p>
 
-            <div class="row g-4 mt-5">
-                <div class="col-md-4">
-                    <div class="card shadow-lg h-100 p-4">
-                        <h5 class="card-title">Real-Time Monitoring</h5>
-                        <p class="card-text">Track flow, pressure, and usage across multiple zones instantly.</p>
-                    </div>
+        <div class="row g-4 mt-5">
+            <div class="col-md-4">
+                <div class="card shadow-lg h-100 p-4">
+                    <h5 class="card-title">Real-Time Monitoring</h5>
+                    <p class="card-text">Track flow, pressure, and usage across multiple zones instantly.</p>
                 </div>
-                <div class="col-md-4">
-                    <div class="card shadow-lg h-100 p-4">
-                        <h5 class="card-title">AI Predictions</h5>
-                        <p class="card-text">Predict future demands and shortages using machine learning models.</p>
-                    </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card shadow-lg h-100 p-4">
+                    <h5 class="card-title">AI Predictions</h5>
+                    <p class="card-text">Predict future demands and shortages using machine learning models.</p>
                 </div>
-                <div class="col-md-4">
-                    <div class="card shadow-lg h-100 p-4">
-                        <h5 class="card-title">Smart Control</h5>
-                        <p class="card-text">Automatically balance water distribution efficiently across networks.</p>
-                    </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card shadow-lg h-100 p-4">
+                    <h5 class="card-title">Smart Control</h5>
+                    <p class="card-text">Automatically balance water distribution efficiently across networks.</p>
                 </div>
             </div>
         </div>
-    </section>
-
-    <!-- 🔹 Footer -->
-    <footer class="footer text-light">
-        <div class="container text-center">
-            <div class="row align-items-center justify-content-center">
-                <!-- Logo -->
-                <div class="col-md-4 mb-3 mb-md-0">
-                    <h5 class="fw-bold text-uppercase">AI-Driven Water Supply</h5>
-                    <p class="text-muted small mb-0">Empowering sustainability with smart technology</p>
-                </div>
-
-                <!-- Links -->
-                <div class="col-md-4 mb-3 mb-md-0">
-                    <ul class="list-inline mb-0">
-                        <li class="list-inline-item"><a href="#" class="text-light text-decoration-none">Home</a></li>
-                        <li class="list-inline-item mx-2">|</li>
-                        <li class="list-inline-item"><a href="#" class="text-light text-decoration-none">About</a></li>
-                        <li class="list-inline-item mx-2">|</li>
-                        <li class="list-inline-item"><a href="#" class="text-light text-decoration-none">Contact</a></li>
-                    </ul>
-                </div>
-
-                <!-- Social -->
-                <div class="col-md-4">
-                    <a href="#" class="text-light me-3"><i class="bi bi-facebook"></i></a>
-                    <a href="#" class="text-light me-3"><i class="bi bi-twitter"></i></a>
-                    <a href="#" class="text-light me-3"><i class="bi bi-linkedin"></i></a>
-                    <a href="#" class="text-light"><i class="bi bi-github"></i></a>
-                </div>
-            </div>
-
-            <hr>
-            <p class="small mb-0 text-muted">
-                © 2025 AI-Driven Water Supply System — All rights reserved.
-            </p>
-        </div>
-    </footer>
-</div>
+    </div>
+</section>

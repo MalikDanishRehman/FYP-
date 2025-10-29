@@ -11,4 +11,8 @@
     <ProjectReference Include="..\AI_Driven_Water_Supply.Infrastructure\AI_Driven_Water_Supply.Infrastructure.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Components\Shared\" />
+  </ItemGroup>
+
 </Project>
