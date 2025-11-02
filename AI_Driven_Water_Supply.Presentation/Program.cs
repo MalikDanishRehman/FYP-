@@ -1,19 +1,19 @@
-using AI_Driven_Water_Supply.Application.Interfaces;
+﻿using AI_Driven_Water_Supply.Application.Interfaces;
 using AI_Driven_Water_Supply.Infrastructure.Services;
 using AI_Driven_Water_Supply.Presentation.Components;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ? Dependency Injection
+// Dependency Injection
 builder.Services.AddScoped<IWaterService, WaterService>();
 
-// ? Razor Components
+// Razor Components
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
 var app = builder.Build();
 
-// ? Middleware order (important)
+// Middleware
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error", createScopeForErrors: true);
@@ -21,10 +21,14 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.UseRouting();       // Add this
-app.UseAntiforgery();   // Must come after routing
+app.UseRouting();
 
-// ? Map components
+// ✅ Serve files from wwwroot
+app.UseStaticFiles();
+
+app.UseAntiforgery();
+
+// Map components
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
