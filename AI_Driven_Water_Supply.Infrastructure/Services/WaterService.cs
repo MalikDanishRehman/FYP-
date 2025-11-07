@@ -4,6 +4,9 @@ namespace AI_Driven_Water_Supply.Infrastructure.Services
 {
     public class WaterService : IWaterService
     {
-        public string GetStatus() => "Water system running ✅";
+        public Task<string> GetWaterStatus()
+        {
+            return Task.FromResult("Water delivery on the way!");
+        }
     }
 }

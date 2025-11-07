@@ -10,4 +10,10 @@
     <ProjectReference Include="..\AI_Driven_Water_Supply.Application\AI_Driven_Water_Supply.Application.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Supabase" Version="1.1.1" />
+    <PackageReference Include="Supabase.Postgrest" Version="4.1.0" />
+    <PackageReference Include="Supabase.Realtime" Version="7.2.0" />
+  </ItemGroup>
+
 </Project>

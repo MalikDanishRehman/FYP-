@@ -1,37 +1,33 @@
-﻿@page "/order"
+﻿@page "/order/{type}"
 
-@* ✅ Order Page — displays selected card details and checkout form *@
+<h1>Order Summary</h1>
 
-<div class="order-page">
-    <h1>Order Summary</h1>
+<div class="order-card">
+    <img src="/images/@($"{type}.jpg")" alt="Selected Product" />
 
-    <div class="order-card">
-        <img src="/images/sample-water.png" alt="Selected Product" />
+    <div class="order-details">
+        <h2>@type</h2>
+        <p>Clean premium RO Water Supply.</p>
 
-        <div class="order-details">
-            <h2>@selectedProduct</h2>
-            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Clean premium RO Water Supply.</p>
+        <label>Quantity (Litres)</label>
+        <input type="number" min="1" @bind="quantity" />
 
-            <label>Quantity (Litres)</label>
-            <input type="number" min="1" @bind="quantity" />
+        <label>Delivery Address</label>
+        <textarea @bind="address"></textarea>
 
-            <label>Delivery Address</label>
-            <textarea @bind="address"></textarea>
-
-            <button class="pay-btn" @onclick="PlaceOrder">Place Order</button>
-        </div>
+        <button class="pay-btn" @onclick="PlaceOrder">Place Order</button>
     </div>
 </div>
 
 @code {
     [Parameter]
-    public string? selectedProduct { get; set; }
+    public string? type { get; set; }
 
-    private int quantity = 1;
-    private string? address;
+    int quantity = 1;
+    string? address;
 
     void PlaceOrder()
     {
-        Console.WriteLine($"Order Placed: {selectedProduct} — {quantity}L to {address}");
+        Console.WriteLine($"Order Placed: {type} — {quantity}L to {address}");
     }
 }
