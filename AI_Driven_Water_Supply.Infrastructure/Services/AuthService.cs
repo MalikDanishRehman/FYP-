@@ -5,20 +5,32 @@ namespace AI_Driven_Water_Supply.Infrastructure.Services
 {
     public class AuthService : IAuthService
     {
-        private readonly Client _client;
+        private readonly Supabase.Client _client;
 
-        public AuthService(Client client)
+        // ✅ Clean constructor: only inject what is actually used
+        public AuthService(Supabase.Client client)
         {
             _client = client;
         }
 
-        public async Task<bool> SignUp(string email, string password)
-            => (await _client.Auth.SignUp(email, password)) != null;
-
+        // SignIn method
         public async Task<bool> SignIn(string email, string password)
-            => (await _client.Auth.SignIn(email, password)) != null;
+        {
+            var result = await _client.Auth.SignIn(email, password);
+            return result?.User != null;
+        }
 
+        // SignUp method
+        public async Task<bool> SignUp(string email, string password, string username)
+        {
+            var result = await _client.Auth.SignUp(email, password);
+            return result?.User != null;
+        }
+
+        // Optional SignOut
         public async Task SignOut()
-            => await _client.Auth.SignOut();
+        {
+            await _client.Auth.SignOut();
+        }
     }
 }
