@@ -4,26 +4,23 @@ using AI_Driven_Water_Supply.Presentation.Components;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ✅ Load .env file (from parent or same directory)
+// Load .env file
 Env.Load(Path.Combine(Directory.GetParent(Directory.GetCurrentDirectory())!.FullName, ".env"));
 
-// ✅ Register Supabase + Auth + Infrastructure services
+// Register Infrastructure (DI + Supabase)
 builder.Services.AddInfrastructure(builder.Configuration);
 
-// ✅ Razor + Antiforgery support
+// Razor Components
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
-builder.Services.AddAntiforgery(); // 🧩 Required for Blazor Server forms
 
 var app = builder.Build();
 
-// ✅ Middleware pipeline
+// Middleware
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
-
-// ✅ Add antiforgery middleware (must be between routing & endpoints)
-app.UseAntiforgery();
+app.UseAntiforgery(); // For form security
 
 app.MapRazorComponents<App>()
    .AddInteractiveServerRenderMode();
