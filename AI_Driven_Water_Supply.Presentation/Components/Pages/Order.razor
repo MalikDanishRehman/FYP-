@@ -1,33 +1,108 @@
 ﻿@page "/order/{type}"
 
-<h1>Order Summary</h1>
+<div class="container mt-4">
+    <div class="row">
 
-<div class="order-card">
-    <img src="/images/@($"{type}.jpg")" alt="Selected Product" />
+        <!-- LEFT IMAGE -->
+        <div class="col-md-4 d-flex align-items-start">
+            <img src="/images/@($"{type}.jpg")"
+                 alt="@type"
+                 style="width: 100%; height: 100%; object-fit: cover; border-radius: 10px;" />
+        </div>
 
-    <div class="order-details">
-        <h2>@type</h2>
-        <p>Clean premium RO Water Supply.</p>
+        <!-- RIGHT PANEL -->
+        <div class="col-md-8">
 
-        <label>Quantity (Litres)</label>
-        <input type="number" min="1" @bind="quantity" />
+            <h3 class="mb-3">Nearby Water Suppliers</h3>
 
-        <label>Delivery Address</label>
-        <textarea @bind="address"></textarea>
+            <!-- MAP AREA -->
+            <div id="map" style="height:350px; width:100%; border-radius:10px; margin-bottom: 30px;"></div>
 
-        <button class="pay-btn" @onclick="PlaceOrder">Place Order</button>
+            <hr class="my-4" />
+
+            <h3 class="mb-3">Available Suppliers List</h3>
+
+            <div class="row g-3">
+
+                @foreach (var supplier in filteredSuppliers)
+                {
+                    <div class="col-md-4">
+                        <div class="card shadow-sm">
+                            <img src="https://via.placeholder.com/300x180"
+                                 class="card-img-top" alt="">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">@supplier.name</h5>
+                                <p class="card-text">@supplier.description</p>
+                                <button class="btn btn-primary btn-sm">Order Now</button>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+            </div>
+
+        </div>
     </div>
 </div>
 
+
 @code {
-    [Parameter]
-    public string? type { get; set; }
 
-    int quantity = 1;
-    string? address;
+    // -------- JS INJECTION -------- //
+    [Inject] public IJSRuntime JS { get; set; } = default!;
 
-    void PlaceOrder()
+    // -------- URL PARAMETER -------- //
+    [Parameter] public string? type { get; set; }
+
+    // -------- SUPPLIER MODEL -------- //
+    public record Supplier(string name, double lat, double lng, string description);
+
+    // -------- ALL SUPPLIERS LIST -------- //
+    List<Supplier> allSuppliers = new()
     {
-        Console.WriteLine($"Order Placed: {type} — {quantity}L to {address}");
+        new Supplier("Fresh Aqua Supplier", 24.8615, 67.0099, "Fast delivery"),
+        new Supplier("Pure RO Water", 24.8650, 67.0201, "Premium RO water"),
+        new Supplier("Blue Drop Supply", 24.8589, 67.0033, "Same-day delivery"),
+        new Supplier("Crystal Water Co.", 24.8545, 67.0120, "Affordable clean water"),
+        new Supplier("RO Fresh Supply", 24.8667, 67.0190, "Reliable service"),
+        new Supplier("Hydro Clean Delivery", 24.8622, 67.0155, "Trusted supplier")
+    };
+
+    // -------- FILTERED SUPPLIERS -------- //
+    List<Supplier> filteredSuppliers = new();
+
+    // -------- PAGE LOAD -------- //
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            FilterSuppliers();
+            await JS.InvokeVoidAsync("mapFunctions.loadMap", type, filteredSuppliers);
+        }
+    }
+
+    // -------- FILTERING LOGIC -------- //
+    void FilterSuppliers()
+    {
+        string t = type?.ToLower() ?? "";
+
+        switch (t)
+        {
+            case "bottle":
+                filteredSuppliers = allSuppliers;
+                break;
+
+            case "plant":
+                filteredSuppliers = allSuppliers.Take(4).ToList();
+                break;
+
+            case "tanker":
+                filteredSuppliers = allSuppliers.Take(2).ToList();
+                break;
+
+            default:
+                filteredSuppliers = allSuppliers;
+                break;
+        }
     }
 }
