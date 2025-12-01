@@ -1,33 +1,51 @@
-﻿using Supabase;
-using AI_Driven_Water_Supply.Application.Interfaces;
+﻿using AI_Driven_Water_Supply.Application.Interfaces;
+using Supabase;
+using Supabase.Gotrue;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using static Supabase.Gotrue.Constants;
+
+
+// ✅ Aliases to remove ambiguity
+using SupabaseClient = Supabase.Client;
 
 namespace AI_Driven_Water_Supply.Infrastructure.Services
 {
     public class AuthService : IAuthService
     {
-        private readonly Supabase.Client _client;
+        private readonly SupabaseClient _client;
 
-        // ✅ Clean constructor: only inject what is actually used
-        public AuthService(Supabase.Client client)
+        public AuthService(SupabaseClient client)
         {
             _client = client;
         }
 
-        // SignIn method
+        // Sign In
         public async Task<bool> SignIn(string email, string password)
         {
             var result = await _client.Auth.SignIn(email, password);
             return result?.User != null;
         }
 
-        // SignUp method
+        // Sign Up
         public async Task<bool> SignUp(string email, string password, string username)
         {
-            var result = await _client.Auth.SignUp(email, password);
+            var result = await _client.Auth.SignUp(
+                SignUpType.Email,  // ✅ Explicit email signup
+                email,
+                password,
+                new SignUpOptions
+                {
+                    Data = new Dictionary<string, object>
+                    {
+                { "username", username }
+                    }
+                });
+
             return result?.User != null;
         }
 
-        // Optional SignOut
+                // Sign Out
         public async Task SignOut()
         {
             await _client.Auth.SignOut();
