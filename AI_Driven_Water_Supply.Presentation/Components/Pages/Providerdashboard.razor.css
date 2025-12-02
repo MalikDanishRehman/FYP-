@@ -6,6 +6,31 @@
     overflow-x: hidden;
     font-family: 'Inter', sans-serif;
 }
+/* Side Sliding Panel */
+.side-panel {
+    position: fixed;
+    top: 0;
+    right: -20%;
+    width: 20%;
+    height: 100vh;
+    background: #1b263b;
+    color: white;
+    z-index: 999;
+    transition: 0.4s ease;
+    padding-top: 60px; /* navbar ke neeche se */
+}
+
+/* When Panel is Active */
+.side-panel-active {
+    right: 0 !important;
+}
+
+/* Body Shrink */
+.body-shrink {
+    width: 80% !important;
+    transition: 0.4s ease;
+}
+
 
 .dashboard-container {
    width:100%;
@@ -88,3 +113,14 @@
         margin: 5px 0 0;
         opacity: 0.7;
     }
+.icon-hover {
+    color: white;
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+
+.icon-hover:hover {
+    color: #0dcaf0; /* hover color — change if you want */
+}
+
+
