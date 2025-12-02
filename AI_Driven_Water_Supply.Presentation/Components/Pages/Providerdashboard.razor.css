@@ -1,0 +1,80 @@
+﻿.dashboard-container {
+    max-width: 470px;
+    margin: auto;
+    padding: 20px;
+    background: #0d1b2a;
+    min-height: 100vh;
+    color: white;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+.header-section {
+    text-align: left;
+    margin-bottom: 25px;
+}
+
+    .header-section h2 {
+        margin: 0;
+        font-size: 24px;
+        font-weight: 600;
+    }
+
+    .header-section p {
+        margin: 3px 0;
+        font-size: 16px;
+        opacity: 0.8;
+    }
+
+.availability-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 10px 0;
+}
+
+.revenue {
+    font-size: 32px;
+    margin-top: 10px;
+}
+
+.sub-text {
+    opacity: 0.7;
+    margin-top: -8px;
+}
+
+.chart-card {
+    background: #1b263b;
+    padding: 15px;
+    border-radius: 12px;
+    margin-bottom: 25px;
+    color: white;
+}
+
+.chart-title {
+    font-size: 16px;
+    margin-bottom: 10px;
+}
+
+.stats-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 18px;
+}
+
+.stat-box {
+    background: #1b263b;
+    width: 48%;
+    padding: 18px 10px;
+    border-radius: 12px;
+    text-align: center;
+}
+
+    .stat-box h3 {
+        margin: 0;
+        font-size: 26px;
+    }
+
+    .stat-box p {
+        margin: 5px 0 0;
+        opacity: 0.7;
+    }
