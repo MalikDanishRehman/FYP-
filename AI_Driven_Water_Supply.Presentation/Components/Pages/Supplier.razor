@@ -1,0 +1,82 @@
+﻿@page "/bo"
+
+@inject NavigationManager Nav
+
+<h2 class="text-white text-decoration-underline mb-3">
+    @name
+</h2>
+
+<!-- Random Paragraph -->
+<p class="text-light">
+    @description
+</p>
+
+<hr />
+
+<!-- Bottle Input & Price -->
+<div class="card p-3 bg-dark text-white">
+    <label>Number of Bottles:</label>
+    <input type="number" class="form-control"
+           min="1" @bind="quantity"
+           @oninput="Calculate" />
+
+    <p class="mt-3 fs-5">
+        Price: <b class="text-warning">Rs @totalPrice</b>
+    </p>
+</div>
+
+<hr />
+
+<!-- BUTTONS -->
+<div class="d-flex gap-3 mt-4">
+
+    <button class="btn btn-outline-warning btn-lg action-btn"
+            @onclick="AddToCart">
+        Add to Cart
+    </button>
+
+    <button class="btn btn-success btn-lg action-btn"
+            @onclick="PlaceOrder">
+        Place Order
+    </button>
+
+</div>
+
+@code {
+
+    [Parameter] public string name { get; set; }
+
+    string description = "";
+    int quantity = 1;
+    int pricePerBottle = 120; // You can change
+    int totalPrice = 120;
+
+    protected override void OnInitialized()
+    {
+        var paragraphs = new List<string>
+        {
+            $"{name} is one of the most trusted suppliers in your area, known for quick delivery and premium quality water.",
+            $"Customers love {name} because of their fast service, clean water, and reliable staff.",
+            $"{name} ensures every delivery is fresh, clean, and perfectly sealed to maintain hygiene standards."
+        };
+
+        // pick random paragraph
+        var rand = new Random();
+        description = paragraphs[rand.Next(paragraphs.Count)];
+    }
+
+    void Calculate()
+    {
+        totalPrice = quantity * pricePerBottle;
+    }
+
+    void AddToCart()
+    {
+        // Your logic
+    }
+
+    void PlaceOrder()
+    {
+        // Your logic
+    }
+}

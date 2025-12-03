@@ -5,7 +5,7 @@
 
         <!-- LEFT IMAGE -->
         <div class="col-md-4 d-flex align-items-start">
-            <img src="/images/@($"{type}.jpg")"
+            <img src="/images/@($"{type?.ToLower()}.jpg")"
                  alt="@type"
                  style="width: 100%; height: 100%; object-fit: cover; border-radius: 70px;" />
         </div>
@@ -33,23 +33,25 @@
                 {
                     <div class="col-md-4">
                         <div class="card shadow-sm bg-body">
-                            <img src="https://via.placeholder.com/300x180"
-                                 class="card-img-top" alt="">
+                            <img src="https://via.placeholder.com/300x180" class="card-img-top" alt="">
 
                             <div class="card-body text-center">
                                 <h5 class="card-title text-white">@supplier.name</h5>
 
-                                <!-- ⭐ STAR RATING HERE -->
+                                <!-- ⭐ STAR RATING -->
                                 <p class="card-text text-warning" style="font-size:20px;">
                                     @GetStars(supplier.rating)
                                 </p>
 
-                                <button class="btn btn-primary btn-sm">Order Now</button>
+                                <button class="btn btn-primary btn-sm"
+                                        @onclick="() => GoToDetails(supplier.name)">
+                                    Order Now
+                                </button>
+
                             </div>
                         </div>
                     </div>
                 }
-
             </div>
 
         </div>
@@ -57,22 +59,22 @@
 </div>
 
 @code {
-
-    [Inject] IJSRuntime JS { get; set; }
+    [Inject] IJSRuntime JS { get; set; } = default!;
+    [Inject] NavigationManager Nav { get; set; } = default!;
 
     [Parameter] public string? type { get; set; }
 
-    // Updated Supplier Model (⭐ rating added)
+    // Supplier Model
     public record Supplier(string name, double lat, double lng, double rating);
 
-    // Suppliers List with Ratings
+    // All suppliers
     List<Supplier> allSuppliers = new()
     {
         new Supplier("Fresh Aqua", 24.8610, 67.0011, 4.5),
         new Supplier("AquaFina", 24.8610, 67.0011, 2),
         new Supplier("Purify Aqua", 24.8610, 67.0011, 3),
         new Supplier("Pure RO Plant", 24.8620, 67.0022, 5),
-         new Supplier("Water Plant", 24.8620, 67.0022, 1.5),
+        new Supplier("Water Plant", 24.8620, 67.0022, 1.5),
         new Supplier("Blue Tanker Service", 24.8585, 67.0065, 2)
     };
 
@@ -91,52 +93,35 @@
         }
     }
 
-    // ⭐ Star Generator Function
+    // ⭐ Star Generator
     string GetStars(double rating)
     {
         int fullStars = (int)Math.Floor(rating);
         bool halfStar = rating - fullStars >= 0.5;
 
-        string output = new string('★', fullStars);
+        string stars = new string('★', fullStars);
+        if (halfStar) stars += "½";
 
-        if (halfStar)
-            output += "½";
-
-        return output;
+        return stars;
     }
 
-    // Filtering Logic
+    // Filtering Logic (case-insensitive)
     void FilterSuppliers()
     {
-        if (string.IsNullOrWhiteSpace(type))
+        var t = type?.Trim().ToLower() ?? "";
+
+        filteredSuppliers = t switch
         {
-            filteredSuppliers = new();
-            return;
-        }
-
-        switch (type.ToLower())
-        {
-            case "bottle":
-                filteredSuppliers = allSuppliers
-                    .Where(s => s.name.Contains("Aqua"))
-                    .ToList();
-                break;
-
-            case "plant":
-                filteredSuppliers = allSuppliers
-                    .Where(s => s.name.Contains("Plant"))
-                    .ToList();
-                break;
-
-            case "tanker":
-                filteredSuppliers = allSuppliers
-                    .Where(s => s.name.Contains("Tanker"))
-                    .ToList();
-                break;
-
-            default:
-                filteredSuppliers = new();
-                break;
-        }
+            "bottle" => allSuppliers.Where(s => s.name.ToLower().Contains("aqua")).ToList(),
+            "plant" => allSuppliers.Where(s => s.name.ToLower().Contains("plant")).ToList(),
+            "tanker" => allSuppliers.Where(s => s.name.ToLower().Contains("tanker")).ToList(),
+            _ => new List<Supplier>()
+        };
     }
+
+    void GoToDetails(string supplierName)
+    {
+        Nav.NavigateTo($"/supplier/{Uri.EscapeDataString(supplierName)}");
+    }
+
 }
