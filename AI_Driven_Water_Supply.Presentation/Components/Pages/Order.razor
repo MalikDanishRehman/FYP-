@@ -13,16 +13,21 @@
         <!-- RIGHT PANEL -->
         <div class="col-md-8">
 
-            <h3 class="mb-3">Nearby Water Suppliers</h3>
+            <h3 class="mb-3 text-white text-decoration-underline">Nearby Water Suppliers</h3>
 
             <!-- MAP AREA -->
             <div id="map" style="height:350px; width:100%; border-radius:10px; margin-bottom: 30px;"></div>
 
             <hr class="my-4" />
 
-            <h3 class="mb-3">Available Suppliers List</h3>
+            <h3 class="mb-3 text-white text-decoration-underline">Available Suppliers List</h3>
 
             <div class="row g-3">
+
+                @if (filteredSuppliers.Count == 0)
+                {
+                    <p class="text-danger">No suppliers found for: @type</p>
+                }
 
                 @foreach (var supplier in filteredSuppliers)
                 {
@@ -45,63 +50,83 @@
     </div>
 </div>
 
-
 @code {
 
-    // -------- JS INJECTION -------- //
-    [Inject] public IJSRuntime JS { get; set; } = default!;
+    // -------- INJECT JS -------- //
+    [Inject] IJSRuntime JS { get; set; }
 
-    // -------- URL PARAMETER -------- //
+    // -------- PAGE PARAMETER -------- //
     [Parameter] public string? type { get; set; }
 
     // -------- SUPPLIER MODEL -------- //
     public record Supplier(string name, double lat, double lng, string description);
 
-    // -------- ALL SUPPLIERS LIST -------- //
+    // -------- ALL SUPPLIERS -------- //
     List<Supplier> allSuppliers = new()
     {
-        new Supplier("Fresh Aqua Supplier", 24.8615, 67.0099, "Fast delivery"),
-        new Supplier("Pure RO Water", 24.8650, 67.0201, "Premium RO water"),
-        new Supplier("Blue Drop Supply", 24.8589, 67.0033, "Same-day delivery"),
-        new Supplier("Crystal Water Co.", 24.8545, 67.0120, "Affordable clean water"),
-        new Supplier("RO Fresh Supply", 24.8667, 67.0190, "Reliable service"),
-        new Supplier("Hydro Clean Delivery", 24.8622, 67.0155, "Trusted supplier")
+        new Supplier("Fresh Aqua", 24.8610, 67.0011, "Fast delivery"),
+        new Supplier("Pure RO Plant", 24.8620, 67.0022, "Premium RO Water"),
+        new Supplier("Blue Tanker Service", 24.8585, 67.0065, "Same-day delivery")
     };
 
-    // -------- FILTERED SUPPLIERS -------- //
+    // -------- FILTERED LIST -------- //
     List<Supplier> filteredSuppliers = new();
 
-    // -------- PAGE LOAD -------- //
+
+    // -----------------------------------------------------
+    // 1️⃣ CORRECT PLACE: Handle route parameter changes
+    // -----------------------------------------------------
+    protected override void OnParametersSet()
+    {
+        FilterSuppliers();   // Set filtered list
+    }
+
+
+    // -----------------------------------------------------
+    // 2️⃣ Load Google Map AFTER first render
+    // -----------------------------------------------------
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
-            FilterSuppliers();
             await JS.InvokeVoidAsync("mapFunctions.loadMap", type, filteredSuppliers);
         }
     }
 
-    // -------- FILTERING LOGIC -------- //
+
+    // -----------------------------------------------------
+    // 3️⃣ FILTERING BASED ON "type"
+    // -----------------------------------------------------
     void FilterSuppliers()
     {
-        string t = type?.ToLower() ?? "";
+        if (string.IsNullOrWhiteSpace(type))
+        {
+            filteredSuppliers = new();
+            return;
+        }
 
-        switch (t)
+        switch (type.ToLower())
         {
             case "bottle":
-                filteredSuppliers = allSuppliers;
+                filteredSuppliers = allSuppliers
+                    .Where(s => s.name.Contains("Aqua"))
+                    .ToList();
                 break;
 
             case "plant":
-                filteredSuppliers = allSuppliers.Take(4).ToList();
+                filteredSuppliers = allSuppliers
+                    .Where(s => s.name.Contains("RO"))
+                    .ToList();
                 break;
 
             case "tanker":
-                filteredSuppliers = allSuppliers.Take(2).ToList();
+                filteredSuppliers = allSuppliers
+                    .Where(s => s.name.Contains("Tanker"))
+                    .ToList();
                 break;
 
             default:
-                filteredSuppliers = allSuppliers;
+                filteredSuppliers = new();
                 break;
         }
     }
