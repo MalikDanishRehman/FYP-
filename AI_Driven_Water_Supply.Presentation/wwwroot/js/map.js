@@ -14,6 +14,6 @@
             L.marker([s.lat, s.lng])
                 .addTo(window.myMap)
                 .bindPopup(`<b>${s.name}</b><br>${s.description}`);
-        });
+        });git 
     }
 }

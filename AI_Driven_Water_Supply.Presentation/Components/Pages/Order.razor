@@ -7,7 +7,7 @@
         <div class="col-md-4 d-flex align-items-start">
             <img src="/images/@($"{type}.jpg")"
                  alt="@type"
-                 style="width: 100%; height: 100%; object-fit: cover; border-radius: 10px;" />
+                 style="width: 100%; height: 100%; object-fit: cover; border-radius: 70px;" />
         </div>
 
         <!-- RIGHT PANEL -->
@@ -22,7 +22,7 @@
 
             <h3 class="mb-3 text-white text-decoration-underline">Available Suppliers List</h3>
 
-            <div class="row g-3">
+            <div class="row g-3 mb-4">
 
                 @if (filteredSuppliers.Count == 0)
                 {
@@ -32,12 +32,18 @@
                 @foreach (var supplier in filteredSuppliers)
                 {
                     <div class="col-md-4">
-                        <div class="card shadow-sm">
+                        <div class="card shadow-sm bg-body">
                             <img src="https://via.placeholder.com/300x180"
                                  class="card-img-top" alt="">
+
                             <div class="card-body text-center">
-                                <h5 class="card-title">@supplier.name</h5>
-                                <p class="card-text">@supplier.description</p>
+                                <h5 class="card-title text-white">@supplier.name</h5>
+
+                                <!-- ⭐ STAR RATING HERE -->
+                                <p class="card-text text-warning" style="font-size:20px;">
+                                    @GetStars(supplier.rating)
+                                </p>
+
                                 <button class="btn btn-primary btn-sm">Order Now</button>
                             </div>
                         </div>
@@ -52,39 +58,31 @@
 
 @code {
 
-    // -------- INJECT JS -------- //
     [Inject] IJSRuntime JS { get; set; }
 
-    // -------- PAGE PARAMETER -------- //
     [Parameter] public string? type { get; set; }
 
-    // -------- SUPPLIER MODEL -------- //
-    public record Supplier(string name, double lat, double lng, string description);
+    // Updated Supplier Model (⭐ rating added)
+    public record Supplier(string name, double lat, double lng, double rating);
 
-    // -------- ALL SUPPLIERS -------- //
+    // Suppliers List with Ratings
     List<Supplier> allSuppliers = new()
     {
-        new Supplier("Fresh Aqua", 24.8610, 67.0011, "Fast delivery"),
-        new Supplier("Pure RO Plant", 24.8620, 67.0022, "Premium RO Water"),
-        new Supplier("Blue Tanker Service", 24.8585, 67.0065, "Same-day delivery")
+        new Supplier("Fresh Aqua", 24.8610, 67.0011, 4.5),
+        new Supplier("AquaFina", 24.8610, 67.0011, 2),
+        new Supplier("Purify Aqua", 24.8610, 67.0011, 3),
+        new Supplier("Pure RO Plant", 24.8620, 67.0022, 5),
+         new Supplier("Water Plant", 24.8620, 67.0022, 1.5),
+        new Supplier("Blue Tanker Service", 24.8585, 67.0065, 2)
     };
 
-    // -------- FILTERED LIST -------- //
     List<Supplier> filteredSuppliers = new();
 
-
-    // -----------------------------------------------------
-    // 1️⃣ CORRECT PLACE: Handle route parameter changes
-    // -----------------------------------------------------
     protected override void OnParametersSet()
     {
-        FilterSuppliers();   // Set filtered list
+        FilterSuppliers();
     }
 
-
-    // -----------------------------------------------------
-    // 2️⃣ Load Google Map AFTER first render
-    // -----------------------------------------------------
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
@@ -93,10 +91,21 @@
         }
     }
 
+    // ⭐ Star Generator Function
+    string GetStars(double rating)
+    {
+        int fullStars = (int)Math.Floor(rating);
+        bool halfStar = rating - fullStars >= 0.5;
 
-    // -----------------------------------------------------
-    // 3️⃣ FILTERING BASED ON "type"
-    // -----------------------------------------------------
+        string output = new string('★', fullStars);
+
+        if (halfStar)
+            output += "½";
+
+        return output;
+    }
+
+    // Filtering Logic
     void FilterSuppliers()
     {
         if (string.IsNullOrWhiteSpace(type))
@@ -115,7 +124,7 @@
 
             case "plant":
                 filteredSuppliers = allSuppliers
-                    .Where(s => s.name.Contains("RO"))
+                    .Where(s => s.name.Contains("Plant"))
                     .ToList();
                 break;
 
