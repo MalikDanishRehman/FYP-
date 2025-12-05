@@ -2,8 +2,9 @@
 @using Supabase.Gotrue
 @inject IAuthService AuthService
 @inject NavigationManager Nav
+@implements IDisposable
+@* 👆 IDisposable zaroori hai taake memory leak na ho *@
 
-@* ✅ Sirf yeh button interactive hoga, poora layout nahi *@
 @rendermode InteractiveServer
 
 @if (IsLoggedIn)
@@ -11,7 +12,6 @@
     <span class="text-light me-3 d-none d-md-block">
         Hello, <span class="text-success fw-bold">@UserName</span>
     </span>
-
     <button class="btn btn-danger btn-sm" @onclick="HandleLogout">
         <i class="bi bi-box-arrow-right"></i> Sign Out
     </button>
@@ -28,6 +28,21 @@ else
 
     protected override void OnInitialized()
     {
+        // 👇 Subscribe karo: Jab bhi auth change ho, CheckUserStatus chalao
+        AuthService.OnChange += StateHasChanged;
+        CheckUserStatus();
+    }
+
+    // 👇 Jab component band ho to unsubscribe karo
+    public void Dispose()
+    {
+        AuthService.OnChange -= StateHasChanged;
+    }
+
+    // Yeh function har baar chalega jab StateHasChanged call hoga
+    protected override void OnAfterRender(bool firstRender)
+    {
+        // State update check
         CheckUserStatus();
     }
 
@@ -36,26 +51,27 @@ else
         var user = AuthService.CurrentUser;
         if (user != null)
         {
-            IsLoggedIn = true;
-            if (user.UserMetadata != null && user.UserMetadata.TryGetValue("username", out var nameObj))
+            // Agar pehle false tha, tabhi update karo (Infinite loop se bachne ke liye)
+            if (!IsLoggedIn)
             {
-                UserName = nameObj?.ToString() ?? user.Email;
-            }
-            else
-            {
+                IsLoggedIn = true;
                 UserName = user.Email?.Split('@')[0] ?? "User";
+                StateHasChanged(); // Refresh UI
             }
         }
         else
         {
-            IsLoggedIn = false;
+            if (IsLoggedIn)
+            {
+                IsLoggedIn = false;
+                StateHasChanged(); // Refresh UI
+            }
         }
     }
 
     private async Task HandleLogout()
     {
-        await AuthService.SignOut();
-        IsLoggedIn = false;
-        Nav.NavigateTo("/login", forceLoad: true);
+        await AuthService.SignOut(); // Yeh khud notify karega
+        Nav.NavigateTo("/login"); // ForceLoad ki zaroorat nahi
     }
 }
