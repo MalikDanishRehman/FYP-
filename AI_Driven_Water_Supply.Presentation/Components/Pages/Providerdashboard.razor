@@ -1,7 +1,9 @@
 ﻿@page "/ProviderDashboard"
 @using AI_Driven_Water_Supply.Application.Interfaces
 @using Supabase.Gotrue
+@using AI_Driven_Water_Supply.Presentation
 @inject IAuthService AuthService
+@inject Supabase.Client _supabase
 @inject NavigationManager Nav
 @inject IJSRuntime JS
 
@@ -11,6 +13,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
+    /* Styles (Same as before) */
     :root {
         --bg-dark: #0b0d17;
         --card-bg: #171a2b;
@@ -26,7 +29,6 @@
         overflow-x: hidden;
     }
 
-    /* Navbar & Icons */
     .dashboard-nav {
         display: flex;
         justify-content: space-between;
@@ -55,7 +57,6 @@
             transform: translateY(-2px);
         }
 
-    /* Notification Dot */
     .notify-dot {
         position: absolute;
         top: 10px;
@@ -67,7 +68,6 @@
         border: 1px solid var(--card-bg);
     }
 
-    /* Header & Cards Styling (Same as before) */
     .header-section {
         margin-bottom: 30px;
     }
@@ -125,7 +125,6 @@
         height: 250px;
     }
 
-    /* 🚀 SIDEBAR CSS (SLIDING EFFECT) */
     .sidebar-overlay {
         position: fixed;
         top: 0;
@@ -147,7 +146,7 @@
     .side-panel {
         position: fixed;
         top: 0;
-        right: -350px; /* Chupa hua */
+        right: -350px;
         width: 320px;
         height: 100vh;
         background: #1c2033;
@@ -161,10 +160,9 @@
     }
 
         .side-panel.open {
-            right: 0; /* Bahar aa gaya */
+            right: 0;
         }
 
-    /* Chat Items in Sidebar */
     .chat-header {
         display: flex;
         justify-content: space-between;
@@ -193,6 +191,12 @@
         background: #333;
         margin-right: 12px;
         position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        color: #fff;
+        background: #444;
     }
 
     .online-dot {
@@ -217,6 +221,10 @@
         margin: 0;
         font-size: 0.8rem;
         color: var(--text-muted);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 150px;
     }
 
     .msg-time {
@@ -224,20 +232,19 @@
         color: #666;
         margin-left: auto;
     }
-
 </style>
 
 <div class="container pb-5">
-
     <div class="dashboard-nav">
         <div><div class="icon-btn"><i class="fa-solid fa-bars"></i></div></div>
-
         <div class="d-flex gap-3">
             <div class="icon-btn" @onclick="ToggleSidebar">
                 <i class="fa-regular fa-comment"></i>
-                <div class="notify-dot"></div>
+                @if (chatList.Count > 0)
+                {
+                    <div class="notify-dot"></div>
+                }
             </div>
-
             <div class="icon-btn" @onclick="HandleLogout">
                 <i class="fa-solid fa-power-off text-danger"></i>
             </div>
@@ -248,8 +255,8 @@
         <h2 class="welcome-text">Hi, <span>@UserName</span>! 👋</h2>
         <p class="text-muted">Here's your dashboard overview.</p>
         <div class="revenue-card shadow-lg">
-            <h1 class="revenue-amount">$12,400</h1>
-            <p class="text-muted mb-0">Total Revenue</p>
+            <h1 class="revenue-amount">Rs @totalRevenue</h1>
+            <p class="text-muted mb-0">Total Estimated Revenue</p>
         </div>
     </div>
 
@@ -257,12 +264,12 @@
 
     <div class="stats-grid">
         <div class="stat-card">
-            <div class="stat-value text-primary">29</div>
-            <div class="stat-label">Total Services</div>
+            <div class="stat-value text-primary">@chatList.Count</div>
+            <div class="stat-label">Active Orders</div>
         </div>
         <div class="stat-card">
-            <div class="stat-value text-warning">07</div>
-            <div class="stat-label">Today's Orders</div>
+            <div class="stat-value text-warning">0</div>
+            <div class="stat-label">Completed</div>
         </div>
     </div>
 </div>
@@ -271,74 +278,109 @@
 
 <div class="side-panel @(isSidebarOpen ? "open" : "")">
     <div class="chat-header">
-        <h4 class="fw-bold m-0">Messages <span class="badge bg-success rounded-pill fs-6">3</span></h4>
+        <h4 class="fw-bold m-0">Orders & Chats <span class="badge bg-success rounded-pill fs-6">@chatList.Count</span></h4>
         <i class="fa-solid fa-xmark fs-4" style="cursor: pointer;" @onclick="ToggleSidebar"></i>
     </div>
 
-    <div class="chat-list">
-
-        <div class="chat-item">
-            <div class="avatar">
-                <img src="https://i.pravatar.cc/150?img=11" class="w-100 h-100 rounded-circle">
-                <div class="online-dot"></div>
+    <div class="chat-list" style="overflow-y: auto;">
+        @if (isLoading)
+        {
+            <div class="text-center text-muted mt-4">
+                <div class="spinner-border text-success" role="status"></div>
+                <p class="mt-2">Loading messages...</p>
             </div>
-            <div class="msg-content">
-                <h6>Ali Khan</h6>
-                <p>Bhai tanker kab tak ayega?</p>
+        }
+        else if (chatList.Count == 0)
+        {
+            <div class="text-center text-muted mt-5">
+                <i class="fa-regular fa-folder-open fs-1 mb-3"></i>
+                <p>No active orders yet.</p>
             </div>
-            <span class="msg-time">2m</span>
-        </div>
-
-        <div class="chat-item">
-            <div class="avatar">
-                <img src="https://i.pravatar.cc/150?img=3" class="w-100 h-100 rounded-circle">
-            </div>
-            <div class="msg-content">
-                <h6>Sara Ahmed</h6>
-                <p>Payment send kar di hai...</p>
-            </div>
-            <span class="msg-time">1h</span>
-        </div>
-
-        <div class="chat-item">
-            <div class="avatar">
-                <img src="https://i.pravatar.cc/150?img=8" class="w-100 h-100 rounded-circle">
-                <div class="online-dot"></div>
-            </div>
-            <div class="msg-content">
-                <h6>Water Support</h6>
-                <p>Apka account verify ho gya.</p>
-            </div>
-            <span class="msg-time">1d</span>
-        </div>
-
+        }
+        else
+        {
+            @foreach (var chat in chatList)
+            {
+                <div class="chat-item" @onclick="() => OpenChat(chat.OrderId)">
+                    <div class="avatar">
+                        @(!string.IsNullOrEmpty(chat.SenderName) ? chat.SenderName.Substring(0, 1).ToUpper() : "U")
+                        <div class="online-dot"></div>
+                    </div>
+                    <div class="msg-content">
+                        <h6>@chat.SenderName</h6>
+                        <p>@chat.Content</p>
+                    </div>
+                    <span class="msg-time">@chat.CreatedAt.ToString("hh:mm tt")</span>
+                </div>
+            }
+        }
     </div>
 
-    <div class="mt-auto text-center">
-        <button class="btn btn-outline-success w-100 btn-sm">View All Messages</button>
+    <div class="mt-auto text-center pt-3">
+        <small class="text-muted">Click a user to start chatting</small>
     </div>
 </div>
 
 @code {
     private string UserName = "Provider";
-    private bool isSidebarOpen = false; // Sidebar state
+    private bool isSidebarOpen = false;
+    private bool isLoading = true;
+    private int totalRevenue = 0;
 
-    protected override void OnInitialized()
+    private List<Message> chatList = new List<Message>();
+
+    protected override async Task OnInitializedAsync()
     {
         var user = AuthService.CurrentUser;
         if (user != null)
         {
             if (user.UserMetadata != null && user.UserMetadata.TryGetValue("username", out var nameObj))
-                UserName = nameObj?.ToString() ?? "Provider";
+                UserName = nameObj?.ToString() ?? "Fresh Aqua";
             else
-                UserName = user.Email?.Split('@')[0] ?? "Provider";
+                UserName = "Fresh Aqua";
+        }
+        await LoadMessages();
+    }
+
+    private async Task LoadMessages()
+    {
+        isLoading = true;
+        try
+        {
+            // Ab ye Message class 'Message.cs' se uthayega
+            var response = await _supabase
+                .From<Message>()
+                .Where(x => x.ReceiverName == UserName)
+                .Order("created_at", Supabase.Postgrest.Constants.Ordering.Descending)
+                .Get();
+
+            var allMessages = response.Models;
+
+            chatList = allMessages
+                        .GroupBy(m => m.OrderId)
+                        .Select(g => g.First())
+                        .ToList();
+
+            totalRevenue = chatList.Count * 1200;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Error fetching messages: " + ex.Message);
+        }
+        finally
+        {
+            isLoading = false;
         }
     }
 
-    // Toggle Function
     private void ToggleSidebar()
     {
         isSidebarOpen = !isSidebarOpen;
+    }
+
+    private void OpenChat(long orderId)
+    {
+        Nav.NavigateTo($"/chat/{orderId}");
     }
 
     private async Task HandleLogout()
@@ -351,7 +393,6 @@
     {
         if (firstRender)
         {
-            // Chart logic (Simplified for UI view)
             await JS.InvokeVoidAsync("eval", @"
                 var ctx = document.getElementById('revenueChart');
                 if(ctx) {

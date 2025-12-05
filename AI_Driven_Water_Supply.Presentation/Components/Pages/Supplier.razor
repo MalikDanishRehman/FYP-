@@ -1,6 +1,8 @@
 ﻿@page "/supplier/{name}"
 @rendermode InteractiveServer
 @inject NavigationManager Nav
+@inject Supabase.Client _supabase  // 👈 Database Connection
+@using AI_Driven_Water_Supply.Presentation // 👈 Models (Order.cs, Message.cs) tak rasai ke liye
 
 <style>
     .modal-backdrop-custom {
@@ -129,28 +131,26 @@
 @code {
     [Parameter] public string name { get; set; }
 
-    // UI State
+    // UI Variables
     string description = "";
     int quantity = 1;
-    int pricePerBottle = 120; // Ye DB se aana chahiye ideally
+    int pricePerBottle = 120;
     int totalPrice = 120;
     bool showModal = false;
 
-    // Order Data Model (Isi file me rakha hai abhi ke liye)
+    // Form Model (Sirf Form ke liye use ho raha hai)
     public class OrderRequest
     {
         public string ConsumerName { get; set; } = "";
         public string Address { get; set; } = "";
         public string Phone { get; set; } = "";
     }
-
     OrderRequest orderModel = new OrderRequest();
 
     protected override void OnInitialized()
     {
         if (string.IsNullOrEmpty(name)) name = "Unknown Supplier";
 
-        // Random description generator (Same as before)
         var paragraphs = new List<string> {
             $"{name} provides premium filtered water ensuring health and safety.",
             $"Reliable service by {name}. Delivery usually within 2 hours.",
@@ -174,40 +174,68 @@
         totalPrice = quantity * pricePerBottle;
     }
 
-    // --- Modal Logic ---
-    void OpenOrderModal()
-    {
-        showModal = true;
-    }
+    void OpenOrderModal() => showModal = true;
+    void CloseModal() => showModal = false;
 
-    void CloseModal()
-    {
-        showModal = false;
-    }
-
-    // --- TASK 7: Order Submission Logic ---
+    // 🔥 TASK 7 & 8: REAL DATABASE LOGIC 🔥
+    // 🔥 UPDATED HandleOrderSubmit FUNCTION 🔥
     private async Task HandleOrderSubmit()
     {
-        // Validation check (Basic)
+        // 1. Validation
         if (string.IsNullOrWhiteSpace(orderModel.Address) || string.IsNullOrWhiteSpace(orderModel.Phone))
         {
-            // Yahan Toast notification laga sakte ho
+            Console.WriteLine("Error: Missing Details");
             return;
         }
 
-        // 1. Database Update Logic (Simulated)
-        // Yahan tumhara DB Context use hoga
-        // e.g., await _dbContext.Orders.AddAsync(newOrder); await _dbContext.SaveChangesAsync();
+        Console.WriteLine("🚀 Saving Order to Supabase...");
 
-        // 2. Auto Message Generate karna (Task 8 ki preparation)
-        string autoMsg = $"New Order! {quantity} bottles. Addr: {orderModel.Address}. Ph: {orderModel.Phone}";
-        Console.WriteLine($"DB SAVE: {autoMsg}"); // Testing ke liye
+        try
+        {
+            // 👇 FIX: "AI_Driven_Water_Supply.Presentation.Order" poora likha hai
+            var newOrder = new AI_Driven_Water_Supply.Presentation.Order
+            {
+                ConsumerName = orderModel.ConsumerName,
+                Address = orderModel.Address,
+                Phone = orderModel.Phone,
+                Quantity = quantity,
+                ItemName = "Water Bottle",
+                TotalPrice = totalPrice,
+                SupplierName = name,
+                Status = "Pending"
+            };
 
-        // 3. Close Modal
-        showModal = false;
+            // 👇 FIX: Yahan bhi poora path diya hai
+            var response = await _supabase.From<AI_Driven_Water_Supply.Presentation.Order>().Insert(newOrder);
+            var insertedOrder = response.Models.FirstOrDefault();
 
-        // 4. User ko Chat/Success Page pe bhejo
-        // Nav.NavigateTo($"/chat/{name}"); // Jab chat ban jayegi tab ye uncomment karna
-        Nav.NavigateTo("/"); // Filhal home bhej rahe hain
+            if (insertedOrder != null)
+            {
+                Console.WriteLine($"✅ Order Saved! ID: {insertedOrder.Id}");
+
+                // 👇 Message ke liye bhi full path use kar lete hain safety ke liye
+                var autoMsg = new AI_Driven_Water_Supply.Presentation.Message
+                {
+                    OrderId = insertedOrder.Id,
+                    SenderName = orderModel.ConsumerName,
+                    ReceiverName = name,
+                    Content = $"New Order! {quantity}x Bottles. Address: {orderModel.Address}. Call: {orderModel.Phone}"
+                };
+
+                await _supabase.From<AI_Driven_Water_Supply.Presentation.Message>().Insert(autoMsg);
+                Console.WriteLine("✅ Auto-Message Sent!");
+
+                showModal = false;
+                Nav.NavigateTo("/");
+            }
+            else
+            {
+                Console.WriteLine("❌ Error: Order insert failed (Null response).");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ CRASH ERROR: {ex.Message}");
+        }
     }
 }
