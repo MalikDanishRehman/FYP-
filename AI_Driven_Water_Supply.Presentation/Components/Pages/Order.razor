@@ -1,22 +1,22 @@
 ﻿@page "/order/{type}"
+@inject NavigationManager Nav
+@inject IJSRuntime JS
 
 <div class="container mt-4">
     <div class="row">
 
-        <!-- LEFT IMAGE -->
         <div class="col-md-4 d-flex align-items-start">
-            <img src="/images/@($"{type?.ToLower()}.jpg")"
+            <img src="/images/@($"{type?.ToLower() ?? "default"}.jpg")"
                  alt="@type"
+                 onerror="this.src='https://via.placeholder.com/300x400';"
                  style="width: 100%; height: 100%; object-fit: cover; border-radius: 70px;" />
         </div>
 
-        <!-- RIGHT PANEL -->
         <div class="col-md-8">
 
             <h3 class="mb-3 text-white text-decoration-underline">Nearby Water Suppliers</h3>
 
-            <!-- MAP AREA -->
-            <div id="map" style="height:350px; width:100%; border-radius:10px; margin-bottom: 30px;"></div>
+            <div id="map" style="height:350px; width:100%; border-radius:10px; margin-bottom: 30px; background-color: #ddd;"></div>
 
             <hr class="my-4" />
 
@@ -33,12 +33,11 @@
                 {
                     <div class="col-md-4">
                         <div class="card shadow-sm bg-body">
-                            <img src="https://via.placeholder.com/300x180" class="card-img-top" alt="">
+                            <img src="https://via.placeholder.com/300x180" class="card-img-top" alt="@supplier.name">
 
                             <div class="card-body text-center">
                                 <h5 class="card-title text-white">@supplier.name</h5>
 
-                                <!-- ⭐ STAR RATING -->
                                 <p class="card-text text-warning" style="font-size:20px;">
                                     @GetStars(supplier.rating)
                                 </p>
@@ -59,15 +58,10 @@
 </div>
 
 @code {
-    [Inject] IJSRuntime JS { get; set; } = default!;
-    [Inject] NavigationManager Nav { get; set; } = default!;
-
     [Parameter] public string? type { get; set; }
 
-    // Supplier Model
     public record Supplier(string name, double lat, double lng, double rating);
 
-    // All suppliers
     List<Supplier> allSuppliers = new()
     {
         new Supplier("Fresh Aqua", 24.8610, 67.0011, 4.5),
@@ -89,23 +83,27 @@
     {
         if (firstRender)
         {
-            await JS.InvokeVoidAsync("mapFunctions.loadMap", type, filteredSuppliers);
+            try
+            {
+                // Map load karne ki koshish (agar JS function ready hai)
+                await JS.InvokeVoidAsync("mapFunctions.loadMap", type, filteredSuppliers);
+            }
+            catch
+            {
+                // Agar map JS file missing hai to error ignore karega
+            }
         }
     }
 
-    // ⭐ Star Generator
     string GetStars(double rating)
     {
         int fullStars = (int)Math.Floor(rating);
         bool halfStar = rating - fullStars >= 0.5;
-
         string stars = new string('★', fullStars);
         if (halfStar) stars += "½";
-
         return stars;
     }
 
-    // Filtering Logic (case-insensitive)
     void FilterSuppliers()
     {
         var t = type?.Trim().ToLower() ?? "";
@@ -115,13 +113,14 @@
             "bottle" => allSuppliers.Where(s => s.name.ToLower().Contains("aqua")).ToList(),
             "plant" => allSuppliers.Where(s => s.name.ToLower().Contains("plant")).ToList(),
             "tanker" => allSuppliers.Where(s => s.name.ToLower().Contains("tanker")).ToList(),
-            _ => new List<Supplier>()
+            _ => allSuppliers
         };
     }
 
+    // ✅ MAIN FUNCTION JO NAVIGATE KAREGA
     void GoToDetails(string supplierName)
     {
+        // Space wale naam (jaise Fresh Aqua) ko safe URL banata hai
         Nav.NavigateTo($"/supplier/{Uri.EscapeDataString(supplierName)}");
     }
-
 }
