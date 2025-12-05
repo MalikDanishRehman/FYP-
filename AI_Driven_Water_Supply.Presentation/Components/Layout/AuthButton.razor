@@ -3,7 +3,6 @@
 @inject IAuthService AuthService
 @inject NavigationManager Nav
 @implements IDisposable
-@* 👆 IDisposable zaroori hai taake memory leak na ho *@
 
 @rendermode InteractiveServer
 
@@ -12,6 +11,7 @@
     <span class="text-light me-3 d-none d-md-block">
         Hello, <span class="text-success fw-bold">@UserName</span>
     </span>
+
     <button class="btn btn-danger btn-sm" @onclick="HandleLogout">
         <i class="bi bi-box-arrow-right"></i> Sign Out
     </button>
@@ -25,53 +25,57 @@ else
 @code {
     private bool IsLoggedIn = false;
     private string UserName = "User";
+    private bool isInitialized = false;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        // 👇 Subscribe karo: Jab bhi auth change ho, CheckUserStatus chalao
+        // 1. Event Subscribe karo (Taake login/logout par UI update ho)
         AuthService.OnChange += StateHasChanged;
-        CheckUserStatus();
+        AuthService.OnChange += UpdateStatus;
+
+        // 2. 🛑 YEH LINE MISSING THI:
+        // Page refresh hote hi check karo ke kya Cookie me koi session hai?
+        await AuthService.TryRefreshSession();
+
+        // 3. Status update karo
+        UpdateStatus();
     }
 
-    // 👇 Jab component band ho to unsubscribe karo
     public void Dispose()
     {
+        // Memory leak rokne ke liye unsubscribe
         AuthService.OnChange -= StateHasChanged;
+        AuthService.OnChange -= UpdateStatus;
     }
 
-    // Yeh function har baar chalega jab StateHasChanged call hoga
-    protected override void OnAfterRender(bool firstRender)
-    {
-        // State update check
-        CheckUserStatus();
-    }
-
-    private void CheckUserStatus()
+    private void UpdateStatus()
     {
         var user = AuthService.CurrentUser;
         if (user != null)
         {
-            // Agar pehle false tha, tabhi update karo (Infinite loop se bachne ke liye)
-            if (!IsLoggedIn)
+            IsLoggedIn = true;
+            // Username nikalne ka safe tareeqa
+            if (user.UserMetadata != null && user.UserMetadata.TryGetValue("username", out var nameObj))
             {
-                IsLoggedIn = true;
+                UserName = nameObj?.ToString() ?? user.Email ?? "User";
+            }
+            else
+            {
                 UserName = user.Email?.Split('@')[0] ?? "User";
-                StateHasChanged(); // Refresh UI
             }
         }
         else
         {
-            if (IsLoggedIn)
-            {
-                IsLoggedIn = false;
-                StateHasChanged(); // Refresh UI
-            }
+            IsLoggedIn = false;
         }
+
+        // UI Refresh force karo
+        InvokeAsync(StateHasChanged);
     }
 
     private async Task HandleLogout()
     {
-        await AuthService.SignOut(); // Yeh khud notify karega
-        Nav.NavigateTo("/login"); // ForceLoad ki zaroorat nahi
+        await AuthService.SignOut();
+        Nav.NavigateTo("/login");
     }
 }
