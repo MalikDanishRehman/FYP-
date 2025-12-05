@@ -42,10 +42,10 @@
                                     @GetStars(supplier.rating)
                                 </p>
 
-                                <button class="btn btn-primary btn-sm"
-                                        @onclick="() => GoToDetails(supplier.name)">
+                                <a href="/supplier/@Uri.EscapeDataString(supplier.name)"
+                                   class="btn btn-primary btn-sm">
                                     Order Now
-                                </button>
+                                </a>
 
                             </div>
                         </div>
