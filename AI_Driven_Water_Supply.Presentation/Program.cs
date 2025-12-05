@@ -4,28 +4,24 @@ using Supabase;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// --- STEP 1: DIRECT CONFIGURATION ---
+// --- STEP 1: CONFIGURATION ---
 var supabaseUrl = "https://wejwiduabjiwztezvkdz.supabase.co";
 var supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndlandpZHVhYmppd3p0ZXp2a2R6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ5MTQzMDgsImV4cCI6MjA4MDQ5MDMwOH0.nW7d_di1l2NTIMtSup4fCfrYJ9ZhW3U4uylAB6EOrvs";
 
 Console.WriteLine($"✅ Supabase URL Loaded: {supabaseUrl}");
 
-// --- STEP 2: REGISTER SUPABASE WITH SCHEMA ---
+// --- STEP 2: REGISTER SUPABASE ---
 var options = new SupabaseOptions
 {
     AutoRefreshToken = true,
     AutoConnectRealtime = true,
-    // 👇 YEH LINE SABSE ZAROORI HAI DATABASE ACCESS KE LIYE
     Schema = "public"
 };
 
-// Scoped Service Register (With Initialization)
+// 🛑 FIX 1: Blocking '.Wait()' hata diya. App fast start hogi.
 builder.Services.AddScoped<Supabase.Client>(provider =>
 {
-    var client = new Supabase.Client(supabaseUrl, supabaseKey, options);
-    // Client ko initialize karo taake purana session load ho sake
-    client.InitializeAsync().Wait();
-    return client;
+    return new Supabase.Client(supabaseUrl, supabaseKey, options);
 });
 
 // Auth Service Registration
@@ -38,7 +34,17 @@ builder.Services.AddRazorComponents()
 var app = builder.Build();
 
 // Middleware
-app.UseHttpsRedirection();
+if (!app.Environment.IsDevelopment())
+{
+    app.UseExceptionHandler("/Error", createScopeForErrors: true);
+    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
+    app.UseHsts();
+}
+
+// 🛑 FIX 2: HTTPS Redirection ko Development me band kar diya
+// Kyunki localhost par kabhi kabhi SSL certificate ka masla hota hai aur app atak jati hai.
+// app.UseHttpsRedirection(); // <--- ISE COMMENT HI REHNE DO ABHI KE LIYE
+
 app.UseStaticFiles();
 app.UseRouting();
 app.UseAntiforgery();

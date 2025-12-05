@@ -1,0 +1,61 @@
+﻿@using AI_Driven_Water_Supply.Application.Interfaces
+@using Supabase.Gotrue
+@inject IAuthService AuthService
+@inject NavigationManager Nav
+
+@* ✅ Sirf yeh button interactive hoga, poora layout nahi *@
+@rendermode InteractiveServer
+
+@if (IsLoggedIn)
+{
+    <span class="text-light me-3 d-none d-md-block">
+        Hello, <span class="text-success fw-bold">@UserName</span>
+    </span>
+
+    <button class="btn btn-danger btn-sm" @onclick="HandleLogout">
+        <i class="bi bi-box-arrow-right"></i> Sign Out
+    </button>
+}
+else
+{
+    <a href="/signup" class="btn btn-outline-light me-2">Sign Up</a>
+    <a href="/login" class="btn btn-light">Sign In</a>
+}
+
+@code {
+    private bool IsLoggedIn = false;
+    private string UserName = "User";
+
+    protected override void OnInitialized()
+    {
+        CheckUserStatus();
+    }
+
+    private void CheckUserStatus()
+    {
+        var user = AuthService.CurrentUser;
+        if (user != null)
+        {
+            IsLoggedIn = true;
+            if (user.UserMetadata != null && user.UserMetadata.TryGetValue("username", out var nameObj))
+            {
+                UserName = nameObj?.ToString() ?? user.Email;
+            }
+            else
+            {
+                UserName = user.Email?.Split('@')[0] ?? "User";
+            }
+        }
+        else
+        {
+            IsLoggedIn = false;
+        }
+    }
+
+    private async Task HandleLogout()
+    {
+        await AuthService.SignOut();
+        IsLoggedIn = false;
+        Nav.NavigateTo("/login", forceLoad: true);
+    }
+}
