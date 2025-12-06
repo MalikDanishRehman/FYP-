@@ -1,7 +1,10 @@
 ﻿@page "/login"
 @using System.ComponentModel.DataAnnotations
 @using AI_Driven_Water_Supply.Application.Interfaces
+@using Supabase.Postgrest.Attributes
+@using Supabase.Postgrest.Models
 @inject IAuthService AuthService
+@inject Supabase.Client _supabase
 @inject NavigationManager Nav
 
 @rendermode InteractiveServer
@@ -10,14 +13,15 @@
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 
 <style>
+    /* --- YEH RAHI AAPKI PERFECT UI --- */
     .signup-container {
         background: #141622;
         color: #fff;
         padding: 2rem;
         border-radius: 12px;
         box-shadow: 0px 4px 20px #0005;
-        max-width: 400px;
-        margin: 2rem auto;
+        max-width: 400px; /* UI Size fixed */
+        margin: 4rem auto;
     }
 
     .brand-green {
@@ -99,7 +103,6 @@
             }
             else
             {
-
                 <span>Login</span>
             }
         </button>
@@ -118,26 +121,70 @@
     private string errorMessage = "";
     private bool isLoading = false;
 
+    // 👇 LOGIC: Supabase Model wapas add kiya
+    [Table("profiles")]
+    public class UserProfile : BaseModel
+    {
+        [Column("id")] public string Id { get; set; }
+        [Column("role")] public string Role { get; set; }
+    }
+
     private async Task HandleLogin()
     {
         isLoading = true;
         errorMessage = "";
-        await Task.Delay(500);
 
-        bool isLoggedIn = await AuthService.SignIn(loginModel.Email, loginModel.Password);
-
-        if (isLoggedIn)
+        try
         {
-            // 👇 YAHAN CHANGE KIYA HAI (forceLoad: true)
-            // Isse Navbar refresh hoga aur 'Sign In' ki jagah 'Sign Out' dikhega
-            Nav.NavigateTo("/onboarding");
-        }
-        else
-        {
-            errorMessage = "Invalid email or password";
-        }
+            // 1. Auth Service se Login
+            bool isLoggedIn = await AuthService.SignIn(loginModel.Email, loginModel.Password);
 
-        isLoading = false;
+            if (isLoggedIn)
+            {
+                // 2. User ID nikalo
+                var user = AuthService.CurrentUser;
+                if (user == null) user = _supabase.Auth.CurrentUser;
+
+                if (user != null)
+                {
+                    // 3. Supabase se Role check karo (Wohi purani logic)
+                    var response = await _supabase.From<UserProfile>()
+                                                  .Where(x => x.Id == user.Id)
+                                                  .Get();
+
+                    var profile = response.Models.FirstOrDefault();
+
+                    if (profile != null)
+                    {
+                        // 4. Role Based Redirect
+                        if (profile.Role == "Consumer")
+                        {
+                            Nav.NavigateTo("/Consumer", forceLoad: true);
+                        }
+                        else
+                        {
+                            Nav.NavigateTo("/ProviderDashboard", forceLoad: true);
+                        }
+                    }
+                    else
+                    {
+                        Nav.NavigateTo("/get-started");
+                    }
+                }
+            }
+            else
+            {
+                errorMessage = "Invalid email or password";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Login Error: " + ex.Message;
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
     public class LoginModel
