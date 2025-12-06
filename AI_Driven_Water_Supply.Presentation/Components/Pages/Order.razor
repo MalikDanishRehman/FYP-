@@ -1,7 +1,10 @@
 ﻿@page "/order/{type}"
+@using Supabase.Postgrest.Attributes @* Ye zaroori hai table mapping ke liye *@
+@using Supabase.Postgrest.Models @* Ye bhi zaroori hai *@
 @inject NavigationManager Nav
 @inject IJSRuntime JS
-
+@inject Supabase.Client SupabaseClient
+@* ✅ Supabase Client Inject kiya (Comment agli line par hona chahiye) *@
 <div class="container mt-4">
     <div class="row">
 
@@ -13,9 +16,8 @@
         </div>
 
         <div class="col-md-8">
-
             <h3 class="mb-3 text-white text-decoration-underline">Nearby Water Suppliers</h3>
-
+            
             <div id="map" style="height:350px; width:100%; border-radius:10px; margin-bottom: 30px; background-color: #ddd;"></div>
 
             <hr class="my-4" />
@@ -23,8 +25,11 @@
             <h3 class="mb-3 text-white text-decoration-underline">Available Suppliers List</h3>
 
             <div class="row g-3 mb-4">
-
-                @if (filteredSuppliers.Count == 0)
+                @if (isLoading)
+                {
+                     <p class="text-white">Loading suppliers from database...</p>
+                }
+                else if (filteredSuppliers.Count == 0)
                 {
                     <p class="text-danger">No suppliers found for: @type</p>
                 }
@@ -42,11 +47,10 @@
                                     @GetStars(supplier.rating)
                                 </p>
 
-                                <a href="/supplier/@Uri.EscapeDataString(supplier.name)"
-                                   class="btn btn-primary btn-sm">
+                                <button @onclick="() => GoToDetails(supplier.name)"
+                                        class="btn btn-primary btn-sm">
                                     Order Now
-                                </a>
-
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -60,38 +64,76 @@
 @code {
     [Parameter] public string? type { get; set; }
 
+    // ✅ UI ke liye record (waisa hi rakha hai)
     public record Supplier(string name, double lat, double lng, double rating);
-
-    List<Supplier> allSuppliers = new()
+    
+    // ✅ Supabase Table Model (Jo tumhare screenshot me hai)
+    [Table("profiles")]
+    public class Profile : BaseModel
     {
-        new Supplier("Fresh Aqua", 24.8610, 67.0011, 4.5),
-        new Supplier("AquaFina", 24.8610, 67.0011, 2),
-        new Supplier("Purify Aqua", 24.8610, 67.0011, 3),
-        new Supplier("Pure RO Plant", 24.8620, 67.0022, 5),
-        new Supplier("Water Plant", 24.8620, 67.0022, 1.5),
-        new Supplier("Blue Tanker Service", 24.8585, 67.0065, 2)
-    };
+        [PrimaryKey("id")]
+        public string Id { get; set; } = default!; // ✅ Default value de di
 
+        [Column("username")]
+        public string Username { get; set; } = string.Empty; // ✅ Empty string se initialize kar diya
+
+        [Column("role")]
+        public string Role { get; set; } = string.Empty; // ✅ Empty string se initialize kar diya
+    }
+    List<Supplier> allSuppliers = new();
     List<Supplier> filteredSuppliers = new();
+    bool isLoading = true;
 
+    // ✅ Jab page load hoga, tab Supabase se data ayega
+    protected override async Task OnInitializedAsync()
+    {
+        try 
+        {
+            // 1. Supabase se wo log uthao jinka Role 'Provider' hai
+            var response = await SupabaseClient.From<Profile>()
+                                     .Where(x => x.Role == "Provider") 
+                                     .Get();
+
+            var dbProfiles = response.Models;
+
+            // 2. Data ko UI format (Supplier) mein convert karo
+            // Note: Kyunki DB me lat/lng nahi hai, mene abhi dummy numbers dale hain.
+            // Baad me tum DB me lat/lng columns bana lena.
+            
+            allSuppliers = dbProfiles.Select(p => new Supplier(
+                p.Username, 
+                24.8600 + (new Random().NextDouble() * 0.01), // Dummy Lat
+                67.0000 + (new Random().NextDouble() * 0.01), // Dummy Lng
+                4.5 // Default Rating
+            )).ToList();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Error fetching data: " + ex.Message);
+        }
+        finally
+        {
+            isLoading = false;
+            FilterSuppliers(); // Data ane ke baad filter chalao
+        }
+    }
+
+    // Parameters change hone par filter dobara chalana
     protected override void OnParametersSet()
     {
         FilterSuppliers();
     }
 
+    // Map Load logic
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender)
+        if (!isLoading && filteredSuppliers.Any()) 
         {
             try
             {
-                // Map load karne ki koshish (agar JS function ready hai)
                 await JS.InvokeVoidAsync("mapFunctions.loadMap", type, filteredSuppliers);
             }
-            catch
-            {
-                // Agar map JS file missing hai to error ignore karega
-            }
+            catch { /* Ignore JS errors if map not ready */ }
         }
     }
 
@@ -106,21 +148,23 @@
 
     void FilterSuppliers()
     {
+        if (allSuppliers == null || !allSuppliers.Any()) return;
+
         var t = type?.Trim().ToLower() ?? "";
 
+        // Agar DB me naam "M.Akmal" hai aur tum "Tanker" search karoge to shayad match na ho.
+        // Isliye abhi ke liye mene logic thodi easy kardi hai taake kuch to dikhe.
+        
         filteredSuppliers = t switch
         {
-            "bottle" => allSuppliers.Where(s => s.name.ToLower().Contains("aqua")).ToList(),
-            "plant" => allSuppliers.Where(s => s.name.ToLower().Contains("plant")).ToList(),
-            "tanker" => allSuppliers.Where(s => s.name.ToLower().Contains("tanker")).ToList(),
-            _ => allSuppliers
+            // Abhi ke liye sab dikha raha hun taake tum test kar sako.
+            // Baad mein tum DB me 'service_type' column daal kar filter karna.
+            _ => allSuppliers 
         };
     }
 
-    // ✅ MAIN FUNCTION JO NAVIGATE KAREGA
     void GoToDetails(string supplierName)
     {
-        // Space wale naam (jaise Fresh Aqua) ko safe URL banata hai
         Nav.NavigateTo($"/supplier/{Uri.EscapeDataString(supplierName)}");
     }
 }
