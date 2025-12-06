@@ -1,199 +1,311 @@
 ﻿@page "/Consumer"
+@using AI_Driven_Water_Supply.Presentation
+@using Supabase.Postgrest.Models
+@inject Supabase.Client _supabase
+@inject NavigationManager Nav
+@rendermode InteractiveServer
 
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
 <style>
+    /* === GLOBAL DARK THEME === */
     body {
         margin: 0;
         padding: 0;
-        background-color: black;
+        background-color: #050505;
         color: white;
-        overflow-x: hidden;
         font-family: 'Inter', sans-serif;
+        overflow-x: hidden;
+        overflow-y: hidden; /* Scroll band taake full app feel aye */
     }
 
-    /* ======================
-               BG + CENTER CONTENT
-               ====================== */
+    /* === NAVBAR FIXED TOP === */
+    .glass-nav {
+        position: fixed;
+        top: 0; /* Bilkul upar chipka diya */
+        left: 0;
+        width: 100%; /* Poori screen ki choraai */
+        height: 70px; /* Fixed height */
+        background: rgba(20, 20, 20, 0.9); /* Thoda dark background */
+        backdrop-filter: blur(10px);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 0 30px; /* Side spacing */
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        z-index: 1000; /* Sabse upar dikhega */
+    }
+
+    .brand-logo {
+        font-weight: 700;
+        font-size: 1.3rem;
+        background: linear-gradient(90deg, #00C9FF 0%, #92FE9D 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    /* === ICONS & DROPDOWNS === */
+    .nav-icons {
+        display: flex;
+        gap: 20px;
+        align-items: center;
+    }
+
+    .icon-btn {
+        position: relative;
+        font-size: 1.2rem;
+        color: #e0e0e0;
+        cursor: pointer;
+        transition: 0.3s;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+        .icon-btn:hover {
+            background: rgba(255,255,255,0.1);
+            color: #00C9FF;
+        }
+
+    .badge-dot {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        width: 8px;
+        height: 8px;
+        background: #ff4757;
+        border-radius: 50%;
+        border: 2px solid #1e1e1e;
+    }
+
+    /* Dropdown Styling */
+    .custom-dropdown {
+        position: absolute;
+        top: 60px;
+        right: 10px; /* Navbar ke neeche */
+        background: #18181b;
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 12px;
+        width: 280px;
+        padding: 10px;
+        display: none;
+        flex-direction: column;
+        gap: 5px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+        opacity: 0;
+        transform: translateY(-10px);
+        transition: 0.3s ease;
+    }
+
+        .custom-dropdown.show {
+            display: flex;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+    .dropdown-item-custom {
+        padding: 10px;
+        border-radius: 8px;
+        color: #ccc;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        transition: 0.2s;
+        cursor: pointer;
+    }
+
+        .dropdown-item-custom:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: white;
+        }
+
+    .supplier-avatar {
+        width: 35px;
+        height: 35px;
+        background: linear-gradient(45deg, #00C9FF, #92FE9D);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        color: black;
+        font-size: 0.8rem;
+    }
+
+    /* === MAIN CONTENT (VIDEO) === */
     .bg-full {
-        height: calc(100vh - 60px);
+        height: 100vh;
         width: 100%;
         display: flex;
         flex-direction: column;
         align-items: center;
-        justify-content: center;
-        padding-top: 0px; /* ↓ zero kar diya */
-        margin-top: -150px;
-        margin-bottom:150px;/* ↓ video thora upar push */
+        justify-content: center; /* Vertically Center */
+        padding-top: 50px; /* Navbar ke liye jagah */
     }
 
     video {
-       
-        box-shadow: 0 0 20px black;
+        width: 450px; /* Video size */
+        max-width: 90%;
+        border-radius: 20px;
+        /* 👇 LIGHTNING REMOVED (No Box Shadow/Filter) */
+        box-shadow: none;
+        filter: none;
+        /* 👇 MOVED UP (Thora upar shift kiya) */
+        transform: translateY(-80px);
     }
 
-    /* ======================
-               RIGHT SLIDE-DOWN SIDEBAR
-               ====================== */
-
-    .sidebar-wrapper {
-        position: fixed;
-        top: 80px; /* Below navbar */
-        right: 60px;
-        z-index: 20;
-        width: auto;
-        display: flex;
-        justify-content: flex-end;
-    }
-
-    .sidebar {
-        width: 180px;
-        background: #1e1e1e;
-        padding: 15px;
-        border-radius: 12px;
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-        /* Hidden initially */
-        transform: translateY(-150%);
-        opacity: 0;
-        transition: 0.35s ease-in-out;
-    }
-
-        .sidebar.show {
-            transform: translateY(0);
-            opacity: 1;
-        }
-
-    .side-btn {
-        display: flex;
-        align-items: center;
-        padding: 12px 15px;
-        font-size: 15px;
-        color: white;
-        background: #2a2a2a;
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
-        transition: 0.2s;
-    }
-
-        .side-btn:hover {
-            background: #3d3d3d;
-            transform: translateX(4px);
-        }
-
-    /* ======================
-               RIGHT FLOATING ARROW
-               ====================== */
-    .toggle-sidebar-btn {
-        position: fixed;
-        top: 65px;
-        right: 30px;
-        z-index: 30;
-        font-size: 28px;
-        color: white;
-        cursor: pointer;
-        background: none;
-        border: none;
-        transition: 0.3s;
-    }
-
-        .toggle-sidebar-btn:hover {
-            color: #58a6ff;
-        }
-
-    /* ======================
-               CHAT INPUT BOX
-               ====================== */
+    /* === BOTTOM CHAT BAR === */
     .chat-input-container {
-        position: fixed;
-        bottom: 20px;
+        position: absolute;
+        bottom: 30px;
         width: 100%;
         display: flex;
         justify-content: center;
-        z-index: 10;
     }
 
     .chat-input-box {
-        width: 60%;
-        max-width: 700px;
-        background-color: #1e1f24;
-        border: 1px solid #3a3b3f;
-        border-radius: 30px;
-        padding: 10px 20px;
+        width: 90%;
+        max-width: 600px;
+        background: #1e1e1e;
+        border: 1px solid #333;
+        border-radius: 50px;
+        padding: 12px 25px;
         display: flex;
         align-items: center;
-        box-shadow: 0 0 10px #0006;
+        gap: 15px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.5);
     }
 
         .chat-input-box input {
             flex: 1;
-            border: none;
             background: transparent;
+            border: none;
             color: white;
-            font-size: 16px;
             outline: none;
-            padding: 5px;
         }
 
         .chat-input-box button {
             background: none;
             border: none;
-            color: #c9d1d9;
-            font-size: 22px;
+            color: #00C9FF;
+            font-size: 1.2rem;
             cursor: pointer;
-            transition: color 0.3s;
         }
 
-            .chat-input-box button:hover {
-                color: #58a6ff;
-            }
 </style>
 
+<div class="glass-nav">
+    <div class="brand-logo">
+        <i class="fa-solid fa-droplet"></i> AI-Driven
+    </div>
 
-<!-- RIGHT SIDE TOGGLE BUTTON -->
-<button class="toggle-sidebar-btn" id="toggleSidebar">
-    <i class="fa-solid fa-caret-down" style="color:#74C0FC;"> </i>
-</button>
+    <div class="nav-icons">
+        <div style="position: relative;">
+            <div class="icon-btn" @onclick="ToggleMsgDropdown">
+                <i class="fa-regular fa-comment-dots"></i>
+                @if (activeChats.Count > 0)
+                {
+                    <span class="badge-dot"></span>
+                }
+            </div>
+            <div class="custom-dropdown @(showMsgDropdown ? "show" : "")">
+                <h6 class="text-white px-2 py-1 m-0 small text-muted">Active Chats</h6>
+                <hr class="my-1 border-secondary" />
+                @if (activeChats.Count > 0)
+                {
+                    @foreach (var chat in activeChats)
+                    {
+                        <div class="dropdown-item-custom" @onclick="() => OpenChat(chat.Id)">
+                            <div class="supplier-avatar">@chat.SupplierName.Substring(0, 1)</div>
+                            <div>
+                                <div class="fw-bold small">@chat.SupplierName</div>
+                                <div style="font-size: 0.65rem; opacity: 0.6;">Order #@chat.Id</div>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="p-2 text-center text-muted small">No active chats</div>
+                }
+            </div>
+        </div>
 
-<!-- RIGHT SLIDE-DOWN SIDEBAR -->
-<div class="sidebar-wrapper">
-    <div class="sidebar" id="sidebar">
-        <a href="/Cardpage" class="side-btn">Order</a>
-        <a href="" class="side-btn">Bill</a>
-        <a href="" class="side-btn">Setting</a>
+        <div style="position: relative;">
+            <div class="icon-btn" @onclick="ToggleProfileDropdown">
+                <i class="fa-regular fa-user"></i>
+            </div>
+            <div class="custom-dropdown @(showProfileDropdown ? "show" : "")" style="width: 200px;">
+                <a href="/Cardpage" class="dropdown-item-custom"><i class="fa-solid fa-bag-shopping"></i> My Orders</a>
+                <a href="#" class="dropdown-item-custom"><i class="fa-solid fa-receipt"></i> Bills</a>
+                <a href="#" class="dropdown-item-custom"><i class="fa-solid fa-gear"></i> Settings</a>
+                <hr class="my-1 border-secondary" />
+                <a href="#" class="dropdown-item-custom text-danger"><i class="fa-solid fa-power-off"></i> Logout</a>
+            </div>
+        </div>
     </div>
 </div>
 
-<!-- CENTER VIDEO -->
-<div class="bg-full">
-    <video id="myVideo" width="480" autoplay muted playsinline>
+<div class="bg-full" @onclick="CloseDropdowns">
+    <video id="myVideo" autoplay muted playsinline>
         <source src="/video/blob.mp4" type="video/mp4">
         Your browser does not support the video tag.
     </video>
- </div>   
 
-<!-- CHAT INPUT -->
-<div class="chat-input-container">
-    <div class="chat-input-box">
-        <input type="text" placeholder="Message..." />
-        <button><i class="bi bi-send-fill"></i></button>
+    <div class="chat-input-container">
+        <div class="chat-input-box">
+            <i class="fa-solid fa-magnifying-glass text-muted"></i>
+            <input type="text" placeholder="Search or type a message..." />
+            <button><i class="bi bi-send-fill"></i></button>
+        </div>
     </div>
 </div>
 
+@code {
+    bool showMsgDropdown = false;
+    bool showProfileDropdown = false;
+    string MyName = "M.Akmal";
+    List<AI_Driven_Water_Supply.Presentation.Order> activeChats = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadActiveChats();
+    }
+
+    async Task LoadActiveChats()
+    {
+        try
+        {
+            var response = await _supabase.From<AI_Driven_Water_Supply.Presentation.Order>()
+                                          .Where(x => x.ConsumerName == MyName)
+                                          .Order("created_at", Supabase.Postgrest.Constants.Ordering.Descending)
+                                          .Get();
+            activeChats = response.Models;
+        }
+        catch { /* Error Handling */ }
+    }
+
+    void ToggleMsgDropdown() { showMsgDropdown = !showMsgDropdown; showProfileDropdown = false; }
+    void ToggleProfileDropdown() { showProfileDropdown = !showProfileDropdown; showMsgDropdown = false; }
+    void CloseDropdowns() { showMsgDropdown = false; showProfileDropdown = false; }
+    void OpenChat(long orderId) { Nav.NavigateTo($"/chat/{orderId}"); }
+}
 
 <script>
-    // VIDEO PING-PONG REVERSE ANIMATION
-    const video = document.getElementById('myVideo');
-    let reverse = false;
-
-    video.addEventListener('loadedmetadata', () => {
+    function startVideoLoop() {
+        const video = document.getElementById('myVideo');
+        if(!video) return;
+        let reverse = false;
         video.playbackRate = 1;
         video.play();
-
         setInterval(() => {
             if (reverse) {
                 video.currentTime -= 0.05;
@@ -203,10 +315,6 @@
                 if (video.currentTime >= video.duration) reverse = true;
             }
         }, 50);
-    });
-
-    // SIDEBAR TOGGLE
-    document.getElementById("toggleSidebar").addEventListener("click", () => {
-        document.getElementById("sidebar").classList.toggle("show");
-    });
+    }
+    setTimeout(startVideoLoop, 1000);
 </script>
