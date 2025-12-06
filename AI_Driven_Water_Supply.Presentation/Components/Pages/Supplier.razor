@@ -2,36 +2,15 @@
 @rendermode InteractiveServer
 @inject NavigationManager Nav
 @inject Supabase.Client _supabase
-@using AI_Driven_Water_Supply.Presentation  @* ✅ Global Models yahan se ayenge *@
+@inject AI_Driven_Water_Supply.Application.Interfaces.IAuthService AuthService 
+@using AI_Driven_Water_Supply.Presentation
 @using Supabase.Postgrest.Attributes
 @using Supabase.Postgrest.Models
 
 <style>
-    .modal-backdrop-custom {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.7);
-        z-index: 1040;
-    }
-
-    .modal-custom {
-        display: block;
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        z-index: 1050;
-        width: 90%;
-        max-width: 500px;
-    }
-
-    .water-card {
-        background: linear-gradient(145deg, #1e2124, #23272b);
-        box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-    }
+    .modal-backdrop-custom { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.7); z-index: 1040; }
+    .modal-custom { display: block; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1050; width: 90%; max-width: 500px; }
+    .water-card { background: linear-gradient(145deg, #1e2124, #23272b); box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
 </style>
 
 <div class="container mt-5 pb-5">
@@ -117,14 +96,13 @@
 }
 
 @code {
-    [Parameter] public string name { get; set; }
+    [Parameter] public string name { get; set; } = default!;
     string description = "";
     int quantity = 1;
     int pricePerBottle = 120;
     int totalPrice = 120;
     bool showModal = false;
 
-    // Local Form Model (Sirf UI ke liye)
     public class OrderRequestForm
     {
         public string ConsumerName { get; set; } = "";
@@ -138,6 +116,13 @@
         if (string.IsNullOrEmpty(name)) name = "Unknown Supplier";
         description = $"Reliable service by {name}. Delivery usually within 2 hours.";
         Calculate();
+
+        // 🔥 AUTO-FILL LOGIC: Gets logged-in user name
+        var user = AuthService.CurrentUser;
+        if (user != null && user.UserMetadata.TryGetValue("username", out var nameObj))
+        {
+            orderFormModel.ConsumerName = nameObj?.ToString() ?? "";
+        }
     }
 
     void UpdateQty(int change)
@@ -148,17 +133,15 @@
     void OpenOrderModal() => showModal = true;
     void CloseModal() => showModal = false;
 
-    // ✅ FINAL SUBMIT LOGIC
     private async Task HandleOrderSubmit()
     {
         if (string.IsNullOrWhiteSpace(orderFormModel.Address) || string.IsNullOrWhiteSpace(orderFormModel.Phone)) return;
 
         try
         {
-            // 1. Global Order Model use ho raha hai
             var newOrder = new AI_Driven_Water_Supply.Presentation.Order
             {
-                ConsumerName = orderFormModel.ConsumerName,
+                ConsumerName = orderFormModel.ConsumerName, // Gets auto-filled value
                 Address = orderFormModel.Address,
                 Phone = orderFormModel.Phone,
                 Quantity = quantity,
@@ -173,7 +156,6 @@
 
             if (insertedOrder != null)
             {
-                // 2. Auto-Message (Global Message Model)
                 var autoMsg = new AI_Driven_Water_Supply.Presentation.Message
                 {
                     OrderId = insertedOrder.Id,
@@ -185,13 +167,9 @@
                 await _supabase.From<AI_Driven_Water_Supply.Presentation.Message>().Insert(autoMsg);
 
                 showModal = false;
-                Nav.NavigateTo("/"); // Success ke baad Home par
+                Nav.NavigateTo("/");
             }
         }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error: {ex.Message}");
-        }
+        catch (Exception ex) { Console.WriteLine($"Error: {ex.Message}"); }
     }
-    // ❌ Yahan se maine Duplicate Message class delete kardi hai
 }
