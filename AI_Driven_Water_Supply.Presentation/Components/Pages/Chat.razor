@@ -1,19 +1,18 @@
 ﻿@page "/chat/{OrderId:long}"
-@using AI_Driven_Water_Supply.Presentation
+@using AI_Driven_Water_Supply.Presentation @* ✅ Global Models *@
 @using Supabase.Postgrest.Models
 @inject Supabase.Client _supabase
 @inject NavigationManager Nav
 @rendermode InteractiveServer
 
 <style>
-    /* Chat Styling */
     .chat-container {
         max-width: 800px;
         margin: 0 auto;
         height: 85vh;
         display: flex;
         flex-direction: column;
-        background: #171a2b; /* Card Background */
+        background: #171a2b;
         border-radius: 15px;
         overflow: hidden;
         border: 1px solid rgba(255,255,255,0.1);
@@ -36,7 +35,7 @@
         display: flex;
         flex-direction: column;
         gap: 15px;
-        background-color: #0b0d17; /* Dark background */
+        background-color: #0b0d17;
     }
 
     .message-bubble {
@@ -48,15 +47,13 @@
         font-size: 0.95rem;
     }
 
-    /* Agar message maine bheja (Provider) */
     .sent {
         align-self: flex-end;
-        background-color: #BFFF27; /* Neon Green */
+        background-color: #BFFF27;
         color: black;
         border-bottom-right-radius: 2px;
     }
 
-    /* Agar message customer ne bheja */
     .received {
         align-self: flex-start;
         background-color: #2c3e50;
@@ -85,12 +82,9 @@
     </button>
 
     <div class="chat-container shadow-lg">
-
         <div class="chat-header">
             <div>
-                <h5 class="m-0 fw-bold">
-                    <i class="fa-solid fa-user-circle me-2"></i> @ConsumerName
-                </h5>
+                <h5 class="m-0 fw-bold"><i class="fa-solid fa-user-circle me-2"></i> @ConsumerName</h5>
                 <small class="text-muted">Order ID: #@OrderId | @ItemName</small>
             </div>
             <span class="badge bg-warning text-dark">@OrderStatus</span>
@@ -99,9 +93,7 @@
         <div class="chat-body">
             @if (isLoading)
             {
-                <div class="text-center text-white mt-5">
-                    <div class="spinner-border text-success"></div>
-                </div>
+                <div class="text-center text-white mt-5"><div class="spinner-border text-success"></div></div>
             }
             else if (messages.Count == 0)
             {
@@ -121,30 +113,26 @@
         </div>
 
         <div class="chat-footer">
-            <input type="text" class="form-control bg-dark text-white border-secondary"
-                   placeholder="Type a message..."
-                   @bind="newMessageInput"
-                   @onkeyup="@(e => { if (e.Key == "Enter") SendMessage(); })" />
-
-            <button class="btn btn-success fw-bold" @onclick="SendMessage">
-                <i class="fa-solid fa-paper-plane"></i>
-            </button>
+            <input type="text" class="form-control bg-dark text-white border-secondary" placeholder="Type a message..." @bind="newMessageInput" @onkeyup="@(e => { if (e.Key == "Enter") SendMessage(); })" />
+            <button class="btn btn-success fw-bold" @onclick="SendMessage"><i class="fa-solid fa-paper-plane"></i></button>
         </div>
-
     </div>
 </div>
 
 @code {
     [Parameter] public long OrderId { get; set; }
 
-    // State Variables
-    private string MyName = "Fresh Aqua"; // Provider ka naam (Jo login hai)
+    // Hardcoded Name for testing.
+    // IMP: Ye wahi naam hona chahiye jo Dashboard me User hai.
+    private string MyName = "Fresh Aqua";
+
     private string ConsumerName = "Loading...";
     private string ItemName = "";
     private string OrderStatus = "";
     private string newMessageInput = "";
     private bool isLoading = true;
 
+    // ✅ Global List use ho rahi hai
     private List<AI_Driven_Water_Supply.Presentation.Message> messages = new();
 
     protected override async Task OnInitializedAsync()
@@ -153,79 +141,60 @@
         await LoadMessages();
     }
 
-    // 1. Order ki details lana (Taake pata chale Consumer kon hai)
     private async Task LoadOrderDetails()
     {
         try
         {
-            var response = await _supabase
-                .From<AI_Driven_Water_Supply.Presentation.Order>()
-                .Where(x => x.Id == OrderId)
-                .Get();
-
+            var response = await _supabase.From<AI_Driven_Water_Supply.Presentation.Order>().Where(x => x.Id == OrderId).Get();
             var order = response.Models.FirstOrDefault();
             if (order != null)
             {
                 ConsumerName = order.ConsumerName;
                 ItemName = $"{order.Quantity}x {order.ItemName}";
                 OrderStatus = order.Status;
-                // Provider name DB se bhi le sakte hain agar dynamic hai
+                // Agar tum Provider ho, to tumhara naam 'SupplierName' hai
+                // Agar tum Consumer ho, to tumhara naam 'ConsumerName' hai
+                // Filhal testing ke liye hum maan ke chal rahe hain ke tum Provider ho
                 MyName = order.SupplierName;
             }
         }
-        catch (Exception ex)
-        {
-            Console.WriteLine("Error loading order: " + ex.Message);
-        }
+        catch (Exception ex) { Console.WriteLine("Error loading order: " + ex.Message); }
     }
 
-    // 2. Messages load karna
     private async Task LoadMessages()
     {
         isLoading = true;
         try
         {
-            var response = await _supabase
-                .From<AI_Driven_Water_Supply.Presentation.Message>()
-                .Where(x => x.OrderId == OrderId)
-                .Order("created_at", Supabase.Postgrest.Constants.Ordering.Ascending) // Purane msg upar
-                .Get();
-
+            var response = await _supabase.From<AI_Driven_Water_Supply.Presentation.Message>()
+                                          .Where(x => x.OrderId == OrderId)
+                                          .Order("created_at", Supabase.Postgrest.Constants.Ordering.Ascending)
+                                          .Get();
             messages = response.Models;
         }
-        catch (Exception ex)
-        {
-            Console.WriteLine("Error loading chat: " + ex.Message);
-        }
-        finally
-        {
-            isLoading = false;
-        }
+        catch (Exception ex) { Console.WriteLine("Error loading chat: " + ex.Message); }
+        finally { isLoading = false; }
     }
 
-    // 3. Naya Message Bhejna
     private async Task SendMessage()
     {
         if (string.IsNullOrWhiteSpace(newMessageInput)) return;
 
         var msgContent = newMessageInput;
-        newMessageInput = ""; // Input clear karo fauran
+        newMessageInput = "";
 
         var newMsg = new AI_Driven_Water_Supply.Presentation.Message
         {
             OrderId = OrderId,
-            SenderName = MyName,     // Me (Provider)
-            ReceiverName = ConsumerName, // Customer
+            SenderName = MyName, // "Fresh Aqua"
+            ReceiverName = ConsumerName, // Customer ka naam
             Content = msgContent
         };
 
-        // UI update for instant feel (Optimistic Update)
-        newMsg.CreatedAt = DateTime.UtcNow; // Temp time
+        // Optimistic UI Update
+        newMsg.CreatedAt = DateTime.UtcNow;
         messages.Add(newMsg);
 
-        // DB Call
         await _supabase.From<AI_Driven_Water_Supply.Presentation.Message>().Insert(newMsg);
-
-        // Asli ID ke liye reload kar sakte ho, but zaroori nahi abhi
     }
 }

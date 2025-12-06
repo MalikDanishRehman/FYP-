@@ -2,7 +2,7 @@
 @rendermode InteractiveServer
 @inject NavigationManager Nav
 @inject Supabase.Client _supabase
-@using AI_Driven_Water_Supply.Presentation
+@using AI_Driven_Water_Supply.Presentation  @* ✅ Global Models yahan se ayenge *@
 @using Supabase.Postgrest.Attributes
 @using Supabase.Postgrest.Models
 
@@ -57,7 +57,6 @@
         <div class="col-md-7">
             <div class="card water-card text-white border-0 p-4">
                 <h4 class="mb-4 border-bottom pb-2 border-secondary">Create Your Order</h4>
-
                 <div class="mb-4">
                     <label class="form-label text-light">Select Quantity (Bottles/Tankers)</label>
                     <div class="input-group input-group-lg">
@@ -79,9 +78,7 @@
                 </div>
 
                 <div class="d-grid gap-2">
-                    <button class="btn btn-success btn-lg py-3 fw-bold" @onclick="OpenOrderModal">
-                        Proceed to Order
-                    </button>
+                    <button class="btn btn-success btn-lg py-3 fw-bold" @onclick="OpenOrderModal">Proceed to Order</button>
                 </div>
             </div>
         </div>
@@ -99,26 +96,20 @@
         <div class="card-body">
             <EditForm Model="orderFormModel" OnValidSubmit="HandleOrderSubmit">
                 <DataAnnotationsValidator />
-
                 <div class="mb-3">
                     <label class="form-label">Full Name</label>
                     <InputText class="form-control bg-secondary text-white border-0" @bind-Value="orderFormModel.ConsumerName" placeholder="Enter your name" />
                 </div>
-
                 <div class="mb-3">
                     <label class="form-label">Delivery Address</label>
                     <InputTextArea class="form-control bg-secondary text-white border-0" rows="2" @bind-Value="orderFormModel.Address" placeholder="House #, Street, Area..." />
                 </div>
-
                 <div class="mb-3">
                     <label class="form-label">Phone Number</label>
                     <InputText class="form-control bg-secondary text-white border-0" @bind-Value="orderFormModel.Phone" placeholder="0300-1234567" />
                 </div>
-
                 <div class="d-grid">
-                    <button type="submit" class="btn btn-primary btn-lg">
-                        Confirm & Send Order 🚀
-                    </button>
+                    <button type="submit" class="btn btn-primary btn-lg">Confirm & Send Order 🚀</button>
                 </div>
             </EditForm>
         </div>
@@ -127,15 +118,13 @@
 
 @code {
     [Parameter] public string name { get; set; }
-
-    // UI State
     string description = "";
     int quantity = 1;
     int pricePerBottle = 120;
     int totalPrice = 120;
     bool showModal = false;
 
-    // Form Model for UI Input
+    // Local Form Model (Sirf UI ke liye)
     public class OrderRequestForm
     {
         public string ConsumerName { get; set; } = "";
@@ -153,13 +142,8 @@
 
     void UpdateQty(int change)
     {
-        if (quantity + change >= 1)
-        {
-            quantity += change;
-            Calculate();
-        }
+        if (quantity + change >= 1) { quantity += change; Calculate(); }
     }
-
     void Calculate() => totalPrice = quantity * pricePerBottle;
     void OpenOrderModal() => showModal = true;
     void CloseModal() => showModal = false;
@@ -171,7 +155,7 @@
 
         try
         {
-            // 1. Create Order Object
+            // 1. Global Order Model use ho raha hai
             var newOrder = new AI_Driven_Water_Supply.Presentation.Order
             {
                 ConsumerName = orderFormModel.ConsumerName,
@@ -184,25 +168,24 @@
                 Status = "Pending"
             };
 
-            // 2. Insert into Supabase
             var response = await _supabase.From<AI_Driven_Water_Supply.Presentation.Order>().Insert(newOrder);
             var insertedOrder = response.Models.FirstOrDefault();
 
             if (insertedOrder != null)
             {
-                // 3. Create Auto-Message (Optional but good for chat)
-                var autoMsg = new Message
+                // 2. Auto-Message (Global Message Model)
+                var autoMsg = new AI_Driven_Water_Supply.Presentation.Message
                 {
-                    OrderId = insertedOrder.Id, // Link message to order
+                    OrderId = insertedOrder.Id,
                     SenderName = orderFormModel.ConsumerName,
                     ReceiverName = name,
                     Content = $"New Order! {quantity}x Bottles. Address: {orderFormModel.Address}"
                 };
 
-                await _supabase.From<Message>().Insert(autoMsg);
+                await _supabase.From<AI_Driven_Water_Supply.Presentation.Message>().Insert(autoMsg);
 
                 showModal = false;
-                Nav.NavigateTo("/"); // Wapis home page par bhej do
+                Nav.NavigateTo("/"); // Success ke baad Home par
             }
         }
         catch (Exception ex)
@@ -210,16 +193,5 @@
             Console.WriteLine($"Error: {ex.Message}");
         }
     }
-
-    // 👇 Agar Message class alag file me nahi hai, to ye use hogi
-    [Table("messages")]
-    public class Message : BaseModel
-    {
-        [Column("id")] public long Id { get; set; }
-        [Column("order_id")] public long OrderId { get; set; }
-        [Column("sender_name")] public string SenderName { get; set; }
-        [Column("receiver_name")] public string ReceiverName { get; set; }
-        [Column("content")] public string Content { get; set; }
-        [Column("created_at")] public DateTime CreatedAt { get; set; }
-    }
+    // ❌ Yahan se maine Duplicate Message class delete kardi hai
 }
