@@ -1,0 +1,216 @@
+﻿body {
+    margin: 0;
+    padding: 0;
+    background-color: #050505;
+    color: white;
+    font-family: 'Inter', sans-serif;
+}
+
+/* NAVBAR */
+.glass-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 70px;
+    background: rgba(20, 20, 20, 0.95);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 0 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 1000;
+}
+
+.brand-logo {
+    font-weight: 700;
+    font-size: 1.3rem;
+    background: linear-gradient(90deg, #FDFC47 0%, #24FE41 100%); /* Thoda Gold/Green touch for Money */
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.back-btn {
+    font-size: 1.2rem;
+    color: #e0e0e0;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+    .back-btn:hover {
+        color: #24FE41;
+        transform: translateX(-5px);
+    }
+
+/* CONTENT LAYOUT */
+.container-bills {
+    padding: 100px 20px 20px 20px;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+/* SUMMARY CARDS */
+.summary-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-bottom: 30px;
+}
+
+.summary-card {
+    background: #141414;
+    border: 1px solid rgba(255,255,255,0.1);
+    padding: 20px;
+    border-radius: 16px;
+    text-align: center;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    position: relative;
+    overflow: hidden;
+}
+    /* Thoda sa glow effect for earnings */
+    .summary-card::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(36, 254, 65, 0.1) 0%, rgba(0,0,0,0) 70%);
+        pointer-events: none;
+    }
+
+.summary-label {
+    font-size: 0.85rem;
+    color: #a0a0a0;
+    margin-bottom: 5px;
+    position: relative;
+}
+
+.summary-val {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: white;
+    position: relative;
+}
+
+.text-earn {
+    color: #24FE41;
+}
+
+.text-pending {
+    color: #FDFC47;
+}
+
+/* BILL LIST */
+.section-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 15px;
+    color: #e0e0e0;
+    border-left: 4px solid #24FE41;
+    padding-left: 10px;
+}
+
+.bill-card {
+    background: #1e1e1e;
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 16px;
+    padding: 15px;
+    margin-bottom: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: 0.3s;
+}
+
+    .bill-card:hover {
+        transform: translateY(-3px);
+        background: #252525;
+        border-color: rgba(36, 254, 65, 0.3);
+    }
+
+.bill-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.bill-icon {
+    width: 50px;
+    height: 50px;
+    background: rgba(36, 254, 65, 0.1);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    color: #24FE41;
+}
+
+.bill-details h6 {
+    margin: 0;
+    font-size: 1rem;
+    color: white;
+}
+
+.bill-details p {
+    margin: 0;
+    font-size: 0.8rem;
+    color: #a0a0a0;
+}
+
+/* ACTIONS & STATUS */
+.bill-action {
+    text-align: right;
+}
+
+.bill-amount {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: white;
+    display: block;
+    margin-bottom: 5px;
+}
+
+.status-badge {
+    font-size: 0.75rem;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-weight: 600;
+    display: inline-block;
+    letter-spacing: 0.5px;
+}
+/* Supplier ke liye statuses thode different */
+.status-due {
+    background: rgba(253, 252, 71, 0.15);
+    color: #FDFC47;
+    border: 1px solid rgba(253, 252, 71, 0.3);
+}
+
+.status-received {
+    background: rgba(36, 254, 65, 0.15);
+    color: #24FE41;
+    border: 1px solid rgba(36, 254, 65, 0.3);
+}
+
+/* Reminder Button Style */
+.btn-remind {
+    background: transparent;
+    border: 1px solid #FDFC47;
+    border-radius: 30px;
+    padding: 6px 15px;
+    color: #FDFC47;
+    font-weight: 600;
+    font-size: 0.8rem;
+    cursor: pointer;
+    margin-top: 5px;
+    transition: 0.2s;
+}
+
+    .btn-remind:hover {
+        background: #FDFC47;
+        color: black;
+    }

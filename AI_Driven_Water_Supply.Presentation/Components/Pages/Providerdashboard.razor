@@ -237,7 +237,9 @@
 <div class="container pb-5">
     <div class="dashboard-nav">
         <div><div class="icon-btn"><i class="fa-solid fa-bars"></i></div></div>
+
         <div class="d-flex gap-3">
+
             <div class="icon-btn" @onclick="ToggleSidebar">
                 <i class="fa-regular fa-comment"></i>
                 @if (chatList.Count > 0)
@@ -245,12 +247,16 @@
                     <div class="notify-dot"></div>
                 }
             </div>
+
+            <a href="/supplier-bills" class="icon-btn text-decoration-none">
+                <i class="fa-solid fa-file-invoice-dollar" style="color: #BFFF27;"></i>
+            </a>
+
             <div class="icon-btn" @onclick="HandleLogout">
                 <i class="fa-solid fa-power-off text-danger"></i>
             </div>
         </div>
     </div>
-
     <div class="header-section">
         <h2 class="welcome-text">Hi, <span>@UserName</span>! 👋</h2>
         <p class="text-muted">Here's your dashboard overview.</p>
