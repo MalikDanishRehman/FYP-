@@ -13,7 +13,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
-    /* Styles (Same as before) */
+    /* --- DASHBOARD STYLES --- */
     :root {
         --bg-dark: #0b0d17;
         --card-bg: #171a2b;
@@ -125,6 +125,7 @@
         height: 250px;
     }
 
+    /* Sidebar Styles */
     .sidebar-overlay {
         position: fixed;
         top: 0;
@@ -188,7 +189,7 @@
         width: 40px;
         height: 40px;
         border-radius: 50%;
-        background: #333;
+        background: #444;
         margin-right: 12px;
         position: relative;
         display: flex;
@@ -196,7 +197,6 @@
         justify-content: center;
         font-weight: bold;
         color: #fff;
-        background: #444;
     }
 
     .online-dot {
@@ -295,6 +295,7 @@
             <div class="text-center text-muted mt-5">
                 <i class="fa-regular fa-folder-open fs-1 mb-3"></i>
                 <p>No active orders yet.</p>
+                <small class="text-danger">Looking for: @UserName</small>
             </div>
         }
         else
@@ -310,7 +311,7 @@
                         <h6>@chat.SenderName</h6>
                         <p>@chat.Content</p>
                     </div>
-                    <span class="msg-time">@chat.CreatedAt.ToString("hh:mm tt")</span>
+                    <span class="msg-time">@chat.CreatedAt.ToLocalTime().ToString("hh:mm tt")</span>
                 </div>
             }
         }
@@ -322,32 +323,126 @@
 </div>
 
 @code {
-    private string UserName = "Provider";
+    private string UserName = "Loading...";
     private bool isSidebarOpen = false;
     private bool isLoading = true;
     private int totalRevenue = 0;
-
     private List<Message> chatList = new List<Message>();
+
+    [Supabase.Postgrest.Attributes.Table("profiles")]
+    public class Profile : Supabase.Postgrest.Models.BaseModel
+    {
+        [Supabase.Postgrest.Attributes.Column("id")]
+        public string Id { get; set; }
+
+        [Supabase.Postgrest.Attributes.Column("username")]
+        public string Username { get; set; }
+    }
 
     protected override async Task OnInitializedAsync()
     {
+        // 1. Pehle check karo ke kya User memory mein hai?
         var user = AuthService.CurrentUser;
-        if (user != null)
+
+        // 2. Agar NULL hai, to shayad page refresh hua hai.
+        // Isliye hum AuthService ko bolenge ke "Cookie se session wapas lao"
+        if (user == null)
         {
-            if (user.UserMetadata != null && user.UserMetadata.TryGetValue("username", out var nameObj))
-                UserName = nameObj?.ToString() ?? "Fresh Aqua";
-            else
-                UserName = "Fresh Aqua";
+            Console.WriteLine("⚠️ User memory mein nahi mila. Session Restore kar raha hoon...");
+
+            // Ye function cookie read karke user ko wapas layega
+            await AuthService.TryRefreshSession();
+
+            // Dobara check karo
+            user = AuthService.CurrentUser;
         }
+
+        // 3. Agar RESTORE ke baad bhi NULL hai, to phir waqai login nahi hai.
+        if (user == null)
+        {
+            Console.WriteLine("❌ Session Restore fail. User is still NULL. Redirecting to Login...");
+            Nav.NavigateTo("/login");
+            return;
+        }
+
+        Console.WriteLine($"✅ User Found: {user.Email}");
+
+        // 4. Naam set karo aur UI update karo
+        await SetDynamicUserName(user);
+        StateHasChanged();
+
+        // 5. Messages load karo
         await LoadMessages();
+
+        isLoading = false;
+        StateHasChanged();
+    }
+
+    private async Task SetDynamicUserName(Supabase.Gotrue.User user)
+    {
+        string fetchedName = "";
+        Console.WriteLine($"🔍 Getting Name for Email: {user.Email}");
+
+        // STEP 1: Profile Table Check
+        try
+        {
+            var response = await _supabase
+                .From<Profile>()
+                .Where(x => x.Id == user.Id)
+                .Get();
+
+            var profile = response.Models.FirstOrDefault();
+            if (profile != null && !string.IsNullOrEmpty(profile.Username))
+            {
+                fetchedName = profile.Username;
+                Console.WriteLine("✅ Name found in Profile Table: " + fetchedName);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("⚠️ Profile Check Failed: " + ex.Message);
+        }
+
+        // STEP 2: Metadata Check
+        if (string.IsNullOrEmpty(fetchedName) && user.UserMetadata != null)
+        {
+            if (user.UserMetadata.TryGetValue("username", out var nameObj))
+            {
+                fetchedName = nameObj?.ToString();
+                Console.WriteLine("✅ Name found in Metadata: " + fetchedName);
+            }
+        }
+
+        // STEP 3: Email Fallback (Last Option)
+        if (string.IsNullOrEmpty(fetchedName) && !string.IsNullOrEmpty(user.Email))
+        {
+            var parts = user.Email.Split('@');
+            if (parts.Length > 0)
+            {
+                fetchedName = parts[0];
+                Console.WriteLine("⚠️ No name found. Using Email Prefix: " + fetchedName);
+            }
+        }
+
+        // Final Assignment
+        if (!string.IsNullOrEmpty(fetchedName))
+        {
+            UserName = fetchedName;
+        }
+        else
+        {
+            UserName = "Unknown Provider";
+        }
     }
 
     private async Task LoadMessages()
     {
-        isLoading = true;
         try
         {
-            // Ab ye Message class 'Message.cs' se uthayega
+            if (UserName == "Loading..." || UserName == "Unknown Provider") return;
+
+            Console.WriteLine($"📨 Fetching messages for Receiver: {UserName}");
+
             var response = await _supabase
                 .From<Message>()
                 .Where(x => x.ReceiverName == UserName)
@@ -355,6 +450,8 @@
                 .Get();
 
             var allMessages = response.Models;
+
+            Console.WriteLine($"✅ Found {allMessages.Count} messages.");
 
             chatList = allMessages
                         .GroupBy(m => m.OrderId)
@@ -365,24 +462,12 @@
         }
         catch (Exception ex)
         {
-            Console.WriteLine("Error fetching messages: " + ex.Message);
-        }
-        finally
-        {
-            isLoading = false;
+            Console.WriteLine("❌ Error fetching messages: " + ex.Message);
         }
     }
 
-    private void ToggleSidebar()
-    {
-        isSidebarOpen = !isSidebarOpen;
-    }
-
-    private void OpenChat(long orderId)
-    {
-        Nav.NavigateTo($"/chat/{orderId}");
-    }
-
+    private void ToggleSidebar() => isSidebarOpen = !isSidebarOpen;
+    private void OpenChat(long orderId) => Nav.NavigateTo($"/chat/{orderId}");
     private async Task HandleLogout()
     {
         await AuthService.SignOut();
