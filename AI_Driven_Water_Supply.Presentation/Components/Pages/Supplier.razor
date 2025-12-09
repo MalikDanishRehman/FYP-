@@ -2,20 +2,42 @@
 @rendermode InteractiveServer
 @inject NavigationManager Nav
 @inject Supabase.Client _supabase
-@inject AI_Driven_Water_Supply.Application.Interfaces.IAuthService AuthService 
+@inject AI_Driven_Water_Supply.Application.Interfaces.IAuthService AuthService
 @using AI_Driven_Water_Supply.Presentation
 @using Supabase.Postgrest.Attributes
 @using Supabase.Postgrest.Models
 
 <style>
-    .modal-backdrop-custom { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.7); z-index: 1040; }
-    .modal-custom { display: block; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1050; width: 90%; max-width: 500px; }
-    .water-card { background: linear-gradient(145deg, #1e2124, #23272b); box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+    .modal-backdrop-custom {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.7);
+        z-index: 1040;
+    }
+
+    .modal-custom {
+        display: block;
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 1050;
+        width: 90%;
+        max-width: 500px;
+    }
+
+    .water-card {
+        background: linear-gradient(145deg, #1e2124, #23272b);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    }
 </style>
 
 <div class="container mt-5 pb-5">
-    <button class="btn btn-outline-secondary mb-4" @onclick='() => Nav.NavigateTo("/")'>
-        <i class="bi bi-arrow-left"></i> ← Back to List
+    <button class="btn btn-outline-secondary mb-4" @onclick='() => Nav.NavigateTo("/Consumer")'>
+        <i class="bi bi-arrow-left"></i> ← Back to Dashboard
     </button>
 
     <div class="row">
@@ -117,11 +139,25 @@
         description = $"Reliable service by {name}. Delivery usually within 2 hours.";
         Calculate();
 
-        // 🔥 AUTO-FILL LOGIC: Gets logged-in user name
+        // 🔥 ROBUST NAME FETCHING (Copied from Dashboard logic)
         var user = AuthService.CurrentUser;
-        if (user != null && user.UserMetadata.TryGetValue("username", out var nameObj))
+        if (user != null)
         {
-            orderFormModel.ConsumerName = nameObj?.ToString() ?? "";
+            string fetchedName = "";
+
+            // 1. Try Metadata
+            if (user.UserMetadata != null && user.UserMetadata.TryGetValue("username", out var nameObj))
+            {
+                fetchedName = nameObj?.ToString() ?? "";
+            }
+
+            // 2. Fallback to Email Prefix if metadata failed
+            if (string.IsNullOrEmpty(fetchedName) && !string.IsNullOrEmpty(user.Email))
+            {
+                fetchedName = user.Email.Split('@')[0];
+            }
+
+            orderFormModel.ConsumerName = fetchedName;
         }
     }
 
@@ -139,35 +175,41 @@
 
         try
         {
+            // 1. Create Order
             var newOrder = new AI_Driven_Water_Supply.Presentation.Order
             {
-                ConsumerName = orderFormModel.ConsumerName, // Gets auto-filled value
+                ConsumerName = orderFormModel.ConsumerName,
                 Address = orderFormModel.Address,
                 Phone = orderFormModel.Phone,
                 Quantity = quantity,
                 ItemName = "Water Bottle",
                 TotalPrice = totalPrice,
                 SupplierName = name,
-                Status = "Pending"
+                Status = "Pending",
+                CreatedAt = DateTime.UtcNow // 🔥 Added Timestamp
             };
 
             var response = await _supabase.From<AI_Driven_Water_Supply.Presentation.Order>().Insert(newOrder);
             var insertedOrder = response.Models.FirstOrDefault();
 
+            // 2. If Order Created, Create First Message
             if (insertedOrder != null)
             {
                 var autoMsg = new AI_Driven_Water_Supply.Presentation.Message
                 {
-                    OrderId = insertedOrder.Id,
+                    OrderId = insertedOrder.Id, // Linking ID
                     SenderName = orderFormModel.ConsumerName,
                     ReceiverName = name,
-                    Content = $"New Order! {quantity}x Bottles. Address: {orderFormModel.Address}"
+                    Content = $"New Order! {quantity}x Bottles. Address: {orderFormModel.Address}",
+                    CreatedAt = DateTime.UtcNow // 🔥 Added Timestamp
                 };
 
                 await _supabase.From<AI_Driven_Water_Supply.Presentation.Message>().Insert(autoMsg);
 
                 showModal = false;
-                Nav.NavigateTo("/");
+
+                // 🔥 Redirect to Consumer Dashboard to see the new active order
+                Nav.NavigateTo("/Consumer");
             }
         }
         catch (Exception ex) { Console.WriteLine($"Error: {ex.Message}"); }
