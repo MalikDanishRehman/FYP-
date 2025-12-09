@@ -1,17 +1,16 @@
 ﻿@page "/supplier-bills"
+@using AI_Driven_Water_Supply.Presentation
+@using Supabase.Postgrest.Models
+@inject Supabase.Client _supabase
 @inject NavigationManager Nav
-
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+@inject AI_Driven_Water_Supply.Application.Interfaces.IAuthService AuthService
 
 <div class="glass-nav">
     <div class="d-flex align-items-center gap-3">
         <i class="fa-solid fa-arrow-left back-btn" @onclick="GoBack"></i>
         <div class="brand-logo">Earnings & Bills</div>
     </div>
-    <div>
-        <i class="fa-solid fa-wallet fs-4 text-earn"></i>
-    </div>
+    <div><i class="fa-solid fa-wallet fs-4 text-earn"></i></div>
 </div>
 
 <div class="container-bills">
@@ -19,85 +18,90 @@
     <div class="summary-grid">
         <div class="summary-card">
             <div class="summary-label">Total Earnings</div>
-            <div class="summary-val text-earn">Rs 45,200</div>
+            <div class="summary-val text-earn">Rs @TotalEarnings</div>
         </div>
         <div class="summary-card">
             <div class="summary-label">Pending Payments</div>
-            <div class="summary-val text-pending">Rs 3,450</div>
+            <div class="summary-val text-pending">Rs @PendingAmount</div>
         </div>
     </div>
 
-    <div class="section-title">Pending Collections (To Collect)</div>
+    <div class="section-title">Pending Collections</div>
 
-    <div class="bill-card">
-        <div class="bill-info">
-            <div class="bill-icon"><i class="fa-solid fa-hand-holding-dollar"></i></div>
-            <div class="bill-details">
-                <h6>Consumer: Kashan</h6>
-                <p>Order #ORD-9921 • 20 Litres Bottle</p>
+    @if (collections.Count == 0)
+    {
+        <p class="text-center text-muted py-3">All payments collected.</p>
+    }
+    else
+    {
+        @foreach (var bill in collections)
+        {
+            <div class="bill-card">
+                <div class="bill-info">
+                    <div class="bill-icon"><i class="fa-solid fa-hand-holding-dollar"></i></div>
+                    <div class="bill-details">
+                        <h6>Consumer: @bill.ConsumerName</h6>
+                        <p>Order #@bill.OrderId • @bill.CreatedAt.ToLocalTime().ToString("dd MMM")</p>
+                    </div>
+                </div>
+                <div class="bill-action">
+                    <span class="bill-amount">Rs @bill.Amount</span>
+                    <span class="status-badge status-due mb-2">Payment Due</span>
+                </div>
             </div>
-        </div>
-        <div class="bill-action">
-            <span class="bill-amount">Rs 1,200</span>
-            <span class="status-badge status-due mb-2">Payment Due</span>
-            <br>
-            <button class="btn-remind"><i class="fa-regular fa-bell me-1"></i> Remind</button>
-        </div>
-    </div>
-
-    <div class="bill-card">
-        <div class="bill-info">
-            <div class="bill-icon"><i class="fa-solid fa-hand-holding-dollar"></i></div>
-            <div class="bill-details">
-                <h6>Consumer: Ali Khan</h6>
-                <p>Order #ORD-8812 • Monthly Subscription</p>
-            </div>
-        </div>
-        <div class="bill-action">
-            <span class="bill-amount">Rs 2,250</span>
-            <span class="status-badge status-due">Payment Due</span>
-            <br>
-            <button class="btn-remind"><i class="fa-regular fa-bell me-1"></i> Remind</button>
-        </div>
-    </div>
-
+        }
+    }
 
     <div class="section-title mt-5">Recent Transactions (Received)</div>
-
-    <div class="bill-card" style="opacity: 0.8;">
-        <div class="bill-info">
-            <div class="bill-icon" style="color: #24FE41;"><i class="fa-solid fa-sack-dollar"></i></div>
-            <div class="bill-details">
-                <h6>Consumer: Saif Raza</h6>
-                <p>Order #ORD-7721 • Yesterday</p>
+    @foreach (var bill in history)
+    {
+        <div class="bill-card" style="opacity: 0.8;">
+            <div class="bill-info">
+                <div class="bill-icon" style="color: #24FE41;"><i class="fa-solid fa-sack-dollar"></i></div>
+                <div class="bill-details">
+                    <h6>Consumer: @bill.ConsumerName</h6>
+                    <p>Order #@bill.OrderId • @bill.CreatedAt.ToLocalTime().ToString("dd MMM")</p>
+                </div>
+            </div>
+            <div class="bill-action">
+                <span class="bill-amount text-muted">Rs @bill.Amount</span>
+                <span class="status-badge status-received">Received</span>
             </div>
         </div>
-        <div class="bill-action">
-            <span class="bill-amount text-muted">Rs 450</span>
-            <span class="status-badge status-received">Received</span>
-        </div>
-    </div>
-
-    <div class="bill-card" style="opacity: 0.8;">
-        <div class="bill-info">
-            <div class="bill-icon" style="color: #24FE41;"><i class="fa-solid fa-sack-dollar"></i></div>
-            <div class="bill-details">
-                <h6>Consumer: Fatima Bibi</h6>
-                <p>Order #ORD-5511 • 10 Oct 2024</p>
-            </div>
-        </div>
-        <div class="bill-action">
-            <span class="bill-amount text-muted">Rs 900</span>
-            <span class="status-badge status-received">Received</span>
-        </div>
-    </div>
-
+    }
 </div>
 
 @code {
-    void GoBack()
+    List<Bill> collections = new();
+    List<Bill> history = new();
+    decimal TotalEarnings = 0;
+    decimal PendingAmount = 0;
+    string MyName = "M.Akmal"; // Ya Dynamic Logic
+
+    protected override async Task OnInitializedAsync()
     {
-        // Wapas Provider Dashboard par bhejega
-        Nav.NavigateTo("/ProviderDashboard");
+        // Yahan wohi Profile/Metadata wali logic lagani hai
+        // jo ProviderDashboard mein lagayi thi
+        // Filhal testing ke liye hardcode hai:
+
+        await LoadData();
     }
+
+    async Task LoadData()
+    {
+        var response = await _supabase.From<Bill>()
+            .Where(x => x.SupplierName == MyName)
+            .Order("created_at", Supabase.Postgrest.Constants.Ordering.Descending)
+            .Get();
+
+        var allBills = response.Models;
+
+        collections = allBills.Where(b => b.Status == "Unpaid").ToList();
+        history = allBills.Where(b => b.Status == "Paid").ToList();
+
+        TotalEarnings = history.Sum(x => x.Amount);
+        PendingAmount = collections.Sum(x => x.Amount);
+    }
+
+    void GoBack() => Nav.NavigateTo("/ProviderDashboard");
 }
