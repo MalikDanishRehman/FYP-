@@ -1,9 +1,102 @@
 ﻿@inherits LayoutComponentBase
 
-<div class="d-flex flex-column min-vh-100">
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+<style>
+    :root {
+        --primary-color: #b2f94e; /* Neon Green */
+        --bg-dark: #050505;
+        --text-white: #e4e6eb;
+        --text-muted: #a0a0a0;
+        --glass-bg: rgba(20, 20, 20, 0.85);
+        --glass-border: rgba(255, 255, 255, 0.1);
+    }
+
+    /* Poori App ka background aur text color yahan set ho raha hai */
+    .app-container {
+        background-color: var(--bg-dark);
+        background-image: radial-gradient(circle at 50% 0%, #111a3b 0%, #02040a 80%);
+        color: var(--text-white);
+        font-family: 'Inter', sans-serif;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* 🔹 Glassmorphism Navbar */
+    .navbar-glass {
+        background: var(--glass-bg);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border-bottom: 1px solid var(--glass-border);
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        padding: 15px 0;
+    }
+
+    .brand-text {
+        font-weight: 700;
+        font-size: 1.5rem;
+        background: linear-gradient(90deg, #fff, #b2f94e);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    /* 🔹 Modern Footer */
+    .footer-modern {
+        background: #02040a;
+        border-top: 1px solid var(--glass-border);
+        padding: 60px 0 30px;
+        margin-top: auto; /* Push to bottom */
+    }
+
+    .footer-link {
+        color: var(--text-muted);
+        text-decoration: none;
+        transition: 0.3s;
+        font-size: 0.95rem;
+    }
+
+        .footer-link:hover {
+            color: var(--primary-color);
+            padding-left: 5px; /* Thoda slide effect */
+        }
+
+    .social-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.05);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        margin: 0 5px;
+        transition: 0.3s;
+        text-decoration: none;
+    }
+
+        .social-icon:hover {
+            background: var(--primary-color);
+            color: black;
+            transform: translateY(-3px);
+        }
+
+    /* Main content area fix */
+    main {
+        flex: 1;
+    }
+</style>
+
+<div class="app-container">
+
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-glass">
         <div class="container">
-            <a class="navbar-brand " href="#"><h4>💧 AI-Driven</h4></a>
+            <a class="navbar-brand d-flex align-items-center gap-2" href="/">
+                <i class="bi bi-droplet-fill" style="color: var(--primary-color);"></i>
+                <span class="brand-text">HydroAI</span>
+            </a>
 
             <div class="ms-auto d-flex align-items-center">
                 <AuthButton />
@@ -11,40 +104,49 @@
         </div>
     </nav>
 
-    <main class="flex-fill" style="background-color: black;">
+    <main>
         @Body
     </main>
 
-    <footer class="footer text-light bg-dark text-white">
-        <div class="container text-center">
-            <div class="row align-items-center justify-content-center">
-                <div class="col-md-4 mb-3 mb-md-0">
-                    <h5 class="fw-bold text-uppercase">AI-Driven Water Supply</h5>
-                    <p class="text-muted small mb-0">Empowering sustainability with smart technology</p>
+    <footer class="footer-modern">
+        <div class="container">
+            <div class="row gy-4 justify-content-between">
+
+                <div class="col-md-4 text-center text-md-start">
+                    <h5 class="fw-bold text-white mb-3">AI-Driven Water Supply</h5>
+                    <p class="text-muted small">
+                        Empowering sustainable cities with smart distribution technology and real-time analytics.
+                    </p>
                 </div>
 
-                <div class="col-md-4 mb-3 mb-md-0">
-                    <ul class="list-inline mb-0">
-                        <li class="list-inline-item"><a href="#" class="text-light text-decoration-none">Home</a></li>
-                        <li class="list-inline-item mx-2">|</li>
-                        <li class="list-inline-item"><a href="#" class="text-light text-decoration-none">About</a></li>
-                        <li class="list-inline-item mx-2">|</li>
-                        <li class="list-inline-item"><a href="#" class="text-light text-decoration-none">Contact</a></li>
+                <div class="col-md-4 text-center">
+                    <h6 class="fw-bold text-white mb-3">Quick Links</h6>
+                    <ul class="list-unstyled d-flex flex-column gap-2">
+                        <li><a href="/" class="footer-link">Home</a></li>
+                        <li><a href="#" class="footer-link">How it Works</a></li>
+                        <li><a href="#" class="footer-link">Contact Support</a></li>
                     </ul>
                 </div>
 
-                <div class="col-md-4">
-                    <a href="#" class="text-light me-3"><i class="bi bi-facebook"></i></a>
-                    <a href="#" class="text-light me-3"><i class="bi bi-twitter"></i></a>
-                    <a href="#" class="text-light me-3"><i class="bi bi-linkedin"></i></a>
-                    <a href="#" class="text-light"><i class="bi bi-github"></i></a>
+                <div class="col-md-4 text-center text-md-end">
+                    <h6 class="fw-bold text-white mb-3">Connect With Us</h6>
+                    <div class="d-flex justify-content-center justify-content-md-end">
+                        <a href="#" class="social-icon"><i class="bi bi-facebook"></i></a>
+                        <a href="#" class="social-icon"><i class="bi bi-twitter-x"></i></a>
+                        <a href="#" class="social-icon"><i class="bi bi-linkedin"></i></a>
+                        <a href="#" class="social-icon"><i class="bi bi-github"></i></a>
+                    </div>
                 </div>
             </div>
 
-            <hr>
-            <p class="small mb-0 text-muted">
-                © 2025 AI-Driven Water Supply System — All rights reserved.
-            </p>
+            <hr class="my-4" style="border-color: rgba(255,255,255,0.1);">
+
+            <div class="text-center">
+                <p class="small mb-0 text-muted">
+                    © 2025 AI-Driven Water Supply System — All rights reserved.
+                </p>
+            </div>
         </div>
     </footer>
+
 </div>

@@ -1,138 +1,369 @@
 ﻿@page "/"
 
-<!-- ✅ Bootstrap + Icons -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Poppins:wght@500;700&display=swap" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 
 <style>
+    /* 🔥 SMOOTH SCROLL ENABLED HERE */
+    html {
+        scroll-behavior: smooth;
+    }
+
+    :root {
+        --primary-color: #b2f94e; /* Neon Green */
+        --primary-glow: rgba(178, 249, 78, 0.5);
+        --bg-dark: #02040a; /* Deep Navy Black instead of flat black */
+        --card-bg: rgba(255, 255, 255, 0.03);
+        --text-white: #ffffff;
+        --text-muted: #a0a0a0;
+    }
+
     body {
-        background-color: #0b0d17;
-        color: #e4e6eb;
+        background-color: var(--bg-dark);
+        background-image: radial-gradient(circle at 50% 0%, #111a3b 0%, #02040a 80%);
+        color: var(--text-white);
+        font-family: 'Inter', sans-serif;
+        overflow-x: hidden;
+        margin: 0;
+    }
+
+    h1, h2, h3, h4, h5 {
         font-family: 'Poppins', sans-serif;
+    }
+
+    /* 🔹 Ambient Glow Effects */
+    .glow-spot {
+        position: absolute;
+        width: 500px;
+        height: 500px;
+        background: radial-gradient(circle, rgba(178, 249, 78, 0.1) 0%, rgba(0,0,0,0) 70%);
+        z-index: -1;
+        top: 20%;
+        left: 10%;
+        animation: pulse 5s infinite alternate;
+    }
+
+    @@keyframes pulse {
+        0% {
+            transform: scale(1);
+            opacity: 0.5;
+        }
+
+        100% {
+            transform: scale(1.2);
+            opacity: 0.8;
+        }
     }
 
     /* 🔹 Hero Section */
     .hero {
+        padding: 160px 0 120px;
+        position: relative;
+    }
+
+    .badge-tech {
+        background: rgba(178, 249, 78, 0.1);
+        color: var(--primary-color);
+        border: 1px solid var(--primary-color);
+        padding: 6px 18px;
+        border-radius: 50px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        display: inline-block;
+        margin-bottom: 25px;
+        box-shadow: 0 0 10px rgba(178, 249, 78, 0.2);
+    }
+
+    .hero h1 {
+        font-size: 4.2rem;
+        line-height: 1.1;
+        font-weight: 700;
+        background: linear-gradient(135deg, #ffffff 0%, #a5b4fc 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 20px;
+    }
+
+    .hero p {
+        color: var(--text-muted);
+        font-size: 1.25rem;
+        line-height: 1.7;
+        margin-bottom: 40px;
+        max-width: 580px;
+    }
+
+    /* 🔹 Buttons */
+    .btn-custom {
+        background-color: var(--primary-color);
+        color: #000;
+        padding: 15px 40px;
+        border-radius: 50px;
+        font-weight: 700;
+        transition: all 0.3s ease;
+        box-shadow: 0 0 20px var(--primary-glow);
+        text-decoration: none;
+        display: inline-block;
+        border: none;
+    }
+
+        .btn-custom:hover {
+            background-color: #fff;
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px var(--primary-glow);
+            color: black;
+        }
+
+    .btn-outline-custom {
+        border: 1px solid rgba(255,255,255,0.3);
+        color: #fff;
+        padding: 15px 40px;
+        border-radius: 50px;
+        font-weight: 600;
+        margin-left: 15px;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-block;
+        background: rgba(255,255,255,0.05);
+        backdrop-filter: blur(5px);
+    }
+
+        .btn-outline-custom:hover {
+            border-color: #fff;
+            background: rgba(255,255,255,0.15);
+            color: white;
+        }
+
+    /* 🔹 Floating Image */
+    .hero-img {
+        max-width: 100%;
+        animation: float 6s ease-in-out infinite;
+        filter: drop-shadow(0 0 30px rgba(178, 249, 78, 0.15));
+    }
+
+    @@keyframes float {
+        0% {
+            transform: translateY(0px);
+        }
+
+        50% {
+            transform: translateY(-20px);
+        }
+
+        100% {
+            transform: translateY(0px);
+        }
+    }
+
+    /* 🔹 Stats Strip */
+    .stats-strip {
+        border-top: 1px solid rgba(255,255,255,0.08);
+        border-bottom: 1px solid rgba(255,255,255,0.08);
+        padding: 40px 0;
+        margin-top: 40px;
+        background: rgba(0, 0, 0, 0.3);
+        backdrop-filter: blur(10px);
+    }
+
+    .stat-item h3 {
+        color: var(--primary-color);
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 5px;
+    }
+
+    .stat-item span {
+        color: var(--text-muted);
+        font-size: 0.95rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    /* 🔹 Features / About Section */
+    .about {
         padding: 120px 0;
+        position: relative;
+    }
+
+    /* ✨ UPDATED GLASS CARDS (Fixing the Black Issue) */
+    .glass-card {
+        background: linear-gradient(145deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.01) 100%);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        padding: 40px 30px;
+        border-radius: 24px;
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        height: 100%;
         text-align: left;
-        color: white;
-        background: linear-gradient(145deg, #0b0d17, #111325);
         position: relative;
         overflow: hidden;
     }
 
-        .hero h1 {
-            font-size: 3.5rem;
-            font-weight: 700;
-            color: #fff;
+        .glass-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 100%;
+            background: radial-gradient(circle at top right, rgba(178, 249, 78, 0.1), transparent 60%);
+            opacity: 0;
+            transition: opacity 0.4s ease;
         }
 
-         p {
-            color: #b0b3c2;
-            font-size: 1.25rem;
-            max-width: 600px;
+        .glass-card:hover {
+            transform: translateY(-10px);
+            border-color: var(--primary-color);
+            box-shadow: 0 15px 40px -10px rgba(0,0,0,0.6);
         }
 
-    /* 🔹 Buttons */
-    .btn-primary {
-        background-color: #b2f94e;
-        border: none;
-        color: #000;
-        font-weight: 600;
-        padding: 12px 30px;
+            .glass-card:hover::before {
+                opacity: 1;
+            }
+
+    .icon-box {
+        width: 70px;
+        height: 70px;
+        background: rgba(178, 249, 78, 0.1);
+        border: 1px solid rgba(178, 249, 78, 0.2);
+        border-radius: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 25px;
+        color: var(--primary-color);
+        font-size: 1.8rem;
         transition: 0.3s;
     }
 
-        .btn-primary:hover {
-            background-color: #d0ff6b;
-            transform: scale(1.05);
-        }
-
-    .btn-outline-lightt {
-        border-color: #b2f94e;
-        color: #b2f94e;
-        padding: 12px 30px;
-        font-weight: 500;
+    .glass-card:hover .icon-box {
+        background: var(--primary-color);
+        color: #000;
+        box-shadow: 0 0 20px var(--primary-glow);
     }
 
-        .btn-outline-lightt:hover {
-            background-color: #b2f94e;
-            color: #000;
-        }
-
-    /* 🔹 About Section */
-    .about {
-        background-color: #111325;
-        padding: 100px 0;
-        color: #e4e6eb;
-    }
-
-    .card {
-        background-color: #171a2b;
-        border: none;
-        color: #e4e6eb;
-        transition: all 0.3s ease-in-out;
-    }
-
-        .card:hover {
-            transform: translateY(-5px);
-            background-color: #1c2033;
-        }
-
-    .card-title {
-        color: #b2f94e;
+    .glass-card h5 {
+        font-size: 1.4rem;
+        margin-bottom: 15px;
+        color: #fff;
         font-weight: 600;
     }
+
+    .glass-card p {
+        color: #b0b0b0;
+        font-size: 1rem;
+        line-height: 1.6;
+        margin: 0;
+    }
+
+    .section-header h2 {
+        font-size: 3rem;
+        margin-bottom: 10px;
+        font-weight: 700;
+    }
+
+    .line {
+        width: 80px;
+        height: 5px;
+        background: var(--primary-color);
+        margin: 20px auto 30px;
+        border-radius: 5px;
+        box-shadow: 0 0 10px var(--primary-glow);
+    }
+
 </style>
 
-<!-- ✅ Hero Section -->
+<div class="glow-spot"></div>
+
 <section class="hero">
     <div class="container">
         <div class="row align-items-center">
-            <div class="col-md-7">
-                <h1>Smart Water Distribution System 💧</h1>
-                <p class="mt-4">
-                    Harnessing AI for efficient, predictive, and sustainable water supply management.
+            <div class="col-lg-6">
+                <div class="badge-tech">AI-Driven Water 2.0</div>
+                <h1>Next-Gen Water <br> Management</h1>
+                <p>
+                    Ensure sustainable water distribution with IoT sensors and Predictive AI.
+                    Monitor flow, detect leaks, and optimize supply in real-time.
                 </p>
-                <div class="mt-5">
-                    <a href="/get-started" class="btn btn-primary me-3">Get Started</a>
-                    <a href="#" class="btn btn-outline-lightt">Learn More</a>
+                <div class="mt-4">
+                    <a href="/get-started" class="btn-custom">Get Started <i class="bi bi-arrow-right ms-2"></i></a>
+                    <a href="#how-it-works" class="btn-outline-custom"><i class="bi bi-gear-wide-connected me-2"></i> How it works</a>
                 </div>
             </div>
-            <div class="col-md-5 text-center">
-                <img src="/images/heo.png" alt="Water AI Logo" style="max-width:300px;">
+            <div class="col-lg-6 text-center mt-5 mt-lg-0">
+                <img src="/images/heo.png" alt="Smart Water Dashboard" class="hero-img">
             </div>
-
         </div>
     </div>
 </section>
 
-<!-- ✅ About Section -->
-<section class="about">
-    <div class="container text-center">
-        <h2 class="fw-bold text-white mb-4">About Our System</h2>
-        <p class="text-muted mx-auto text-white" style="max-width: 800px;">
-            Our AI-Driven Water Supply system optimizes water flow, predicts shortages, and improves distribution using
-            real-time analytics. With machine learning algorithms, it minimizes wastage and ensures maximum coverage for communities.
-        </p>
+<div class="stats-strip">
+    <div class="container">
+        <div class="row text-center">
+            <div class="col-md-4 stat-item">
+                <h3>99.9%</h3>
+                <span>Purity Monitored</span>
+            </div>
+            <div class="col-md-4 stat-item border-start border-end border-secondary">
+                <h3>2ms</h3>
+                <span>Leak Detection Speed</span>
+            </div>
+            <div class="col-md-4 stat-item">
+                <h3>40%</h3>
+                <span>Water Wastage Reduced</span>
+            </div>
+        </div>
+    </div>
+</div>
 
-        <div class="row g-4 mt-5">
+<section class="about" id="how-it-works">
+    <div class="container">
+        <div class="section-header text-center">
+            <h2>System Capabilities</h2>
+            <div class="line"></div>
+            <p class="text-muted mx-auto" style="max-width: 650px; font-size: 1.1rem;">
+                Our system integrates advanced IoT hardware with cloud-based machine learning to revolutionize how water is distributed.
+            </p>
+        </div>
+
+        <div class="row g-4 mt-3">
             <div class="col-md-4">
-                <div class="card shadow-lg h-100 p-4">
-                    <h5 class="card-title">Real-Time Monitoring</h5>
-                    <p class="card-text">Track flow, pressure, and usage across multiple zones instantly.</p>
+                <div class="glass-card">
+                    <div class="icon-box">
+                        <i class="bi bi-router"></i>
+                    </div>
+                    <h5>IoT Sensor Network</h5>
+                    <p>
+                        Real-time tracking of <strong>Flow Rate, Pressure, and pH Levels</strong>.
+                        Sensors instantly transmit data to the central dashboard for monitoring.
+                    </p>
                 </div>
             </div>
             <div class="col-md-4">
-                <div class="card shadow-lg h-100 p-4">
-                    <h5 class="card-title">AI Predictions</h5>
-                    <p class="card-text">Predict future demands and shortages using machine learning models.</p>
+                <div class="glass-card">
+                    <div class="icon-box">
+                        <i class="bi bi-graph-up-arrow"></i>
+                    </div>
+                    <h5>Predictive AI</h5>
+                    <p>
+                        Our ML algorithms analyze historical usage patterns to <strong>forecast demand spikes</strong>
+                        and prevent water shortages before they happen.
+                    </p>
                 </div>
             </div>
             <div class="col-md-4">
-                <div class="card shadow-lg h-100 p-4">
-                    <h5 class="card-title">Smart Control</h5>
-                    <p class="card-text">Automatically balance water distribution efficiently across networks.</p>
+                <div class="glass-card">
+                    <div class="icon-box">
+                        <i class="bi bi-shield-check"></i>
+                    </div>
+                    <h5>Automated Valves</h5>
+                    <p>
+                        Smart valves automatically adjust to <strong>distribute water equitably</strong>,
+                        reducing wastage and identifying leakage points instantly.
+                    </p>
                 </div>
             </div>
         </div>

@@ -3,7 +3,8 @@
 @using Supabase.Postgrest.Models
 @inject Supabase.Client _supabase
 @inject NavigationManager Nav
-@inject AI_Driven_Water_Supply.Application.Interfaces.IAuthService AuthService 
+@inject AI_Driven_Water_Supply.Application.Interfaces.IAuthService AuthService
+@inject IJSRuntime JS
 @rendermode InteractiveServer
 
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -11,50 +12,228 @@
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 
 <style>
-    body { margin: 0; padding: 0; background-color: #050505; color: white; font-family: 'Inter', sans-serif; overflow: hidden; }
+    body {
+        margin: 0;
+        padding: 0;
+        background-color: #000000;
+        color: white;
+        font-family: 'Inter', sans-serif;
+        overflow: hidden;
+    }
 
     /* NAVBAR STYLES */
     .glass-nav {
-        position: fixed; top: 0; left: 0; width: 100%; height: 70px;
-        background: rgba(20, 20, 20, 0.95); backdrop-filter: blur(10px);
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        padding: 0 30px; display: flex; justify-content: space-between; align-items: center; z-index: 1000;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 70px;
+        background: rgba(10, 10, 10, 0.8);
+        backdrop-filter: blur(15px);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        padding: 0 30px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        z-index: 1000;
     }
-    .brand-logo { font-weight: 700; font-size: 1.3rem; background: linear-gradient(90deg, #00C9FF 0%, #92FE9D 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-transform: uppercase; letter-spacing: 1px; }
-    .nav-icons { display: flex; gap: 20px; align-items: center; }
-    .icon-btn { position: relative; font-size: 1.2rem; color: #e0e0e0; cursor: pointer; transition: 0.3s; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
-    .icon-btn:hover { background: rgba(255,255,255,0.1); color: #00C9FF; }
-    .badge-dot { position: absolute; top: 8px; right: 8px; width: 8px; height: 8px; background: #ff4757; border-radius: 50%; border: 2px solid #1e1e1e; }
+
+    .brand-logo {
+        font-weight: 700;
+        font-size: 1.3rem;
+        background: linear-gradient(90deg, #00C9FF 0%, #92FE9D 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .nav-icons {
+        display: flex;
+        gap: 20px;
+        align-items: center;
+    }
+
+    .icon-btn {
+        position: relative;
+        font-size: 1.2rem;
+        color: #e0e0e0;
+        cursor: pointer;
+        transition: 0.3s;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+        .icon-btn:hover {
+            background: rgba(255,255,255,0.1);
+            color: #00C9FF;
+        }
+
+    .badge-dot {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        width: 8px;
+        height: 8px;
+        background: #ff4757;
+        border-radius: 50%;
+        border: 2px solid #1e1e1e;
+    }
 
     /* DROPDOWN STYLES */
     .custom-dropdown {
-        position: absolute; top: 60px; right: 10px; background: #18181b;
-        border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; width: 320px;
-        padding: 5px; display: none; flex-direction: column; gap: 2px;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.8); opacity: 0; transform: translateY(-10px); transition: 0.3s ease;
+        position: absolute;
+        top: 60px;
+        right: 10px;
+        background: #18181b;
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 12px;
+        width: 320px;
+        padding: 5px;
+        display: none;
+        flex-direction: column;
+        gap: 2px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+        opacity: 0;
+        transform: translateY(-10px);
+        transition: 0.3s ease;
     }
-    .custom-dropdown.show { display: flex; opacity: 1; transform: translateY(0); }
-    
+
+        .custom-dropdown.show {
+            display: flex;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
     .chat-item {
-        padding: 12px; border-radius: 8px; color: #ccc; text-decoration: none;
-        display: flex; align-items: center; gap: 12px; transition: 0.2s; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.05);
+        padding: 12px;
+        border-radius: 8px;
+        color: #ccc;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        transition: 0.2s;
+        cursor: pointer;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
     }
-    .chat-item:hover { background: rgba(255, 255, 255, 0.08); }
-    
-    .supplier-avatar { width: 40px; height: 40px; background: linear-gradient(45deg, #00C9FF, #92FE9D); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: black; font-size: 1rem; flex-shrink: 0; }
-    
-    .chat-info { flex: 1; overflow: hidden; }
-    .chat-name { font-weight: 600; font-size: 0.9rem; color: white; display: flex; justify-content: space-between; }
-    .chat-msg { font-size: 0.8rem; opacity: 0.7; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #a0a0a0; }
-    .chat-time { font-size: 0.7rem; color: #666; font-weight: normal; }
+
+        .chat-item:hover {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+    .supplier-avatar {
+        width: 40px;
+        height: 40px;
+        background: linear-gradient(45deg, #00C9FF, #92FE9D);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        color: black;
+        font-size: 1rem;
+        flex-shrink: 0;
+    }
+
+    .chat-info {
+        flex: 1;
+        overflow: hidden;
+    }
+
+    .chat-name {
+        font-weight: 600;
+        font-size: 0.9rem;
+        color: white;
+        display: flex;
+        justify-content: space-between;
+    }
+
+    .chat-msg {
+        font-size: 0.8rem;
+        opacity: 0.7;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        color: #a0a0a0;
+    }
+
+    .chat-time {
+        font-size: 0.7rem;
+        color: #666;
+        font-weight: normal;
+    }
 
     /* CONTENT STYLES */
-    .bg-full { height: 100vh; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; padding-top: 50px; }
-    video { width: 450px; max-width: 90%; border-radius: 20px; transform: translateY(-80px); }
-    .chat-input-container { position: absolute; bottom: 30px; width: 100%; display: flex; justify-content: center; }
-    .chat-input-box { width: 90%; max-width: 600px; background: #1e1e1e; border: 1px solid #333; border-radius: 50px; padding: 12px 25px; display: flex; align-items: center; gap: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
-    .chat-input-box input { flex: 1; background: transparent; border: none; color: white; outline: none; }
-    .chat-input-box button { background: none; border: none; color: #00C9FF; font-size: 1.2rem; cursor: pointer; }
+    .bg-full {
+        height: 100vh;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding-top: 50px;
+        background-color: black;
+    }
+
+    /* 🔥 VIDEO BLENDING MAGIC 🔥 */
+    #myVideo {
+        width: 500px;
+        max-width: 90%;
+        transform: translateY(-50px);
+        mix-blend-mode: screen; /* Black background gayab */
+        opacity: 0.9;
+        -webkit-mask-image: radial-gradient(circle, rgba(0,0,0,1) 20%, rgba(0,0,0,0) 80%);
+        mask-image: radial-gradient(circle, rgba(0,0,0,1) 20%, rgba(0,0,0,0) 80%);
+    }
+
+    .chat-input-container {
+        position: absolute;
+        bottom: 40px;
+        width: 100%;
+        display: flex;
+        justify-content: center;
+    }
+
+    .chat-input-box {
+        width: 90%;
+        max-width: 600px;
+        background: rgba(30, 30, 30, 0.8);
+        backdrop-filter: blur(10px);
+        border: 1px solid #333;
+        border-radius: 50px;
+        padding: 12px 25px;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+
+        .chat-input-box input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: white;
+            outline: none;
+        }
+
+        .chat-input-box button {
+            background: none;
+            border: none;
+            color: #00C9FF;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+            .chat-input-box button:hover {
+                transform: scale(1.1);
+                color: #92FE9D;
+            }
 </style>
 
 <div class="glass-nav">
@@ -64,7 +243,10 @@
         <div style="position: relative;">
             <div class="icon-btn" @onclick="ToggleMsgDropdown">
                 <i class="fa-regular fa-comment-dots"></i>
-                @if (chatList.Any(c => c.UnreadCount > 0)) { <span class="badge-dot"></span> }
+                @if (chatList.Any(c => c.UnreadCount > 0))
+                {
+                    <span class="badge-dot"></span>
+                }
             </div>
 
             <div class="custom-dropdown @(showMsgDropdown ? "show" : "")">
@@ -73,7 +255,7 @@
                     <small class="text-muted" style="cursor:pointer" @onclick="RefreshChats"><i class="fa-solid fa-rotate-right"></i></small>
                 </div>
                 <hr class="my-0 border-secondary" />
-                
+
                 <div style="max-height: 300px; overflow-y: auto;">
                     @if (isLoading)
                     {
@@ -88,14 +270,17 @@
                         @foreach (var chat in chatList)
                         {
                             <div class="chat-item" @onclick="() => OpenChat(chat.OrderId)">
-                                <div class="supplier-avatar">@chat.SupplierName.Substring(0,1).ToUpper()</div>
+                                <div class="supplier-avatar">@(!string.IsNullOrEmpty(chat.SupplierName) ? chat.SupplierName.Substring(0, 1).ToUpper() : "S")</div>
                                 <div class="chat-info">
                                     <div class="chat-name">
-                                        @chat.SupplierName 
+                                        @chat.SupplierName
                                         <span class="chat-time">@chat.LastMsgTime</span>
                                     </div>
                                     <div class="chat-msg">
-                                        @if(chat.IsLastMsgFromMe) { <i class="bi bi-check2-all text-info me-1"></i> }
+                                        @if (chat.IsLastMsgFromMe)
+                                        {
+                                            <i class="bi bi-check2-all text-info me-1"></i>
+                                        }
                                         @chat.LastMessage
                                     </div>
                                 </div>
@@ -111,14 +296,14 @@
             <div class="custom-dropdown @(showProfileDropdown ? "show" : "")" style="width: 200px;">
                 <a href="/Cardpage" class="chat-item"><i class="fa-solid fa-bag-shopping me-2"></i> My Orders</a>
                 <a href="/bills" class="chat-item"><i class="fa-solid fa-receipt me-2"></i> Bills</a>
-                <a href="#" class="chat-item text-danger"><i class="fa-solid fa-power-off me-2"></i> Logout</a>
+                <a href="#" class="chat-item text-danger" @onclick="HandleLogout"><i class="fa-solid fa-power-off me-2"></i> Logout</a>
             </div>
         </div>
     </div>
 </div>
 
 <div class="bg-full" @onclick="CloseDropdowns">
-    <video id="myVideo" autoplay muted playsinline>
+    <video id="myVideo" autoplay muted playsinline loop>
         <source src="/video/blob.mp4" type="video/mp4">
     </video>
     <div class="chat-input-container">
@@ -131,9 +316,7 @@
 </div>
 
 @code {
-    // 🔥 AUTO-FILLED VARIABLE
-    string MyName = ""; 
-
+    string MyName = "";
     bool showMsgDropdown = false;
     bool showProfileDropdown = false;
     bool isLoading = true;
@@ -150,25 +333,51 @@
 
     List<ChatViewModel> chatList = new();
 
+    // Profile Class
+    [Supabase.Postgrest.Attributes.Table("profiles")]
+    public class Profile : Supabase.Postgrest.Models.BaseModel
+    {
+        [Supabase.Postgrest.Attributes.Column("id")]
+        public string Id { get; set; } = "";
+
+        [Supabase.Postgrest.Attributes.Column("username")]
+        public string Username { get; set; } = "";
+    }
+
     protected override async Task OnInitializedAsync()
     {
-        // 🔥 LOGIC TO GET CURRENT USER NAME
+        // 1. Session Check & Restore
         var user = AuthService.CurrentUser;
+        if (user == null)
+        {
+            await AuthService.TryRefreshSession();
+            user = AuthService.CurrentUser;
+        }
+
         if (user != null)
         {
-            if (user.UserMetadata != null && user.UserMetadata.TryGetValue("username", out var nameObj))
+            // 2. Fetch Name logic (Robust)
+            string fetchedName = "";
+            try
             {
-                MyName = nameObj?.ToString() ?? "";
+                var response = await _supabase.From<Profile>().Where(x => x.Id == user.Id).Get();
+                var profile = response.Models.FirstOrDefault();
+                if (profile != null) fetchedName = profile.Username;
             }
-            else
-            {
-                MyName = (user.Email ?? "").Split('@')[0];
-            }
-            await LoadChats(); // Name milne ke baad chats load karo
+            catch { }
+
+            if (string.IsNullOrEmpty(fetchedName) && user.UserMetadata != null)
+                if (user.UserMetadata.TryGetValue("username", out var nameObj)) fetchedName = nameObj?.ToString() ?? "";
+
+            if (string.IsNullOrEmpty(fetchedName) && !string.IsNullOrEmpty(user.Email))
+                fetchedName = user.Email.Split('@')[0];
+
+            MyName = fetchedName;
+            await LoadChats();
         }
         else
         {
-            // Optional: Nav.NavigateTo("/login");
+            Nav.NavigateTo("/login");
         }
     }
 
@@ -181,10 +390,10 @@
         try
         {
             var orderResponse = await _supabase.From<AI_Driven_Water_Supply.Presentation.Order>()
-                                          .Where(x => x.ConsumerName == MyName) 
-                                          .Order("created_at", Supabase.Postgrest.Constants.Ordering.Descending)
-                                          .Get();
-            
+                                               .Where(x => x.ConsumerName == MyName)
+                                               .Order("created_at", Supabase.Postgrest.Constants.Ordering.Descending)
+                                               .Get();
+
             var myOrders = orderResponse.Models;
 
             foreach (var order in myOrders)
@@ -194,7 +403,7 @@
                                                  .Order("created_at", Supabase.Postgrest.Constants.Ordering.Descending)
                                                  .Limit(1)
                                                  .Get();
-                
+
                 var lastMsg = msgResponse.Models.FirstOrDefault();
 
                 chatList.Add(new ChatViewModel
@@ -202,7 +411,7 @@
                     OrderId = order.Id,
                     SupplierName = order.SupplierName,
                     LastMessage = lastMsg != null ? lastMsg.Content : "Order placed",
-                    LastMsgTime = lastMsg != null ? lastMsg.CreatedAt.ToString("hh:mm tt") : order.CreatedAt.ToString("hh:mm tt"),
+                    LastMsgTime = lastMsg != null ? lastMsg.CreatedAt.ToLocalTime().ToString("hh:mm tt") : order.CreatedAt.ToLocalTime().ToString("hh:mm tt"),
                     IsLastMsgFromMe = lastMsg != null && lastMsg.SenderName == MyName
                 });
             }
@@ -210,23 +419,26 @@
         catch (Exception ex) { Console.WriteLine("Error: " + ex.Message); }
         finally { isLoading = false; }
     }
-    
+
     void ToggleMsgDropdown() { showMsgDropdown = !showMsgDropdown; showProfileDropdown = false; }
     void ToggleProfileDropdown() { showProfileDropdown = !showProfileDropdown; showMsgDropdown = false; }
     void CloseDropdowns() { showMsgDropdown = false; showProfileDropdown = false; }
     void OpenChat(long orderId) { Nav.NavigateTo($"/chat/{orderId}"); }
     async Task RefreshChats() { await LoadChats(); }
+
+    async Task HandleLogout()
+    {
+        await AuthService.SignOut();
+        Nav.NavigateTo("/login");
+    }
 }
 
 <script>
     function startVideoLoop() {
         const video = document.getElementById('myVideo');
         if(!video) return;
-        let reverse = false; video.playbackRate = 1; video.play();
-        setInterval(() => {
-            if (reverse) { video.currentTime -= 0.05; if (video.currentTime <= 0) reverse = false; } 
-            else { video.currentTime += 0.05; if (video.currentTime >= video.duration) reverse = true; }
-        }, 50);
+        video.playbackRate = 1;
+        video.play().catch(e => console.log("Autoplay blocked"));
     }
     setTimeout(startVideoLoop, 1000);
 </script>
