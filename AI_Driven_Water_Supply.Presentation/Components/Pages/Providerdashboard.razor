@@ -12,244 +12,25 @@
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-<style>
-    /* --- DASHBOARD STYLES --- */
-    :root {
-        --bg-dark: #0b0d17;
-        --card-bg: #171a2b;
-        --accent-green: #BFFF27;
-        --text-white: #e4e6eb;
-        --text-muted: #a0a3bd;
-    }
 
-    body {
-        background-color: var(--bg-dark);
-        color: var(--text-white);
-        font-family: 'Poppins', sans-serif;
-        overflow-x: hidden;
-    }
 
-    .dashboard-nav {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 20px 0;
-    }
+<div class="container">
 
-    .icon-btn {
-        background: var(--card-bg);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        color: var(--text-white);
-        width: 45px;
-        height: 45px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        transition: 0.3s;
-        position: relative;
-    }
-
-        .icon-btn:hover {
-            background: var(--accent-green);
-            color: #000;
-            transform: translateY(-2px);
-        }
-
-    .notify-dot {
-        position: absolute;
-        top: 10px;
-        right: 12px;
-        width: 8px;
-        height: 8px;
-        background-color: #ff4757;
-        border-radius: 50%;
-        border: 1px solid var(--card-bg);
-    }
-
-    .header-section {
-        margin-bottom: 30px;
-    }
-
-    .welcome-text {
-        font-size: 1.8rem;
-        font-weight: 700;
-    }
-
-        .welcome-text span {
-            color: var(--accent-green);
-        }
-
-    .revenue-card {
-        background: linear-gradient(135deg, #1f233a 0%, #171a2b 100%);
-        padding: 25px;
-        border-radius: 20px;
-        border: 1px solid rgba(191, 255, 39, 0.1);
-        margin-bottom: 20px;
-    }
-
-    .revenue-amount {
-        font-size: 2.5rem;
-        font-weight: 700;
-        color: var(--accent-green);
-        margin: 10px 0;
-    }
-
-    .stats-grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 15px;
-        margin-top: 20px;
-    }
-
-    .stat-card {
-        background: var(--card-bg);
-        padding: 20px;
-        border-radius: 16px;
-        text-align: center;
-        border: 1px solid rgba(255, 255, 255, 0.05);
-        transition: 0.3s;
-    }
-
-        .stat-card:hover {
-            border-color: var(--accent-green);
-            transform: translateY(-5px);
-        }
-
-    .chart-container {
-        background: var(--card-bg);
-        padding: 20px;
-        border-radius: 20px;
-        margin-top: 20px;
-        height: 250px;
-    }
-
-    /* Sidebar Styles */
-    .sidebar-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.6);
-        z-index: 998;
-        opacity: 0;
-        visibility: hidden;
-        transition: 0.3s ease;
-    }
-
-        .sidebar-overlay.active {
-            opacity: 1;
-            visibility: visible;
-        }
-
-    .side-panel {
-        position: fixed;
-        top: 0;
-        right: -350px;
-        width: 320px;
-        height: 100vh;
-        background: #1c2033;
-        z-index: 999;
-        transition: right 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
-        padding: 20px;
-        box-shadow: -5px 0 30px rgba(0,0,0,0.6);
-        border-left: 1px solid rgba(255,255,255,0.08);
-        display: flex;
-        flex-direction: column;
-    }
-
-        .side-panel.open {
-            right: 0;
-        }
-
-    .chat-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 20px;
-    }
-
-    .chat-item {
-        display: flex;
-        align-items: center;
-        padding: 12px;
-        border-radius: 12px;
-        cursor: pointer;
-        transition: 0.2s;
-        border-bottom: 1px solid rgba(255,255,255,0.05);
-    }
-
-        .chat-item:hover {
-            background: rgba(255,255,255,0.05);
-        }
-
-    .avatar {
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        background: #444;
-        margin-right: 12px;
-        position: relative;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: bold;
-        color: #fff;
-    }
-
-    .online-dot {
-        width: 10px;
-        height: 10px;
-        background: #2ecc71;
-        border-radius: 50%;
-        position: absolute;
-        bottom: 0;
-        right: 0;
-        border: 2px solid #1c2033;
-    }
-
-    .msg-content h6 {
-        margin: 0;
-        font-size: 0.95rem;
-        font-weight: 600;
-        color: #fff;
-    }
-
-    .msg-content p {
-        margin: 0;
-        font-size: 0.8rem;
-        color: var(--text-muted);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        max-width: 150px;
-    }
-
-    .msg-time {
-        font-size: 0.7rem;
-        color: #666;
-        margin-left: auto;
-    }
-</style>
-
-<div class="container pb-5">
     <div class="dashboard-nav">
         <div><div class="icon-btn"><i class="fa-solid fa-bars"></i></div></div>
 
         <div class="d-flex gap-3">
 
             <div class="icon-btn" @onclick="ToggleSidebar">
-                <i class="fa-regular fa-comment"></i>
+                <i class="fa-regular fa-comment-dots"></i>
                 @if (chatList.Count > 0)
                 {
                     <div class="notify-dot"></div>
                 }
             </div>
 
-            <a href="/supplier-bills" class="icon-btn text-decoration-none">
-                <i class="fa-solid fa-file-invoice-dollar" style="color: #BFFF27;"></i>
+            <a href="/supplier-bills" class="icon-btn">
+                <i class="fa-solid fa-file-invoice-dollar" style="color: var(--accent-green);"></i>
             </a>
 
             <div class="icon-btn" @onclick="HandleLogout">
@@ -257,12 +38,14 @@
             </div>
         </div>
     </div>
+
     <div class="header-section">
         <h2 class="welcome-text">Hi, <span>@UserName</span>! 👋</h2>
-        <p class="text-muted">Here's your dashboard overview.</p>
-        <div class="revenue-card shadow-lg">
+        <p class="text-muted">Here's your business overview.</p>
+
+        <div class="revenue-card">
             <h1 class="revenue-amount">Rs @totalRevenue</h1>
-            <p class="text-muted mb-0">Total Estimated Revenue</p>
+            <p class="text-muted mb-0"><i class="fa-solid fa-arrow-trend-up text-success me-2"></i>Total Estimated Revenue</p>
         </div>
     </div>
 
@@ -284,24 +67,24 @@
 
 <div class="side-panel @(isSidebarOpen ? "open" : "")">
     <div class="chat-header">
-        <h4 class="fw-bold m-0">Orders & Chats <span class="badge bg-success rounded-pill fs-6">@chatList.Count</span></h4>
-        <i class="fa-solid fa-xmark fs-4" style="cursor: pointer;" @onclick="ToggleSidebar"></i>
+        <h4 class="fw-bold m-0 text-white">Orders <span class="badge bg-success rounded-pill fs-6 ms-2">@chatList.Count</span></h4>
+        <i class="fa-solid fa-xmark fs-4 text-muted" style="cursor: pointer;" @onclick="ToggleSidebar"></i>
     </div>
 
-    <div class="chat-list" style="overflow-y: auto;">
+    <div class="chat-list" style="overflow-y: auto; flex: 1;">
         @if (isLoading)
         {
-            <div class="text-center text-muted mt-4">
+            <div class="text-center text-muted mt-5">
                 <div class="spinner-border text-success" role="status"></div>
-                <p class="mt-2">Loading messages...</p>
+                <p class="mt-3 small">Checking orders...</p>
             </div>
         }
         else if (chatList.Count == 0)
         {
             <div class="text-center text-muted mt-5">
-                <i class="fa-regular fa-folder-open fs-1 mb-3"></i>
-                <p>No active orders yet.</p>
-                <small class="text-danger">Looking for: @UserName</small>
+                <i class="fa-regular fa-folder-open fs-1 mb-3 opacity-50"></i>
+                <p class="small">No active orders yet.</p>
+                <small class="text-danger d-block mt-2" style="font-size: 0.7rem;">ID: @UserName</small>
             </div>
         }
         else
@@ -323,8 +106,8 @@
         }
     </div>
 
-    <div class="mt-auto text-center pt-3">
-        <small class="text-muted">Click a user to start chatting</small>
+    <div class="mt-auto text-center pt-3 border-top border-secondary">
+        <small class="text-muted">Tap a user to view order details</small>
     </div>
 </div>
 
@@ -347,107 +130,53 @@
 
     protected override async Task OnInitializedAsync()
     {
-        // 1. Pehle check karo ke kya User memory mein hai?
+        // Session Check
         var user = AuthService.CurrentUser;
-
-        // 2. Agar NULL hai, to shayad page refresh hua hai.
-        // Isliye hum AuthService ko bolenge ke "Cookie se session wapas lao"
         if (user == null)
         {
-            Console.WriteLine("⚠️ User memory mein nahi mila. Session Restore kar raha hoon...");
-
-            // Ye function cookie read karke user ko wapas layega
             await AuthService.TryRefreshSession();
-
-            // Dobara check karo
             user = AuthService.CurrentUser;
         }
 
-        // 3. Agar RESTORE ke baad bhi NULL hai, to phir waqai login nahi hai.
-        if (user == null)
+        if (user != null)
         {
-            Console.WriteLine("❌ Session Restore fail. User is still NULL. Redirecting to Login...");
-            Nav.NavigateTo("/login");
-            return;
+            await SetDynamicUserName(user);
+            StateHasChanged();
+            await LoadMessages();
+            isLoading = false;
+            StateHasChanged();
         }
-
-        Console.WriteLine($"✅ User Found: {user.Email}");
-
-        // 4. Naam set karo aur UI update karo
-        await SetDynamicUserName(user);
-        StateHasChanged();
-
-        // 5. Messages load karo
-        await LoadMessages();
-
-        isLoading = false;
-        StateHasChanged();
+        else
+        {
+            Nav.NavigateTo("/login");
+        }
     }
 
     private async Task SetDynamicUserName(Supabase.Gotrue.User user)
     {
         string fetchedName = "";
-        Console.WriteLine($"🔍 Getting Name for Email: {user.Email}");
-
-        // STEP 1: Profile Table Check
         try
         {
-            var response = await _supabase
-                .From<Profile>()
-                .Where(x => x.Id == user.Id)
-                .Get();
-
+            var response = await _supabase.From<Profile>().Where(x => x.Id == user.Id).Get();
             var profile = response.Models.FirstOrDefault();
-            if (profile != null && !string.IsNullOrEmpty(profile.Username))
-            {
-                fetchedName = profile.Username;
-                Console.WriteLine("✅ Name found in Profile Table: " + fetchedName);
-            }
+            if (profile != null) fetchedName = profile.Username;
         }
-        catch (Exception ex)
-        {
-            Console.WriteLine("⚠️ Profile Check Failed: " + ex.Message);
-        }
+        catch { }
 
-        // STEP 2: Metadata Check
         if (string.IsNullOrEmpty(fetchedName) && user.UserMetadata != null)
-        {
-            if (user.UserMetadata.TryGetValue("username", out var nameObj))
-            {
-                fetchedName = nameObj?.ToString();
-                Console.WriteLine("✅ Name found in Metadata: " + fetchedName);
-            }
-        }
+            if (user.UserMetadata.TryGetValue("username", out var nameObj)) fetchedName = nameObj?.ToString();
 
-        // STEP 3: Email Fallback (Last Option)
         if (string.IsNullOrEmpty(fetchedName) && !string.IsNullOrEmpty(user.Email))
-        {
-            var parts = user.Email.Split('@');
-            if (parts.Length > 0)
-            {
-                fetchedName = parts[0];
-                Console.WriteLine("⚠️ No name found. Using Email Prefix: " + fetchedName);
-            }
-        }
+            fetchedName = user.Email.Split('@')[0];
 
-        // Final Assignment
-        if (!string.IsNullOrEmpty(fetchedName))
-        {
-            UserName = fetchedName;
-        }
-        else
-        {
-            UserName = "Unknown Provider";
-        }
+        UserName = string.IsNullOrEmpty(fetchedName) ? "Provider" : fetchedName;
     }
 
     private async Task LoadMessages()
     {
         try
         {
-            if (UserName == "Loading..." || UserName == "Unknown Provider") return;
-
-            Console.WriteLine($"📨 Fetching messages for Receiver: {UserName}");
+            if (UserName == "Loading..." || UserName == "Provider") return;
 
             var response = await _supabase
                 .From<Message>()
@@ -456,8 +185,6 @@
                 .Get();
 
             var allMessages = response.Models;
-
-            Console.WriteLine($"✅ Found {allMessages.Count} messages.");
 
             chatList = allMessages
                         .GroupBy(m => m.OrderId)
@@ -468,7 +195,7 @@
         }
         catch (Exception ex)
         {
-            Console.WriteLine("❌ Error fetching messages: " + ex.Message);
+            Console.WriteLine("Error: " + ex.Message);
         }
     }
 

@@ -1,126 +1,258 @@
-﻿body {
-    margin: 0;
-    padding: 0;
-    background-color: black;
-    color: white;
+﻿/* --- DASHBOARD STYLES (Professional Look) --- */
+:root {
+    --bg-dark: #0b0d17;
+    --card-bg: #171a2b;
+    --accent-green: #BFFF27; /* Aapka Neon Green */
+    --text-white: #e4e6eb;
+    --text-muted: #a0a3bd;
+}
+
+body {
+    background-color: var(--bg-dark);
+    color: var(--text-white);
+    font-family: 'Poppins', sans-serif;
     overflow-x: hidden;
-    font-family: 'Inter', sans-serif;
-}
-/* Side Sliding Panel */
-.side-panel {
-    position: fixed;
-    top: 0;
-    right: -20%;
-    width: 20%;
-    height: 100vh;
-    background: #1b263b;
-    color: white;
-    z-index: 999;
-    transition: 0.4s ease;
-    padding-top: 60px; /* navbar ke neeche se */
-}
-
-/* When Panel is Active */
-.side-panel-active {
-    right: 0 !important;
-}
-
-/* Body Shrink */
-.body-shrink {
-    width: 80% !important;
-    transition: 0.4s ease;
+    margin: 0;
 }
 
 
-.dashboard-container {
-   width:100%;
-   height:100vh;
-    margin: auto;
-    padding: 20px;
-    background: #0d1b2a;
-    min-height: 100vh;
-    color: white;
-    font-family: 'Segoe UI', sans-serif;
+
+/* Navbar Icons */
+.dashboard-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 25px 0;
 }
 
-.header-section {
-    text-align: left;
-    margin-bottom: 25px;
-}
-
-    .header-section h2 {
-        margin: 0;
-        font-size: 24px;
-        font-weight: 600;
-    }
-
-    .header-section p {
-        margin: 3px 0;
-        font-size: 16px;
-        opacity: 0.8;
-    }
-
-.availability-row {
+.icon-btn {
+    background: var(--card-bg);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-white);
+    width: 48px;
+    height: 48px;
+    border-radius: 12px; /* Thoda square look professional lagta hai */
     display: flex;
     align-items: center;
-    gap: 10px;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    text-decoration: none;
+}
+
+    .icon-btn:hover {
+        background: var(--accent-green);
+        color: #000;
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(191, 255, 39, 0.3);
+    }
+
+.notify-dot {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    width: 8px;
+    height: 8px;
+    background-color: #ff4757;
+    border-radius: 50%;
+    border: 1px solid var(--card-bg);
+}
+
+/* Header & Revenue Card */
+.header-section {
+    margin-bottom: 30px;
+}
+
+.welcome-text {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 5px;
+}
+
+    .welcome-text span {
+        color: var(--accent-green);
+    }
+
+.revenue-card {
+    background: linear-gradient(135deg, #1f233a 0%, #171a2b 100%);
+    padding: 30px;
+    border-radius: 24px;
+    border: 1px solid rgba(191, 255, 39, 0.15);
+    margin-bottom: 25px;
+    position: relative;
+    overflow: hidden;
+}
+
+    .revenue-card::after {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 200px;
+        height: 200px;
+        background: radial-gradient(circle, rgba(191, 255, 39, 0.1) 0%, transparent 70%);
+    }
+
+.revenue-amount {
+    font-size: 2.8rem;
+    font-weight: 700;
+    color: var(--accent-green);
     margin: 10px 0;
 }
 
-.revenue {
-    font-size: 32px;
-    margin-top: 10px;
+/* Stats Grid */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+    margin-top: 25px;
 }
 
-.sub-text {
-    opacity: 0.7;
-    margin-top: -8px;
+.stat-card {
+    background: var(--card-bg);
+    padding: 25px;
+    border-radius: 18px;
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: 0.3s;
 }
 
-.chart-card {
-    background: #1b263b;
+    .stat-card:hover {
+        border-color: var(--accent-green);
+        transform: translateY(-5px);
+    }
+
+.stat-value {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 5px;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+.chart-container {
+    background: var(--card-bg);
+    padding: 20px;
+    border-radius: 20px;
+    margin-top: 25px;
+    height: 280px;
+    border: 1px solid rgba(255,255,255,0.05);
+}
+
+/* --- SIDE PANEL (Sliding Logic) --- */
+.sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 998;
+    opacity: 0;
+    visibility: hidden;
+    transition: 0.4s ease;
+    backdrop-filter: blur(3px);
+}
+
+    .sidebar-overlay.active {
+        opacity: 1;
+        visibility: visible;
+    }
+
+.side-panel {
+    position: fixed;
+    top: 0;
+    right: -380px;
+    width: 350px;
+    height: 100vh;
+    background: #141724;
+    z-index: 999;
+    transition: right 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+    padding: 25px;
+    box-shadow: -10px 0 30px rgba(0,0,0,0.5);
+    border-left: 1px solid rgba(255,255,255,0.08);
+    display: flex;
+    flex-direction: column;
+}
+
+    .side-panel.open {
+        right: 0;
+    }
+
+/* Chat Items inside Sidebar */
+.chat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+}
+
+.chat-item {
+    display: flex;
+    align-items: center;
     padding: 15px;
     border-radius: 12px;
-    margin-bottom: 25px;
-    color: white;
-}
-
-.chart-title {
-    font-size: 16px;
+    cursor: pointer;
+    transition: 0.2s;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    background: rgba(255,255,255,0.02);
     margin-bottom: 10px;
 }
 
-.stats-row {
+    .chat-item:hover {
+        background: rgba(255,255,255,0.08);
+    }
+
+.avatar {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    background: #2a2d3e;
+    margin-right: 15px;
+    position: relative;
     display: flex;
-    justify-content: space-between;
-    margin-bottom: 18px;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.1);
 }
 
-.stat-box {
-    background: #1b263b;
-    width: 48%;
-    padding: 18px 10px;
-    border-radius: 12px;
-    text-align: center;
+.online-dot {
+    width: 12px;
+    height: 12px;
+    background: #2ecc71;
+    border-radius: 50%;
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    border: 2px solid #141724;
 }
 
-    .stat-box h3 {
-        margin: 0;
-        font-size: 26px;
-    }
-
-    .stat-box p {
-        margin: 5px 0 0;
-        opacity: 0.7;
-    }
-.icon-hover {
-    color: white;
-    cursor: pointer;
-    transition: 0.2s ease;
+.msg-content h6 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #fff;
 }
 
-.icon-hover:hover {
-    color: #0dcaf0; /* hover color — change if you want */
+.msg-content p {
+    margin: 2px 0 0;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 160px;
 }
 
-
+.msg-time {
+    font-size: 0.75rem;
+    color: #666;
+    margin-left: auto;
+    font-weight: 500;
+}
