@@ -10,15 +10,17 @@
 
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 
 <style>
     body {
+        margin: 0;
+        padding: 0;
         background-color: #050505;
-        color: white;
         font-family: 'Poppins', sans-serif;
     }
 
-    .signup-wrapper {
+    .auth-wrapper {
         height: 100vh;
         display: flex;
         align-items: center;
@@ -26,98 +28,134 @@
         background: radial-gradient(circle at center, #1a1a2e 0%, #000000 100%);
     }
 
-    .signup-container {
+    .auth-card {
         background: #141622;
         color: #fff;
-        padding: 2rem;
+        padding: 3rem 2.5rem; /* Padding bhi thori barha di */
         border-radius: 12px;
-        box-shadow: 0px 4px 20px #0005;
-        max-width: 400px;
+        box-shadow: 0px 4px 20px rgba(0,0,0,0.5);
+        /* 🔥 WIDTH BARHA DI: Pehle 400px tha, ab 500px hai */
         width: 100%;
-        border: 1px solid rgba(255,255,255,0.1);
+        max-width: 500px;
+        border: 1px solid rgba(255,255,255,0.05);
+        text-align: center;
+    }
+
+    .form-label {
+        font-weight: 600;
+        font-size: 0.95rem;
+        color: #e0e0e0;
+        text-align: left;
+        display: block;
+        margin-bottom: 5px;
     }
 
     .form-control {
-        background: #232638;
+        width: 100%;
+        padding: 14px; /* Inputs thore bare kar diye */
+        border-radius: 6px;
         border: 1px solid #333;
-        color: white;
-        padding: 10px;
+        background: #232638;
+        color: #fff;
+        font-size: 1rem;
     }
 
         .form-control:focus {
             background: #232638;
-            color: white;
-            border-color: #b2f94e;
-            box-shadow: none;
+            color: #fff;
+            border-color: #BFFF27;
+            box-shadow: 0 0 5px rgba(191, 255, 39, 0.3);
         }
 
-    .signup-btn {
-        background: #b2f94e;
+    .btn-neon {
+        background: #BFFF27;
         color: #111;
         border: none;
-        padding: 10px;
-        width: 100%;
-        font-weight: bold;
         border-radius: 6px;
-        margin-top: 15px;
+        padding: 14px;
+        font-weight: bold;
+        font-size: 1.1rem;
+        cursor: pointer;
+        width: 100%;
+        margin-top: 25px;
+        transition: 0.2s;
     }
 
-        .signup-btn:hover {
-            background: #92FE9D;
+        .btn-neon:hover {
+            background: #ddff70;
         }
+
+    .role-badge {
+        background: rgba(191, 255, 39, 0.1);
+        color: #BFFF27;
+        padding: 6px 15px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        border: 1px solid rgba(191, 255, 39, 0.3);
+        margin-bottom: 25px;
+        display: inline-block;
+    }
+
+    .link-text {
+        color: #888;
+        font-size: 0.95rem;
+        text-decoration: none;
+        margin-top: 20px;
+        display: inline-block;
+    }
+
+        .link-text a {
+            color: #BFFF27;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+            .link-text a:hover {
+                text-decoration: underline;
+            }
 </style>
 
-<div class="signup-wrapper">
+<div class="auth-wrapper">
     <EditForm Model="@signupModel" OnValidSubmit="HandleSignup" FormName="SignupForm">
         <DataAnnotationsValidator />
 
-        <div class="signup-container">
-            <h2 class="text-center mb-2 fw-bold">Sign Up</h2>
-
-            <div class="text-center mb-4">
-                <span class="badge bg-dark border border-secondary text-info px-3 py-2 rounded-pill">
-                    Joining as: <strong>@signupModel.Role</strong>
-                </span>
-            </div>
+        <div class="auth-card">
+            <h2 class="mb-2 fw-bold" style="font-size: 2rem;">Sign Up</h2>
+            <div class="role-badge">Joining as: @signupModel.Role</div>
 
             @if (!string.IsNullOrEmpty(message))
             {
-                <div class="alert @(isSuccess ? "alert-success" : "alert-danger") text-center py-2 small">@message</div>
+                <div class="alert @(isSuccess ? "alert-success" : "alert-danger") py-2 small mb-3">
+                    @message
+                </div>
             }
 
-            <div class="mb-3">
-                <label class="form-label small text-muted">Username</label>
-                <InputText @bind-Value="signupModel.Username" class="form-control" placeholder="Ali Khan" />
-                <ValidationMessage For="@(() => signupModel.Username)" class="text-danger small" />
-            </div>
-
-            <div class="mb-3">
-                <label class="form-label small text-muted">Email</label>
-                <InputText @bind-Value="signupModel.Email" class="form-control" type="email" placeholder="name@example.com" />
+            <div class="mb-3 text-start">
+                <label class="form-label">Email</label>
+                <InputText @bind-Value="signupModel.Email" class="form-control" type="email" placeholder="Enter email" />
                 <ValidationMessage For="@(() => signupModel.Email)" class="text-danger small" />
             </div>
 
-            <div class="mb-3">
-                <label class="form-label small text-muted">Password</label>
+            <div class="mb-3 text-start">
+                <label class="form-label">Password</label>
                 <InputText @bind-Value="signupModel.Password" class="form-control" type="password" placeholder="••••••••" />
                 <ValidationMessage For="@(() => signupModel.Password)" class="text-danger small" />
             </div>
 
-            <button type="submit" class="signup-btn" disabled="@isLoading">
+            <button type="submit" class="btn-neon" disabled="@isLoading">
                 @if (isLoading)
                 {
-                    <span>Creating Account...</span>
+                    <span>Processing...</span>
                 }
                 else
                 {
-
                     <span>Sign Up</span>
                 }
             </button>
 
-            <div class="text-center mt-3">
-                <a href="/get-started" class="text-decoration-none text-muted small">Change Role</a> |
-                <a href="/login" class="text-decoration-none text-info small">Login</a>
+            <div class="link-text">
+                Already have an account? <a href="/login">Login</a> <br>
+                <a href="/get-started" class="text-muted small mt-2 d-block">Change Role</a>
             </div>
         </div>
     </EditForm>
@@ -129,7 +167,6 @@
     private bool isSuccess = false;
     private bool isLoading = false;
 
-    // Database Table Model
     [Table("profiles")]
     public class UserProfile : BaseModel
     {
@@ -138,7 +175,6 @@
         [Column("role")] public string Role { get; set; } = string.Empty;
     }
 
-    // URL se Role uthana
     protected override void OnInitialized()
     {
         var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
@@ -148,7 +184,7 @@
         }
         else
         {
-            NavigationManager.NavigateTo("/get-started"); // Agar role nahi hai to wapis bhejo
+            signupModel.Role = "Consumer";
         }
     }
 
@@ -159,8 +195,12 @@
 
         try
         {
-            // 1. Auth Signup (Email/Pass)
-            var options = new Supabase.Gotrue.SignUpOptions { Data = new Dictionary<string, object> { { "username", signupModel.Username } } };
+            // 🔥 Auto-generate Username from Email (e.g. ali@gmail.com -> ali)
+            // Kyunke Database ko username chahiye hota hai.
+            string autoUsername = signupModel.Email.Split('@')[0];
+
+            // 1. Auth Signup
+            var options = new Supabase.Gotrue.SignUpOptions { Data = new Dictionary<string, object> { { "username", autoUsername } } };
             var session = await _supabase.Auth.SignUp(signupModel.Email, signupModel.Password, options);
 
             if (session != null && session.User != null)
@@ -169,23 +209,25 @@
                 var newProfile = new UserProfile
                 {
                     Id = session.User.Id,
-                    Username = signupModel.Username,
-                    Role = signupModel.Role // 🔥 URL se aya hua role
+                    Username = autoUsername, // Using auto-generated name
+                    Role = signupModel.Role
                 };
                 await _supabase.From<UserProfile>().Insert(newProfile);
 
                 isSuccess = true;
-                message = "Account created! Redirecting to login...";
-                await Task.Delay(2000);
+                message = "Account created! Redirecting...";
+                await Task.Delay(1500);
                 NavigationManager.NavigateTo("/login");
             }
             else
             {
+                isSuccess = false;
                 message = "Signup failed. Try again.";
             }
         }
         catch (Exception ex)
         {
+            isSuccess = false;
             message = "Error: " + ex.Message;
         }
         finally { isLoading = false; }
@@ -193,7 +235,7 @@
 
     public class SignupModel
     {
-        [Required] public string Username { get; set; } = "";
+        // 🔥 Username field hata diya hai model se bhi
         [Required, EmailAddress] public string Email { get; set; } = "";
         [Required, MinLength(6)] public string Password { get; set; } = "";
         public string Role { get; set; } = "Consumer";
