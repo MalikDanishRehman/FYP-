@@ -1,0 +1,25 @@
+﻿.modal-backdrop-custom {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    z-index: 1040;
+}
+
+.modal-custom {
+    display: block;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1050;
+    width: 90%;
+    max-width: 500px;
+}
+
+.water-card {
+    background: linear-gradient(145deg, #1e2124, #23272b);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+}
