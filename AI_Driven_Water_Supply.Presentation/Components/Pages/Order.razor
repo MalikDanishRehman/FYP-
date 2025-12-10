@@ -1,10 +1,7 @@
 ﻿@page "/order/{type}"
-@using Supabase.Postgrest.Attributes @* Ye zaroori hai table mapping ke liye *@
-@using Supabase.Postgrest.Models @* Ye bhi zaroori hai *@
-@inject NavigationManager Nav
-@inject IJSRuntime JS
-@inject Supabase.Client SupabaseClient
-@* ✅ Supabase Client Inject kiya (Comment agli line par hona chahiye) *@
+@rendermode InteractiveServer
+@* Namespace is automatically imported if in same folder, otherwise add @using *@
+
 <div class="container mt-4">
     <div class="row">
 
@@ -12,13 +9,13 @@
             <img src="/images/@($"{type?.ToLower() ?? "default"}.jpg")"
                  alt="@type"
                  onerror="this.src='https://via.placeholder.com/300x400';"
-                 style="width: 100%; height: 100%; object-fit: cover; border-radius: 70px;" />
+                 class="supplier-type-img" />
         </div>
 
         <div class="col-md-8">
             <h3 class="mb-3 text-white text-decoration-underline">Nearby Water Suppliers</h3>
-            
-            <div id="map" style="height:350px; width:100%; border-radius:10px; margin-bottom: 30px; background-color: #ddd;"></div>
+
+            <div id="map"></div>
 
             <hr class="my-4" />
 
@@ -27,7 +24,7 @@
             <div class="row g-3 mb-4">
                 @if (isLoading)
                 {
-                     <p class="text-white">Loading suppliers from database...</p>
+                    <p class="text-white">Loading suppliers from database...</p>
                 }
                 else if (filteredSuppliers.Count == 0)
                 {
@@ -60,111 +57,3 @@
         </div>
     </div>
 </div>
-
-@code {
-    [Parameter] public string? type { get; set; }
-
-    // ✅ UI ke liye record (waisa hi rakha hai)
-    public record Supplier(string name, double lat, double lng, double rating);
-    
-    // ✅ Supabase Table Model (Jo tumhare screenshot me hai)
-    [Table("profiles")]
-    public class Profile : BaseModel
-    {
-        [PrimaryKey("id")]
-        public string Id { get; set; } = default!; // ✅ Default value de di
-
-        [Column("username")]
-        public string Username { get; set; } = string.Empty; // ✅ Empty string se initialize kar diya
-
-        [Column("role")]
-        public string Role { get; set; } = string.Empty; // ✅ Empty string se initialize kar diya
-    }
-    List<Supplier> allSuppliers = new();
-    List<Supplier> filteredSuppliers = new();
-    bool isLoading = true;
-
-    // ✅ Jab page load hoga, tab Supabase se data ayega
-    protected override async Task OnInitializedAsync()
-    {
-        try 
-        {
-            // 1. Supabase se wo log uthao jinka Role 'Provider' hai
-            var response = await SupabaseClient.From<Profile>()
-                                     .Where(x => x.Role == "Provider") 
-                                     .Get();
-
-            var dbProfiles = response.Models;
-
-            // 2. Data ko UI format (Supplier) mein convert karo
-            // Note: Kyunki DB me lat/lng nahi hai, mene abhi dummy numbers dale hain.
-            // Baad me tum DB me lat/lng columns bana lena.
-            
-            allSuppliers = dbProfiles.Select(p => new Supplier(
-                p.Username, 
-                24.8600 + (new Random().NextDouble() * 0.01), // Dummy Lat
-                67.0000 + (new Random().NextDouble() * 0.01), // Dummy Lng
-                4.5 // Default Rating
-            )).ToList();
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine("Error fetching data: " + ex.Message);
-        }
-        finally
-        {
-            isLoading = false;
-            FilterSuppliers(); // Data ane ke baad filter chalao
-        }
-    }
-
-    // Parameters change hone par filter dobara chalana
-    protected override void OnParametersSet()
-    {
-        FilterSuppliers();
-    }
-
-    // Map Load logic
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (!isLoading && filteredSuppliers.Any()) 
-        {
-            try
-            {
-                await JS.InvokeVoidAsync("mapFunctions.loadMap", type, filteredSuppliers);
-            }
-            catch { /* Ignore JS errors if map not ready */ }
-        }
-    }
-
-    string GetStars(double rating)
-    {
-        int fullStars = (int)Math.Floor(rating);
-        bool halfStar = rating - fullStars >= 0.5;
-        string stars = new string('★', fullStars);
-        if (halfStar) stars += "½";
-        return stars;
-    }
-
-    void FilterSuppliers()
-    {
-        if (allSuppliers == null || !allSuppliers.Any()) return;
-
-        var t = type?.Trim().ToLower() ?? "";
-
-        // Agar DB me naam "M.Akmal" hai aur tum "Tanker" search karoge to shayad match na ho.
-        // Isliye abhi ke liye mene logic thodi easy kardi hai taake kuch to dikhe.
-        
-        filteredSuppliers = t switch
-        {
-            // Abhi ke liye sab dikha raha hun taake tum test kar sako.
-            // Baad mein tum DB me 'service_type' column daal kar filter karna.
-            _ => allSuppliers 
-        };
-    }
-
-    void GoToDetails(string supplierName)
-    {
-        Nav.NavigateTo($"/supplier/{Uri.EscapeDataString(supplierName)}");
-    }
-}
