@@ -1,0 +1,412 @@
+﻿@page "/attendance"
+@using AI_Driven_Water_Supply.Application.Interfaces
+@using AI_Driven_Water_Supply.Application.Models  @* 🔥 Domain ki jagah ye lagao *@
+@using Supabase.Postgrest.Models
+@inject Supabase.Client _supabase
+@inject IAuthService AuthService
+@inject NavigationManager Nav
+@rendermode InteractiveServer
+
+<style>
+    body {
+        background-color: #050505;
+        color: white;
+        font-family: 'Poppins', sans-serif;
+    }
+
+    .page-container {
+        min-height: 100vh;
+        padding: 40px 20px;
+        background-image: radial-gradient(circle at 50% 0%, #111a3b 0%, #050505 80%);
+    }
+
+    .header-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+        padding-bottom: 15px;
+    }
+
+    .page-title {
+        font-size: 1.8rem;
+        font-weight: 700;
+        margin: 0;
+        color: #BFFF27;
+    }
+
+    /* Worker Card Styling */
+    .worker-card {
+        background: rgba(23, 26, 43, 0.6);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 15px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: 0.3s;
+        cursor: pointer;
+    }
+
+        .worker-card:hover {
+            border-color: #BFFF27;
+            transform: translateY(-3px);
+            background: rgba(23, 26, 43, 0.9);
+        }
+
+    .avatar-circle {
+        width: 50px;
+        height: 50px;
+        background: rgba(255,255,255,0.05);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        color: #BFFF27;
+        font-size: 1.2rem;
+        margin-right: 15px;
+    }
+
+    /* Attendance Buttons */
+    .btn-action-group {
+        display: flex;
+        gap: 10px;
+    }
+
+    .att-btn {
+        width: 45px;
+        height: 45px;
+        border-radius: 12px;
+        border: 1px solid rgba(255,255,255,0.1);
+        background: transparent;
+        color: #666;
+        transition: 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+        .att-btn:hover {
+            border-color: white;
+            color: white;
+        }
+
+    /* Active States */
+    .present.active {
+        background: #2ecc71;
+        color: black;
+        border-color: #2ecc71;
+        box-shadow: 0 0 15px rgba(46, 204, 113, 0.4);
+    }
+
+    .absent.active {
+        background: #ff4757;
+        color: white;
+        border-color: #ff4757;
+        box-shadow: 0 0 15px rgba(255, 71, 87, 0.4);
+    }
+
+    /* Modal Styling */
+    .custom-modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        z-index: 1050;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(5px);
+    }
+
+    .custom-modal {
+        background: #141622;
+        border: 1px solid rgba(255,255,255,0.1);
+        width: 90%;
+        max-width: 450px;
+        border-radius: 20px;
+        padding: 25px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+        color: white;
+    }
+
+    .form-control-dark {
+        background: #0b0d17;
+        border: 1px solid #333;
+        color: white;
+        padding: 12px;
+        border-radius: 8px;
+        width: 100%;
+        margin-bottom: 15px;
+    }
+
+    .btn-neon {
+        background: #BFFF27;
+        color: black;
+        font-weight: 700;
+        border: none;
+        width: 100%;
+        padding: 12px;
+        border-radius: 8px;
+        margin-top: 10px;
+    }
+
+        .btn-neon:hover {
+            background: #d4ff70;
+        }
+
+    .btn-close-custom {
+        background: none;
+        border: none;
+        color: #aaa;
+        font-size: 1.5rem;
+        float: right;
+        cursor: pointer;
+    }
+</style>
+
+<div class="page-container">
+
+    <div class="container" style="max-width: 800px;">
+        <div class="header-row">
+            <h2 class="page-title"><i class="fa-solid fa-clipboard-user me-2"></i> Attendance</h2>
+            <div class="text-end">
+                <span class="d-block text-muted small">Today's Date</span>
+                <span class="fw-bold">@todayDate</span>
+            </div>
+        </div>
+
+        <button class="btn btn-outline-light w-100 mb-4 py-3" style="border-style: dashed;" @onclick="() => showAddModal = true">
+            <i class="fa-solid fa-plus me-2"></i> Add New Worker
+        </button>
+
+        @if (isLoading)
+        {
+            <div class="text-center text-muted py-5">Loading workers...</div>
+        }
+        else if (workers.Count == 0)
+        {
+            <div class="text-center text-muted py-5">
+                <i class="fa-solid fa-users-slash fs-1 mb-3 opacity-50"></i>
+                <p>No workers found.</p>
+            </div>
+        }
+
+        @foreach (var worker in workers)
+        {
+            <div class="worker-card" @onclick="() => OpenDetailModal(worker)">
+                <div class="d-flex align-items-center">
+                    <div class="avatar-circle">
+                        @worker.Name.Substring(0, 1).ToUpper()
+                    </div>
+                    <div>
+                        <h5 class="m-0 fw-bold">@worker.Name</h5>
+                        <small class="text-muted">@worker.Role</small>
+                    </div>
+                </div>
+
+                <div class="btn-action-group" @onclick:stopPropagation="true">
+                    <button class="att-btn present @(worker.TodayStatus == "Present" ? "active" : "")"
+                            @onclick='() => MarkStatus(worker, "Present")'>
+                        <i class="fa-solid fa-check"></i>
+                    </button>
+                    <button class="att-btn absent @(worker.TodayStatus == "Absent" ? "active" : "")"
+                            @onclick='() => MarkStatus(worker, "Absent")'>
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+            </div>
+        }
+    </div>
+
+</div>
+
+@if (showAddModal)
+{
+    <div class="custom-modal-overlay">
+        <div class="custom-modal">
+            <button class="btn-close-custom" @onclick="() => showAddModal = false">&times;</button>
+            <h4 class="mb-4">Add Worker</h4>
+
+            <input type="text" class="form-control-dark" placeholder="Full Name" @bind="newWorker.Name" />
+            <input type="text" class="form-control-dark" placeholder="Role (e.g. Helper)" @bind="newWorker.Role" />
+            <input type="number" class="form-control-dark" placeholder="Monthly Salary (PKR)" @bind="newWorker.BaseSalary" />
+
+            <button class="btn-neon" @onclick="SaveWorker">Save Record</button>
+        </div>
+    </div>
+}
+
+@if (showDetailModal)
+{
+    <div class="custom-modal-overlay">
+        <div class="custom-modal text-center">
+            <button class="btn-close-custom" @onclick="() => showDetailModal = false">&times;</button>
+
+            <div class="avatar-circle mx-auto mb-3" style="width: 70px; height: 70px; font-size: 2rem;">
+                @selectedWorker.Name.Substring(0, 1).ToUpper()
+            </div>
+            <h3>@selectedWorker.Name</h3>
+            <p class="text-muted">@selectedWorker.Role</p>
+
+            <div class="row g-2 mt-4">
+                <div class="col-6">
+                    <div class="p-3 border border-secondary rounded">
+                        <small class="text-muted d-block">Days Present</small>
+                        <h2 class="text-success m-0">@totalPresentDays</h2>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="p-3 border border-secondary rounded">
+                        <small class="text-muted d-block">Base Salary</small>
+                        <h4 class="text-white m-0">@selectedWorker.BaseSalary</h4>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-3 rounded mt-3" style="background: rgba(191, 255, 39, 0.1); border: 1px solid #BFFF27;">
+                <small class="text-muted text-uppercase" style="letter-spacing:1px;">Calculated Salary</small>
+                <h1 style="color: #BFFF27; font-weight: 800; margin: 0;">Rs @totalEarned</h1>
+            </div>
+
+            <button class="btn btn-outline-danger w-100 mt-4" @onclick="DeleteWorker">
+                <i class="fa-solid fa-trash me-2"></i> Delete Record
+            </button>
+        </div>
+    </div>
+}
+
+@code {
+    // --- UI Variables ---
+    private List<Worker> workers = new();
+    private bool showAddModal = false;
+    private bool showDetailModal = false;
+    private bool isLoading = true;
+    private string todayDate = DateTime.Now.ToString("dd MMM yyyy");
+
+    // --- Models for Logic ---
+    private Worker newWorker = new();
+    private Worker selectedWorker = new();
+    private int totalPresentDays = 0;
+    private decimal totalEarned = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var user = AuthService.CurrentUser;
+        if (user == null)
+        {
+            await AuthService.TryRefreshSession();
+            user = AuthService.CurrentUser;
+        }
+
+        if (user != null)
+        {
+            await LoadWorkers(user.Id);
+        }
+        else
+        {
+            Nav.NavigateTo("/login");
+        }
+    }
+
+    private async Task LoadWorkers(string userId)
+    {
+        isLoading = true;
+        try
+        {
+            // 1. Get Workers
+            var response = await _supabase.From<Worker>().Where(x => x.SupplierId == userId).Get();
+            workers = response.Models;
+
+            // 2. Get Attendance
+            var today = DateTime.UtcNow.Date;
+            var attResponse = await _supabase.From<AttendanceLog>().Where(x => x.Date == today).Get();
+            var logs = attResponse.Models;
+
+            // 3. Map Status
+            foreach (var w in workers)
+            {
+                var log = logs.FirstOrDefault(l => l.WorkerId == w.Id);
+                w.TodayStatus = log != null ? log.Status : "Pending";
+            }
+        }
+        catch (Exception ex) { Console.WriteLine("Error: " + ex.Message); }
+        finally { isLoading = false; }
+    }
+
+    private async Task MarkStatus(Worker worker, string status)
+    {
+        // UI Update (Optimistic)
+        worker.TodayStatus = status;
+
+        var today = DateTime.UtcNow.Date;
+        var existing = await _supabase.From<AttendanceLog>()
+            .Where(x => x.WorkerId == worker.Id && x.Date == today)
+            .Get();
+
+        if (existing.Models.Any())
+        {
+            var log = existing.Models.First();
+            log.Status = status;
+            await _supabase.From<AttendanceLog>().Update(log);
+        }
+        else
+        {
+            await _supabase.From<AttendanceLog>().Insert(new AttendanceLog
+            {
+                WorkerId = worker.Id,
+                Date = today,
+                Status = status
+            });
+        }
+    }
+
+    private async Task SaveWorker()
+    {
+        var user = AuthService.CurrentUser;
+        if (user != null)
+        {
+            newWorker.SupplierId = user.Id;
+            await _supabase.From<Worker>().Insert(newWorker);
+            showAddModal = false;
+            newWorker = new Worker(); // Reset
+            await LoadWorkers(user.Id);
+        }
+    }
+
+    private async Task OpenDetailModal(Worker worker)
+    {
+        selectedWorker = worker;
+
+        // Calculate Stats
+        var response = await _supabase.From<AttendanceLog>()
+            .Where(x => x.WorkerId == worker.Id && x.Status == "Present")
+            .Get();
+
+        totalPresentDays = response.Models.Count;
+
+        // Salary Formula: (Base / 30) * Present Days
+        if (worker.BaseSalary > 0)
+        {
+            decimal daily = worker.BaseSalary / 30;
+            totalEarned = Math.Round(daily * totalPresentDays, 0);
+        }
+        else totalEarned = 0;
+
+        showDetailModal = true;
+    }
+
+    private async Task DeleteWorker()
+    {
+        await _supabase.From<Worker>().Delete(selectedWorker);
+        showDetailModal = false;
+        var user = AuthService.CurrentUser;
+        if (user != null) await LoadWorkers(user.Id);
+    }
+}

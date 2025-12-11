@@ -1,0 +1,146 @@
+﻿/* --- GLOBAL THEME SCOPED TO THIS PAGE --- */
+.page-container {
+    --primary-color: #b2f94e; /* Neon Green */
+    --primary-glow: rgba(178, 249, 78, 0.4);
+    --bg-dark: #02040a;
+    --card-glass: rgba(255, 255, 255, 0.03);
+    --card-border: rgba(255, 255, 255, 0.08);
+    --text-white: #ffffff;
+    background-color: var(--bg-dark);
+    background-image: radial-gradient(circle at 50% 0%, #111a3b 0%, #02040a 80%);
+    color: var(--text-white);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    padding-bottom: 50px;
+}
+
+h1, h2, h3, h5 {
+    font-family: 'Poppins', sans-serif;
+}
+
+/* --- HERO SECTION --- */
+.marketplace-hero {
+    padding: 80px 0 40px;
+    text-align: center;
+    position: relative;
+}
+
+.hero-gif {
+    width: 150px;
+    filter: drop-shadow(0 0 20px var(--primary-glow));
+    margin-bottom: 20px;
+}
+
+.hero-title {
+    font-size: 3rem;
+    font-weight: 700;
+    background: linear-gradient(90deg, #fff, #b2f94e);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 10px;
+}
+
+.section-subtitle {
+    color: #a0a0a0;
+    font-size: 1.1rem;
+    margin-bottom: 50px;
+}
+
+/* --- CARDS GRID --- */
+.glass-card {
+    background: var(--card-glass);
+    border: 1px solid var(--card-border);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 20px;
+    padding: 20px;
+    transition: all 0.4s ease;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+    overflow: hidden;
+}
+
+    /* Card Hover Effect */
+    .glass-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 15px 40px -10px rgba(0,0,0,0.6);
+        border-color: var(--primary-color);
+    }
+
+    .glass-card::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(178, 249, 78, 0.05) 0%, transparent 60%);
+        pointer-events: none;
+        opacity: 0;
+        transition: 0.4s;
+    }
+
+    .glass-card:hover::before {
+        opacity: 1;
+    }
+
+/* Image Container */
+.img-wrapper {
+    height: 220px;
+    overflow: hidden;
+    border-radius: 15px;
+    margin-bottom: 20px;
+    background: rgba(0,0,0,0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--card-border);
+}
+
+    .img-wrapper img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.5s ease;
+    }
+
+.glass-card:hover .img-wrapper img {
+    transform: scale(1.05);
+}
+
+.card-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 15px;
+}
+
+/* --- BUTTONS --- */
+.btn-neon {
+    background: var(--primary-color);
+    color: #000;
+    border: none;
+    padding: 12px;
+    width: 100%;
+    border-radius: 50px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: 0.9rem;
+    transition: 0.3s;
+    box-shadow: 0 0 15px var(--primary-glow);
+    text-decoration: none;
+    display: inline-block;
+}
+
+    .btn-neon:hover {
+        background: #fff;
+        transform: translateY(-2px);
+        box-shadow: 0 0 25px var(--primary-glow);
+        color: black;
+    }
