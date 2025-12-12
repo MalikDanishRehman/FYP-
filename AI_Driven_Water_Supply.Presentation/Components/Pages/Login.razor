@@ -1,199 +1,52 @@
 ﻿@page "/login"
-@using System.ComponentModel.DataAnnotations
-@using AI_Driven_Water_Supply.Application.Interfaces
-@using Supabase.Postgrest.Attributes
-@using Supabase.Postgrest.Models
-@inject IAuthService AuthService
-@inject Supabase.Client _supabase
-@inject NavigationManager Nav
-
 @rendermode InteractiveServer
 
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 
-<style>
-    /* --- YEH RAHI AAPKI PERFECT UI --- */
-    .signup-container {
-        background: #141622;
-        color: #fff;
-        padding: 2rem;
-        border-radius: 12px;
-        box-shadow: 0px 4px 20px #0005;
-        max-width: 400px; /* UI Size fixed */
-        margin: 4rem auto;
-    }
+<div class="page-container">
 
-    .brand-green {
-        color: #BFFF27;
-    }
+    <EditForm Model="@loginModel" OnValidSubmit="HandleLogin" FormName="LoginForm">
+        <DataAnnotationsValidator />
 
-    .form-group {
-        margin-bottom: 1.5rem;
-    }
+        <div class="signup-container">
+            <h2 class="text-center mb-4 text-white">
+                <span class="brand-green">Login</span> to Smart Water
+            </h2>
 
-    .form-control {
-        width: 100%;
-        padding: 0.8rem;
-        border-radius: 6px;
-        border: 1px solid #222;
-        background: #232638;
-        color: #fff;
-        font-size: 1rem;
-    }
+            <div class="form-group">
+                <label>Email</label>
+                <InputText @bind-Value="loginModel.Email" class="form-control" type="email" placeholder="Enter email" />
+                <ValidationMessage For="@(() => loginModel.Email)" />
+            </div>
 
-        .form-control:focus {
-            background: #232638;
-            color: #fff;
-            border-color: #BFFF27;
-            box-shadow: 0 0 5px rgba(191, 255, 39, 0.5);
-        }
+            <div class="form-group">
+                <label>Password</label>
+                <InputText @bind-Value="loginModel.Password" class="form-control" type="password" placeholder="Enter password" />
+                <ValidationMessage For="@(() => loginModel.Password)" />
+            </div>
 
-    .signup-btn {
-        background: #BFFF27;
-        color: #111;
-        border: none;
-        border-radius: 6px;
-        padding: 0.8rem 2rem;
-        font-weight: bold;
-        cursor: pointer;
-        transition: background 0.2s;
-        width: 100%;
-    }
-
-        .signup-btn:hover {
-            background: #ddff70;
-        }
-
-    label {
-        font-weight: 600;
-        margin-bottom: 0.5rem;
-        display: block;
-    }
-
-    .validation-message {
-        color: #ff6b6b;
-        font-size: 0.9rem;
-        margin-top: 5px;
-        display: block;
-    }
-</style>
-
-<EditForm Model="@loginModel" OnValidSubmit="HandleLogin" FormName="LoginForm">
-    <DataAnnotationsValidator />
-    <div class="signup-container">
-        <h2 class="text-center mb-4"><span class="brand-green">Login</span> to Smart Water</h2>
-
-        <div class="form-group">
-            <label>Email</label>
-            <InputText @bind-Value="loginModel.Email" class="form-control" type="email" placeholder="Enter email" />
-            <ValidationMessage For="@(() => loginModel.Email)" />
-        </div>
-
-        <div class="form-group">
-            <label>Password</label>
-            <InputText @bind-Value="loginModel.Password" class="form-control" type="password" placeholder="Enter password" />
-            <ValidationMessage For="@(() => loginModel.Password)" />
-        </div>
-
-        <button type="submit" class="signup-btn" disabled="@isLoading">
-            @if (isLoading)
-            {
-                <span>Processing...</span>
-            }
-            else
-            {
-                <span>Login</span>
-            }
-        </button>
-
-        @if (!string.IsNullOrEmpty(errorMessage))
-        {
-            <div class="alert alert-danger mt-3">@errorMessage</div>
-        }
-    </div>
-</EditForm>
-
-@code {
-    [SupplyParameterFromForm]
-    private LoginModel loginModel { get; set; } = new();
-
-    private string errorMessage = "";
-    private bool isLoading = false;
-
-    // 👇 LOGIC: Supabase Model wapas add kiya
-    [Table("profiles")]
-    public class UserProfile : BaseModel
-    {
-        [Column("id")] public string Id { get; set; }
-        [Column("role")] public string Role { get; set; }
-    }
-
-    private async Task HandleLogin()
-    {
-        isLoading = true;
-        errorMessage = "";
-
-        try
-        {
-            // 1. Auth Service se Login
-            bool isLoggedIn = await AuthService.SignIn(loginModel.Email, loginModel.Password);
-
-            if (isLoggedIn)
-            {
-                // 2. User ID nikalo
-                var user = AuthService.CurrentUser;
-                if (user == null) user = _supabase.Auth.CurrentUser;
-
-                if (user != null)
+            <button type="submit" class="signup-btn" disabled="@isLoading">
+                @if (isLoading)
                 {
-                    // 3. Supabase se Role check karo (Wohi purani logic)
-                    var response = await _supabase.From<UserProfile>()
-                                                  .Where(x => x.Id == user.Id)
-                                                  .Get();
-
-                    var profile = response.Models.FirstOrDefault();
-
-                    if (profile != null)
-                    {
-                        // 4. Role Based Redirect
-                        if (profile.Role == "Consumer")
-                        {
-                            Nav.NavigateTo("/Consumer", forceLoad: true);
-                        }
-                        else
-                        {
-                            Nav.NavigateTo("/ProviderDashboard", forceLoad: true);
-                        }
-                    }
-                    else
-                    {
-                        Nav.NavigateTo("/get-started");
-                    }
+                    <span>Processing...</span>
                 }
-            }
-            else
+                else
+                {
+                    <span>Login</span>
+                }
+            </button>
+
+            @if (!string.IsNullOrEmpty(errorMessage))
             {
-                errorMessage = "Invalid email or password";
+                <div class="alert alert-danger">@errorMessage</div>
             }
-        }
-        catch (Exception ex)
-        {
-            errorMessage = "Login Error: " + ex.Message;
-        }
-        finally
-        {
-            isLoading = false;
-        }
-    }
 
-    public class LoginModel
-    {
-        [Required(ErrorMessage = "Email is required")]
-        [EmailAddress(ErrorMessage = "Invalid email address")]
-        public string Email { get; set; } = "";
+            <div class="text-center mt-3">
+                <small style="color: #888;">Don't have an account? <a href="/get-started" style="color: #BFFF27; text-decoration: none;">Sign up</a></small>
+            </div>
+        </div>
+    </EditForm>
 
-        [Required(ErrorMessage = "Password is required")]
-        public string Password { get; set; } = "";
-    }
-}
+</div>
