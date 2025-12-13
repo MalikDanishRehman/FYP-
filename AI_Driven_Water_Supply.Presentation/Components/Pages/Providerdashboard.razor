@@ -2,6 +2,8 @@
 @using AI_Driven_Water_Supply.Application.Interfaces
 @using Supabase.Gotrue
 @using AI_Driven_Water_Supply.Presentation
+@using Supabase.Postgrest.Attributes
+@using Supabase.Postgrest.Models
 @inject IAuthService AuthService
 @inject Supabase.Client _supabase
 @inject NavigationManager Nav
@@ -15,13 +17,13 @@
     <div class="container">
 
         <div class="dashboard-nav">
-            
+
             <div class="nav-left">
                 <h2 class="welcome-text">Hi, <span>@UserName</span>! 👋</h2>
             </div>
 
             <div class="nav-right">
-                
+
                 <div class="icon-btn" @onclick="ToggleSidebar" title="Messages">
                     <i class="fa-regular fa-comment-dots"></i>
                     @if (chatList.Count > 0)
@@ -33,13 +35,13 @@
                 <a href="/supplier-bills" class="icon-btn" title="Earnings & Bills">
                     <i class="fa-solid fa-file-invoice-dollar" style="color: var(--accent-green);"></i>
                 </a>
-                
+
                 <a href="/attendance" class="icon-btn" title="Staff Attendance">
                     <i class="fa-solid fa-clipboard-user" style="color: #c767da;"></i>
                 </a>
 
                 <a href="/profilepro" class="profile-container" title="My Profile">
-                    <img src="https://i.pravatar.cc/150?img=12" alt="Profile" class="profile-img">
+                    <img src="@ProfileImageUrl" alt="Profile" class="profile-img">
                     <div class="status-dot"></div>
                 </a>
             </div>
@@ -93,7 +95,6 @@
                 <div class="text-center text-muted mt-5">
                     <i class="fa-regular fa-folder-open fs-1 mb-3 opacity-50"></i>
                     <p class="small">No active orders yet.</p>
-                    <small class="text-danger d-block mt-2" style="font-size: 0.7rem;">ID: @UserName</small>
                 </div>
             }
             else
@@ -114,34 +115,29 @@
                 }
             }
         </div>
-
-        <div class="mt-auto text-center pt-3 border-top border-secondary">
-            <small class="text-muted">Tap a user to view order details</small>
-        </div>
     </div>
 
 </div>
 
 @code {
     private string UserName = "Loading...";
+    // ✅ DEFAULT IMAGE SET HERE (Web Path)
+    private string ProfileImageUrl = "/images/fallbackimg.jpg";
     private bool isSidebarOpen = false;
     private bool isLoading = true;
     private int totalRevenue = 0;
     private List<Message> chatList = new List<Message>();
 
-    [Supabase.Postgrest.Attributes.Table("profiles")]
-    public class Profile : Supabase.Postgrest.Models.BaseModel
+    // ✅ MODEL UPDATED (Added ProfilePic)
+    [Table("profiles")]
+    public class Profile : BaseModel
     {
-        [Supabase.Postgrest.Attributes.Column("id")]
-        public string Id { get; set; }
-
-        [Supabase.Postgrest.Attributes.Column("username")]
-        public string Username { get; set; }
+        [Column("id")] public string Id { get; set; } = "";
+        [Column("username")] public string Username { get; set; } = "";
+        [Column("profilepic")] public string ProfilePic { get; set; } = "";
     }
-
     protected override async Task OnInitializedAsync()
     {
-        // Session Check
         var user = AuthService.CurrentUser;
         if (user == null)
         {
@@ -151,7 +147,7 @@
 
         if (user != null)
         {
-            await SetDynamicUserName(user);
+            await SetDynamicData(user); // Updated Function Name
             StateHasChanged();
             await LoadMessages();
             isLoading = false;
@@ -163,17 +159,40 @@
         }
     }
 
-    private async Task SetDynamicUserName(Supabase.Gotrue.User user)
+    // ✅ NEW LOGIC: NAME + PHOTO FETCH
+    private async Task SetDynamicData(Supabase.Gotrue.User user)
     {
         string fetchedName = "";
         try
         {
+            // Database Query
             var response = await _supabase.From<Profile>().Where(x => x.Id == user.Id).Get();
             var profile = response.Models.FirstOrDefault();
-            if (profile != null) fetchedName = profile.Username;
-        }
-        catch { }
 
+            if (profile != null)
+            {
+                // 1. Set Name
+                fetchedName = profile.Username;
+
+                // 2. Set Profile Picture Logic
+                if (!string.IsNullOrEmpty(profile.ProfilePic))
+                {
+                    // Agar DB me pic hai, to Bucket se URL banao
+                    ProfileImageUrl = _supabase.Storage.From("Avatar").GetPublicUrl(profile.ProfilePic);
+                }
+                else
+                {
+                    // Agar DB me pic nahi hai, to Local Image
+                    ProfileImageUrl = "/images/fallbackimg.jpg";
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Error fetching profile: " + ex.Message);
+        }
+
+        // Fallback Name Logic
         if (string.IsNullOrEmpty(fetchedName) && user.UserMetadata != null)
             if (user.UserMetadata.TryGetValue("username", out var nameObj)) fetchedName = nameObj?.ToString();
 
@@ -212,11 +231,6 @@
 
     private void ToggleSidebar() => isSidebarOpen = !isSidebarOpen;
     private void OpenChat(long orderId) => Nav.NavigateTo($"/chat/{orderId}");
-    private async Task HandleLogout()
-    {
-        await AuthService.SignOut();
-        Nav.NavigateTo("/login");
-    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {

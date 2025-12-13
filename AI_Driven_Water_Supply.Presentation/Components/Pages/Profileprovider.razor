@@ -31,9 +31,9 @@
 
                 <div class="avatar-section">
                     <div class="avatar-wrapper">
-                        @if (!string.IsNullOrEmpty(userProfile.AvatarUrl))
+                        @if (!string.IsNullOrEmpty(DisplayUrl))
                         {
-                            <img src="@userProfile.AvatarUrl" class="profile-img" alt="User">
+                            <img src="@DisplayUrl" class="profile-img" alt="User" />
                         }
                         else
                         {
@@ -42,59 +42,42 @@
                             </div>
                         }
 
-                        <div class="edit-icon-overlay" @onclick="() => showImageModal = true" title="Change Photo">
-                            <i class="fa-solid fa-pen"></i>
+                        <div class="edit-icon-overlay" @onclick="() => showImageModal = true">
+                            <i class="fa-solid fa-camera"></i>
                         </div>
                     </div>
-                    <h2 class="text-white m-0">@userProfile.Username</h2>
-                    <span class="badge bg-secondary mt-2">@userProfile.Role</span>
+                    <h3 class="text-white mt-2">@userProfile.Username</h3>
+                    <span class="badge bg-primary">@userProfile.Role</span>
                 </div>
 
                 <EditForm Model="userProfile" OnValidSubmit="HandleSave">
                     <DataAnnotationsValidator />
 
-                    <div class="row">
+                    <div class="row mt-4">
                         <div class="col-md-6">
-                            <h5 class="section-title">Account Details</h5>
-                            <label class="form-label">Email Address</label>
-                            <input type="text" class="form-control-custom" value="@userEmail" disabled />
-
-                            <label class="form-label">Username</label>
-                            <input type="text" class="form-control-custom" value="@userProfile.Username" disabled />
+                            <label class="form-label text-muted">Username</label>
+                            <InputText @bind-Value="userProfile.Username" class="form-control-custom" />
                         </div>
 
                         <div class="col-md-6">
-                            <h5 class="section-title">Personal Info</h5>
-
-                            <label class="form-label">Location / Address</label>
-                            <InputText @bind-Value="userProfile.Location" class="form-control-custom" placeholder="e.g. Gulshan-e-Iqbal, Karachi" />
-
-                            @if (userProfile.Role == "Provider")
-                            {
-                                <div class="mt-3 p-3 rounded" style="background: rgba(191, 255, 39, 0.05); border: 1px dashed #BFFF27;">
-                                    <label class="form-label text-warning"><i class="fa-solid fa-truck-droplet me-2"></i> What do you supply?</label>
-                                    <InputSelect @bind-Value="userProfile.ServiceType" class="form-control-custom bg-dark">
-                                        <option value="">Select Service Type</option>
-                                        <option value="Tanker">Water Tanker</option>
-                                        <option value="Bottle">Mineral Water Bottles</option>
-                                        <option value="Plant">Plant Supply</option>
-                                    </InputSelect>
-                                </div>
-                            }
+                            <label class="form-label text-muted">Location / Address</label>
+                            <InputText @bind-Value="userProfile.Location" class="form-control-custom" placeholder="e.g. Sector 11-B, North Karachi" />
                         </div>
                     </div>
 
-                    <button type="submit" class="btn-save">
-                        @if (isSaving)
-                        {
-                            <span>Saving...</span>
-                        }
-                        else
-                        {
+                    <div class="mt-4">
+                        <button type="submit" class="btn-save">
+                            @if (isSaving)
+                            {
+                                <span>Saving...</span>
+                            }
+                            else
+                            {
 
-                            <span>Save Changes</span>
-                        }
-                    </button>
+                                <span>Update Profile</span>
+                            }
+                        </button>
+                    </div>
 
                     @if (!string.IsNullOrEmpty(message))
                     {
@@ -110,73 +93,47 @@
 {
     <div class="custom-modal-overlay">
         <div class="custom-modal">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h5 class="m-0 text-white">Change Profile Photo</h5>
-                <button class="btn-close-custom" @onclick="() => showImageModal = false">&times;</button>
-            </div>
+            <h5 class="text-white mb-3">Update Profile Picture</h5>
 
             <label class="upload-box">
                 @if (isUploading)
                 {
-                    <div class="spinner-border text-success spinner-border-sm" role="status"></div>
+                    <div class="spinner-border text-success spinner-border-sm"></div>
                     <span class="ms-2">Uploading...</span>
                 }
                 else
                 {
                     <InputFile OnChange="UploadImage" accept=".jpg,.png,.jpeg" style="display:none;" />
-                    <i class="fa-solid fa-cloud-arrow-up fs-2 mb-2 text-success"></i>
-                    <span>Upload from Device</span>
+                    <i class="fa-solid fa-cloud-arrow-up fs-1 mb-2 text-success"></i>
+                    <p>Click to Select Image</p>
                 }
             </label>
-
-            <div class="text-center text-muted my-2">- OR -</div>
-
-            <label class="form-label text-start w-100">Paste Image URL</label>
-            <input type="text" class="form-control-custom" @bind="tempUrl" placeholder="https://example.com/image.jpg" />
-
-            <button class="btn-save mt-2" @onclick="SetUrlImage">Set URL</button>
+            <button class="btn btn-secondary mt-3 btn-sm" @onclick="() => showImageModal = false">Cancel</button>
         </div>
     </div>
 }
 
 <style>
-    /* --- STYLES --- */
+    /* SIMPLE CSS */
     .page-wrapper {
-        --bg-dark: #050505;
-        --accent-green: #BFFF27;
-        --text-white: #ffffff;
-        background-color: var(--bg-dark);
-        color: var(--text-white);
-        font-family: 'Poppins', sans-serif;
+        background: #050505;
         min-height: 100vh;
         padding: 40px 0;
-    }
-
-    .container {
-        max-width: 900px;
+        color: white;
     }
 
     .glass-card {
-        background: rgba(23, 26, 43, 0.7);
-        backdrop-filter: blur(20px);
-        border: 1px solid rgba(255,255,255,0.08);
-        border-radius: 24px;
+        background: rgba(30, 30, 40, 0.8);
+        border-radius: 20px;
         padding: 40px;
-    }
-
-    /* Avatar & Edit Icon */
-    .avatar-section {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        margin-bottom: 40px;
+        border: 1px solid #333;
     }
 
     .avatar-wrapper {
         position: relative;
-        width: 120px;
-        height: 120px;
-        margin-bottom: 15px;
+        width: 130px;
+        height: 130px;
+        margin: 0 auto;
     }
 
     .profile-img {
@@ -184,29 +141,27 @@
         height: 100%;
         border-radius: 50%;
         object-fit: cover;
-        border: 3px solid var(--accent-green);
+        border: 3px solid #BFFF27;
     }
 
     .profile-placeholder {
         width: 100%;
         height: 100%;
-        background: rgba(255,255,255,0.05);
         border-radius: 50%;
+        background: #222;
         display: flex;
         align-items: center;
         justify-content: center;
-        border: 3px solid var(--accent-green);
         font-size: 3rem;
-        color: var(--accent-green);
-        font-weight: bold;
+        color: #BFFF27;
+        border: 3px solid #BFFF27;
     }
 
-    /* Pen Icon */
     .edit-icon-overlay {
         position: absolute;
         bottom: 5px;
         right: 5px;
-        background: var(--accent-green);
+        background: #BFFF27;
         color: black;
         width: 35px;
         height: 35px;
@@ -215,65 +170,27 @@
         align-items: center;
         justify-content: center;
         cursor: pointer;
-        transition: 0.3s;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.5);
-    }
-
-        .edit-icon-overlay:hover {
-            transform: scale(1.1);
-            background: #fff;
-        }
-
-    /* Forms */
-    .section-title {
-        color: var(--accent-green);
-        font-size: 1.1rem;
-        margin-bottom: 20px;
-        text-transform: uppercase;
-        border-bottom: 1px solid rgba(255,255,255,0.1);
-        padding-bottom: 10px;
     }
 
     .form-control-custom {
-        background: rgba(0,0,0,0.3);
-        border: 1px solid rgba(255,255,255,0.1);
+        background: #111;
+        border: 1px solid #444;
         color: white;
         width: 100%;
         padding: 12px;
-        border-radius: 12px;
-        margin-bottom: 15px;
-        display: block;
+        border-radius: 8px;
     }
 
     .btn-save {
-        background: var(--accent-green);
+        background: #BFFF27;
         color: black;
         width: 100%;
         padding: 12px;
-        border-radius: 50px;
-        font-weight: 700;
+        border-radius: 8px;
         border: none;
-        cursor: pointer;
-        transition: 0.3s;
+        font-weight: bold;
     }
 
-        .btn-save:hover {
-            background: white;
-        }
-
-    .btn-back {
-        background: none;
-        border: none;
-        color: #aaa;
-        cursor: pointer;
-        margin-bottom: 20px;
-    }
-
-        .btn-back:hover {
-            color: var(--accent-green);
-        }
-
-    /* Modal Styles */
     .custom-modal-overlay {
         position: fixed;
         top: 0;
@@ -285,67 +202,46 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        backdrop-filter: blur(5px);
     }
 
     .custom-modal {
-        background: #141622;
-        border: 1px solid rgba(255,255,255,0.1);
-        padding: 25px;
-        border-radius: 20px;
-        width: 90%;
-        max-width: 400px;
+        background: #1a1a1a;
+        padding: 30px;
+        border-radius: 15px;
+        width: 300px;
         text-align: center;
+        border: 1px solid #333;
     }
 
     .upload-box {
-        border: 2px dashed rgba(255,255,255,0.2);
-        padding: 30px;
-        border-radius: 12px;
+        border: 2px dashed #555;
+        padding: 20px;
+        border-radius: 10px;
         cursor: pointer;
-        transition: 0.2s;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        color: #ccc;
-    }
-
-        .upload-box:hover {
-            border-color: var(--accent-green);
-            color: var(--accent-green);
-            background: rgba(191, 255, 39, 0.05);
-        }
-
-    .btn-close-custom {
-        background: none;
-        border: none;
-        color: #fff;
-        font-size: 1.5rem;
-        cursor: pointer;
+        display: block;
     }
 </style>
 
 @code {
-    private UserProfile userProfile = new UserProfile();
-    private string userEmail = "";
-    private bool isLoading = true;
-    private bool isSaving = false;
-    private bool isUploading = false;
-    private string message = "";
-    private bool isSuccess = false;
-    private bool showImageModal = false;
-    private string tempUrl = "";
-
-    [Table("consumerprofile")]
-    public class UserProfile : BaseModel
+    // Ye wahi Model hai jo step 2 me banaya
+    [Table("profiles")]
+    public class Profile : BaseModel
     {
         [Column("id")] public string Id { get; set; } = "";
         [Column("username")] public string Username { get; set; } = "";
         [Column("role")] public string Role { get; set; } = "";
-        [Column("location")] public string Location { get; set; } = "";
-        [Column("avatar_url")] public string AvatarUrl { get; set; } = "";
-        [Column("service_type")] public string ServiceType { get; set; } = "";
+        [Column("profilepic")] public string ProfilePic { get; set; } = ""; // Unique ID stored here
+        [Column("location")] public string Location { get; set; } = "";     // Location stored here
     }
+
+    private Profile userProfile = new Profile();
+    private string DisplayUrl = ""; // Ye HTML me image dikhane ke liye use hoga
+    private bool isLoading = true;
+    private bool isSaving = false;
+    private bool isUploading = false;
+    private bool showImageModal = false;
+    private string message = "";
+    private bool isSuccess = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -354,91 +250,139 @@
 
     private async Task LoadProfile()
     {
-        var user = AuthService.CurrentUser;
-        if (user == null) { await AuthService.TryRefreshSession(); user = AuthService.CurrentUser; }
-
-        if (user != null)
+        try
         {
-            userEmail = user.Email ?? "No Email";
-            try
+            var user = AuthService.CurrentUser;
+            if (user == null)
             {
-                var response = await _supabase.From<UserProfile>().Where(x => x.Id == user.Id).Get();
-                var data = response.Models.FirstOrDefault();
-                if (data != null) userProfile = data;
+                await AuthService.TryRefreshSession();
+                user = AuthService.CurrentUser;
             }
-            catch (Exception ex) { Console.WriteLine(ex.Message); }
-        }
-        else Nav.NavigateTo("/login");
 
-        isLoading = false;
+            if (user != null && !string.IsNullOrEmpty(user.Id))
+            {
+                // 1. Fetch Profile from 'profiles' table
+                var response = await _supabase.From<Profile>()
+                                            .Where(x => x.Id == user.Id)
+                                            .Get();
+
+                var data = response.Models.FirstOrDefault();
+
+                if (data != null)
+                {
+                    userProfile = data;
+                    if (string.IsNullOrEmpty(userProfile.Id)) userProfile.Id = user.Id;
+
+                    // ✅ UNIQUE ID LOGIC:
+                    // Agar DB me 'ProfilePic' ki value hai (e.g., "unique-id-123.jpg")
+                    // To Bucket se uska URL banao
+                    if (!string.IsNullOrEmpty(userProfile.ProfilePic))
+                    {
+                        DisplayUrl = _supabase.Storage.From("Avatar").GetPublicUrl(userProfile.ProfilePic);
+                    }
+                }
+                else
+                {
+                    // Agar naya user hai
+                    userProfile.Id = user.Id;
+                }
+            }
+            else
+            {
+                Nav.NavigateTo("/login");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Load Error: " + ex.Message);
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
     }
 
-    // ✅ LOGIC: UPLOAD IMAGE TO SUPABASE
     private async Task UploadImage(InputFileChangeEventArgs e)
     {
         isUploading = true;
         try
         {
+            var user = AuthService.CurrentUser;
+            if (user == null) return;
+
             var file = e.File;
-            // 1. Read file bytes
-            using var stream = file.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024); // 5MB limit
+            using var stream = file.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024);
             using var memoryStream = new System.IO.MemoryStream();
             await stream.CopyToAsync(memoryStream);
             var bytes = memoryStream.ToArray();
 
-            // 2. Generate unique filename
-            string fileName = $"{userProfile.Id}_{DateTime.Now.Ticks}{System.IO.Path.GetExtension(file.Name)}";
+            // ✅ STEP 1: Generate Unique ID (Filename)
+            // Hum UserID + Timestamp use karenge taake hamesha unique rahe
+            string fileExtension = System.IO.Path.GetExtension(file.Name);
+            string uniqueFileId = $"{user.Id}_{DateTime.Now.Ticks}{fileExtension}";
 
-            // 3. Upload to 'avatars' bucket
-            await _supabase.Storage.From("avatars").Upload(bytes, fileName);
+            // ✅ STEP 2: Bucket me Upload karo (Isi Unique ID se)
+            await _supabase.Storage.From("Avatar").Upload(bytes, uniqueFileId);
 
-            // 4. Get Public URL
-            string publicUrl = _supabase.Storage.From("avatars").GetPublicUrl(fileName);
+            // ✅ STEP 3: Database Update karo
+            // Hum sirf 'uniqueFileId' save kar rahe hain, poora URL nahi.
+            await _supabase.From<Profile>()
+                           .Where(x => x.Id == user.Id)
+                           .Set(x => x.ProfilePic, uniqueFileId)
+                           .Update();
 
-            // 5. Update UI
-            userProfile.AvatarUrl = publicUrl;
-            showImageModal = false; // Close modal
+            // ✅ STEP 4: UI Update
+            userProfile.ProfilePic = uniqueFileId;
+            DisplayUrl = _supabase.Storage.From("Avatar").GetPublicUrl(uniqueFileId); // Display ke liye URL banao
+
+            showImageModal = false;
         }
         catch (Exception ex)
         {
             Console.WriteLine("Upload Error: " + ex.Message);
         }
-        finally { isUploading = false; }
-    }
-
-    // ✅ LOGIC: SET URL MANUALLY
-    private void SetUrlImage()
-    {
-        if (!string.IsNullOrWhiteSpace(tempUrl))
+        finally
         {
-            userProfile.AvatarUrl = tempUrl;
-            showImageModal = false;
+            isUploading = false;
+            StateHasChanged();
         }
     }
 
     private async Task HandleSave()
     {
         isSaving = true;
-        message = "";
         try
         {
-            await _supabase.From<UserProfile>()
+            // Update Username and Location
+            await _supabase.From<Profile>()
                            .Where(x => x.Id == userProfile.Id)
-                           .Set(x => x.Location, userProfile.Location)
-                           .Set(x => x.AvatarUrl, userProfile.AvatarUrl)
-                           .Set(x => x.ServiceType, userProfile.ServiceType)
+                           .Set(x => x.Username, userProfile.Username)
+                           .Set(x => x.Location, userProfile.Location) // ✅ Location Save ho rahi hai
                            .Update();
 
             isSuccess = true;
-            message = "Profile updated successfully!";
+            message = "Profile Updated Successfully!";
         }
-        catch (Exception ex) { isSuccess = false; message = "Error updating profile."; }
-        finally { isSaving = false; await Task.Delay(3000); message = ""; }
+        catch (Exception ex)
+        {
+            isSuccess = false;
+            message = "Error: " + ex.Message;
+        }
+        finally
+        {
+            isSaving = false;
+            StateHasChanged();
+            await Task.Delay(3000);
+            message = "";
+            StateHasChanged();
+        }
     }
 
     private void GoBack()
     {
-        if (userProfile.Role == "Consumer") Nav.NavigateTo("/Consumer");
-        else Nav.NavigateTo("/ProviderDashboard");
+        // Role check karke wapas bhejo
+        if (userProfile.Role == "Provider") Nav.NavigateTo("/ProviderDashboard");
+        else Nav.NavigateTo("/Consumer");
     }
 }

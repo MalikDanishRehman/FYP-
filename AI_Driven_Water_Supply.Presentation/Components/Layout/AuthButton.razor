@@ -30,35 +30,45 @@ else
 @code {
     private bool IsLoggedIn = false;
     private string UserName = "User";
-    private bool isInitialized = false;
 
-    protected override async Task OnInitializedAsync()
+    // ✅ 1. Event Subscribe (Ye yahan safe hai)
+    protected override void OnInitialized()
     {
-        // 1. Event Subscribe karo (Taake login/logout par UI update ho)
-        AuthService.OnChange += StateHasChanged;
         AuthService.OnChange += UpdateStatus;
+    }
 
-        // 2. 🛑 YEH LINE MISSING THI:
-        // Page refresh hote hi check karo ke kya Cookie me koi session hai?
-        await AuthService.TryRefreshSession();
-
-        // 3. Status update karo
-        UpdateStatus();
+    // ✅ 2. FIX: Session Check yahan hoga (Browser connect hone ke baad)
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                // Ab JS Error nahi aayega kyunke Page Render ho chuka hai
+                await AuthService.TryRefreshSession();
+                UpdateStatus(); // UI update karo
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Auth Error: {ex.Message}");
+            }
+        }
     }
 
     public void Dispose()
     {
         // Memory leak rokne ke liye unsubscribe
-        AuthService.OnChange -= StateHasChanged;
         AuthService.OnChange -= UpdateStatus;
     }
 
     private void UpdateStatus()
     {
         var user = AuthService.CurrentUser;
+
         if (user != null)
         {
             IsLoggedIn = true;
+
             // Username nikalne ka safe tareeqa
             if (user.UserMetadata != null && user.UserMetadata.TryGetValue("username", out var nameObj))
             {
@@ -72,6 +82,7 @@ else
         else
         {
             IsLoggedIn = false;
+            UserName = "User";
         }
 
         // UI Refresh force karo
@@ -81,6 +92,7 @@ else
     private async Task HandleLogout()
     {
         await AuthService.SignOut();
-        Nav.NavigateTo("/login");
+        // ForceLoad true rakha hai taake logout ke baad page poora refresh ho
+        Nav.NavigateTo("/login", forceLoad: true);
     }
 }
