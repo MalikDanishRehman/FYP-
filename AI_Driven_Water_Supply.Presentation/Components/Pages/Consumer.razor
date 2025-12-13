@@ -1,6 +1,7 @@
 ﻿@page "/Consumer"
 @using AI_Driven_Water_Supply.Presentation
 @using Supabase.Postgrest.Models
+@using Supabase.Postgrest.Attributes
 @inject Supabase.Client _supabase
 @inject NavigationManager Nav
 @inject AI_Driven_Water_Supply.Application.Interfaces.IAuthService AuthService
@@ -71,6 +72,29 @@
         .icon-btn:hover {
             background: rgba(255,255,255,0.1);
             color: #00C9FF;
+        }
+
+    /* ✅ NEW PROFILE IMAGE STYLE */
+    .profile-trigger {
+        width: 45px;
+        height: 45px;
+        border-radius: 50%;
+        cursor: pointer;
+        border: 2px solid #00C9FF;
+        overflow: hidden;
+        position: relative;
+        transition: transform 0.2s;
+    }
+
+        .profile-trigger:hover {
+            transform: scale(1.05);
+            border-color: #92FE9D;
+        }
+
+        .profile-trigger img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
 
     .badge-dot {
@@ -180,12 +204,11 @@
         background-color: black;
     }
 
-    /* 🔥 VIDEO BLENDING MAGIC 🔥 */
     #myVideo {
         width: 500px;
         max-width: 90%;
         transform: translateY(-50px);
-        mix-blend-mode: screen; /* Black background gayab */
+        mix-blend-mode: screen;
         opacity: 0.9;
         -webkit-mask-image: radial-gradient(circle, rgba(0,0,0,1) 20%, rgba(0,0,0,0) 80%);
         mask-image: radial-gradient(circle, rgba(0,0,0,1) 20%, rgba(0,0,0,0) 80%);
@@ -292,8 +315,12 @@
         </div>
 
         <div style="position: relative;">
-            <div class="icon-btn" @onclick="ToggleProfileDropdown"><i class="fa-regular fa-user"></i></div>
+            <div class="profile-trigger" @onclick="ToggleProfileDropdown" title="@MyName">
+                <img src="@ProfileImageUrl" alt="User">
+            </div>
+
             <div class="custom-dropdown @(showProfileDropdown ? "show" : "")" style="width: 200px;">
+                <a href="/profilepro" class="chat-item"><i class="fa-solid fa-user-pen me-2"></i> Edit Profile</a>
                 <a href="/Cardpage" class="chat-item"><i class="fa-solid fa-bag-shopping me-2"></i> My Orders</a>
                 <a href="/bills" class="chat-item"><i class="fa-solid fa-receipt me-2"></i> Bills</a>
                 <a href="#" class="chat-item text-danger" @onclick="HandleLogout"><i class="fa-solid fa-power-off me-2"></i> Logout</a>
@@ -317,6 +344,8 @@
 
 @code {
     string MyName = "";
+    // ✅ DEFAULT IMAGE (Wahi jo provider me use ki thi)
+    string ProfileImageUrl = "/images/fallbackimg.jpg";
     bool showMsgDropdown = false;
     bool showProfileDropdown = false;
     bool isLoading = true;
@@ -333,20 +362,17 @@
 
     List<ChatViewModel> chatList = new();
 
-    // Profile Class
-    [Supabase.Postgrest.Attributes.Table("profiles")]
-    public class Profile : Supabase.Postgrest.Models.BaseModel
+    // ✅ UPDATED MODEL (Added ProfilePic)
+    [Table("profiles")]
+    public class Profile : BaseModel
     {
-        [Supabase.Postgrest.Attributes.Column("id")]
-        public string Id { get; set; } = "";
-
-        [Supabase.Postgrest.Attributes.Column("username")]
-        public string Username { get; set; } = "";
+        [Column("id")] public string Id { get; set; } = "";
+        [Column("username")] public string Username { get; set; } = "";
+        [Column("profilepic")] public string ProfilePic { get; set; } = ""; // Fetch Filename
     }
 
     protected override async Task OnInitializedAsync()
     {
-        // 1. Session Check & Restore
         var user = AuthService.CurrentUser;
         if (user == null)
         {
@@ -356,16 +382,34 @@
 
         if (user != null)
         {
-            // 2. Fetch Name logic (Robust)
+            // ✅ NEW FETCH LOGIC (Name + Photo)
             string fetchedName = "";
             try
             {
                 var response = await _supabase.From<Profile>().Where(x => x.Id == user.Id).Get();
                 var profile = response.Models.FirstOrDefault();
-                if (profile != null) fetchedName = profile.Username;
-            }
-            catch { }
 
+                if (profile != null)
+                {
+                    fetchedName = profile.Username;
+
+                    // Logic: Agar DB me photo hai, to URL banao
+                    if (!string.IsNullOrEmpty(profile.ProfilePic))
+                    {
+                        ProfileImageUrl = _supabase.Storage.From("Avatar").GetPublicUrl(profile.ProfilePic);
+                    }
+                    else
+                    {
+                        ProfileImageUrl = "/images/fallbackimg.jpg";
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Profile Load Error: " + ex.Message);
+            }
+
+            // Fallback for Name
             if (string.IsNullOrEmpty(fetchedName) && user.UserMetadata != null)
                 if (user.UserMetadata.TryGetValue("username", out var nameObj)) fetchedName = nameObj?.ToString() ?? "";
 
