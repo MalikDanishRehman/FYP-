@@ -1,0 +1,160 @@
+﻿@page "/order/{type}"
+@using Supabase.Postgrest.Attributes
+@using Supabase.Postgrest.Models
+@inject Supabase.Client _supabase
+@inject NavigationManager Nav
+@rendermode InteractiveServer
+
+<div class="container mt-4">
+    <div class="row">
+
+        <div class="col-md-4 d-flex align-items-start">
+            <img src="/images/@($"{type?.ToLower() ?? "default"}.jpg")"
+                 alt="@type"
+                 onerror="this.src='/images/fallbackimg.jpg';"
+                 class="supplier-type-img" />
+        </div>
+
+        <div class="col-md-8">
+            <h3 class="mb-3 text-white text-decoration-underline">Nearby Water Suppliers</h3>
+
+            <div id="map"></div>
+
+            <hr class="my-4" />
+
+            <h3 class="mb-3 text-white text-decoration-underline">Available Suppliers List</h3>
+
+            <div class="row g-3 mb-4">
+                @if (isLoading)
+                {
+                    <div class="col-12 text-center text-white">
+                        <div class="spinner-border text-primary" role="status"></div>
+                        <p>Loading suppliers...</p>
+                    </div>
+                }
+                else if (filteredSuppliers.Count == 0)
+                {
+                    <p class="text-danger">No suppliers found for: @type</p>
+                }
+
+                @foreach (var supplier in filteredSuppliers)
+                {
+                    <div class="col-md-4">
+                        <div class="card shadow-sm bg-body h-100">
+
+                            <div style="height: 180px; overflow: hidden; background-color: #000;">
+                                <img src="@supplier.ImageUrl"
+                                     class="card-img-top"
+                                     alt="@supplier.Name"
+                                     style="width: 100%; height: 100%; object-fit: cover;">
+                            </div>
+
+                            <div class="card-body text-center">
+                                <h5 class="card-title text-white">@supplier.Name</h5>
+
+                                <p class="card-text text-warning" style="font-size:20px;">
+                                    @GetStars(supplier.Rating)
+                                </p>
+
+                                <button @onclick="() => GoToDetails(supplier.Name)"
+                                        class="btn btn-primary btn-sm w-100">
+                                    Order Now
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public string? type { get; set; }
+
+    private bool isLoading = true;
+    private List<SupplierViewModel> filteredSuppliers = new();
+
+    // Database Model
+    [Table("profiles")]
+    public class SupplierProfile : BaseModel
+    {
+        [Column("id")] public string Id { get; set; } = "";
+        [Column("username")] public string Username { get; set; } = "";
+        [Column("role")] public string Role { get; set; } = "";
+        [Column("service_type")] public string ServiceType { get; set; } = "";
+        [Column("rating")] public double Rating { get; set; }
+        [Column("profilepic")] public string ProfilePic { get; set; } = "";
+    }
+
+    // View Model
+    public class SupplierViewModel
+    {
+        public string Name { get; set; } = "";
+        public double Rating { get; set; }
+        public string ImageUrl { get; set; } = "";
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            isLoading = true;
+
+            // ✅ ERROR FIXED HERE: "Supplier" ki jagah "Provider" kar diya
+            var response = await _supabase.From<SupplierProfile>()
+                                          .Where(x => x.Role == "Provider")
+                                          .Get();
+
+            var suppliers = response.Models;
+
+            filteredSuppliers.Clear();
+
+            foreach (var item in suppliers)
+            {
+                // Optional: Agar future mein Type (Tanker/Bottle) se filter karna ho
+                // if (!string.IsNullOrEmpty(type) && item.ServiceType != type) continue;
+
+                string finalImageUrl = "/images/fallbackimg.jpg";
+
+                if (!string.IsNullOrEmpty(item.ProfilePic))
+                {
+                    finalImageUrl = _supabase.Storage.From("Avatar").GetPublicUrl(item.ProfilePic);
+                }
+
+                filteredSuppliers.Add(new SupplierViewModel
+                {
+                    Name = item.Username,
+                    Rating = item.Rating > 0 ? item.Rating : 4.5,
+                    ImageUrl = finalImageUrl
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error fetching suppliers: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+    private string GetStars(double rating)
+    {
+        int fullStars = (int)rating;
+        bool halfStar = (rating - fullStars) >= 0.5;
+        string stars = "";
+
+        for (int i = 0; i < fullStars; i++) stars += "★";
+        if (halfStar) stars += "½";
+
+        return stars.PadRight(5, '☆');
+    }
+
+    private void GoToDetails(string name)
+    {
+        Nav.NavigateTo($"/supplier/{name}");
+    }
+}
