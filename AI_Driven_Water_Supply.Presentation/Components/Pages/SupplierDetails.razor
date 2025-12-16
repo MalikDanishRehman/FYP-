@@ -405,17 +405,30 @@
     }
 
     // ✅ Fix CS8618: Properties initialized to string.Empty
+    // ✅ Updated Model (Fixes UUID Error)
     [Table("reviews")]
     public class ReviewModel : BaseModel
     {
-        [Column("id")] public string Id { get; set; } = string.Empty;
-        [Column("provider_id")] public string ProviderId { get; set; } = string.Empty;
-        [Column("consumer_name")] public string ConsumerName { get; set; } = "Anonymous";
-        [Column("rating")] public int Rating { get; set; }
-        [Column("comment")] public string Comment { get; set; } = string.Empty;
-        [Column("created_at")] public DateTime CreatedAt { get; set; }
-    }
+        // Id ko nullable (?) banaya aur string.Empty hata diya.
+        // Jab ye null hoga, Supabase isay ignore karega aur DB khud ID generate karega.
+        [Column("id")]
+        public string? Id { get; set; }
 
+        [Column("provider_id")]
+        public string ProviderId { get; set; } = null!; // Required, but set via logic
+
+        [Column("consumer_name")]
+        public string ConsumerName { get; set; } = "Anonymous";
+
+        [Column("rating")]
+        public int Rating { get; set; }
+
+        [Column("comment")]
+        public string Comment { get; set; } = string.Empty;
+
+        [Column("created_at")]
+        public DateTime CreatedAt { get; set; }
+    }
     public class OrderRequestForm
     {
         [Required] public string ConsumerName { get; set; } = "";
@@ -439,6 +452,7 @@
                 if (user.UserMetadata != null && user.UserMetadata.TryGetValue("username", out var nameObj))
                     fetchedName = nameObj?.ToString() ?? "";
 
+                if (string.IsNullOrEmpty(fetchedName) && !string.IsNullOrEmpty(user.Email))
                 if (string.IsNullOrEmpty(fetchedName) && !string.IsNullOrEmpty(user.Email))
                     fetchedName = user.Email.Split('@')[0];
             }
@@ -533,24 +547,64 @@
         }
         catch (Exception ex) { Console.WriteLine($"Order Error: {ex.Message}"); }
     }
-
     private async Task SubmitReview()
     {
+        // 1. Session Check
+        var session = _supabase.Auth.CurrentSession;
+        if (session == null || session.ExpiresAt() < DateTime.UtcNow)
+        {
+            Console.WriteLine("Session Expired.");
+            return;
+        }
+
         if (string.IsNullOrEmpty(newReview.Comment)) return;
+        if (string.IsNullOrEmpty(providerId)) return;
+
         isSubmittingReview = true;
         try
         {
-            // ✅ Fix CS8601: Logic Safety
+            // --- STEP 1: Insert New Review ---
+            newReview.Id = Guid.NewGuid().ToString(); // ID Generate ki
             newReview.ProviderId = providerId;
             newReview.ConsumerName = orderFormModel.ConsumerName ?? "Anonymous";
+            newReview.CreatedAt = DateTime.UtcNow;
 
             await _supabase.From<ReviewModel>().Insert(newReview);
 
-            await LoadReviews();
-            newReview.Comment = string.Empty; // Reset safely
-            newReview.Rating = 5;
+            // --- STEP 2: Calculate New Average ---
+            // Saare reviews mangwayein taake average nikal sakein
+            var response = await _supabase.From<ReviewModel>()
+                                          .Where(x => x.ProviderId == providerId)
+                                          .Get();
+
+            var allReviews = response.Models;
+
+            double newAverageRating = 0;
+            if (allReviews.Count > 0)
+            {
+                // C# ka built-in function use karke average nikala
+                newAverageRating = allReviews.Average(r => r.Rating);
+            }
+
+            // --- STEP 3: Update Profile Table ---
+            // Ab ye nayi average rating Profiles table mein save karein
+            await _supabase.From<ProviderDetailProfile>()
+                           .Where(x => x.Id == providerId)
+                           .Set(x => x.Rating, newAverageRating)
+                           .Update();
+
+            // --- STEP 4: Update UI ---
+            // Screen par bhi update dikhane ke liye
+            currentRating = newAverageRating;
+            reviewsList = allReviews.OrderByDescending(x => x.CreatedAt).ToList();
+
+            // Reset form
+            newReview = new ReviewModel { Rating = 5, Comment = string.Empty };
         }
-        catch (Exception ex) { Console.WriteLine("Review Error: " + ex.Message); }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Review/Update Error: " + ex.Message);
+        }
         finally { isSubmittingReview = false; }
     }
 }
