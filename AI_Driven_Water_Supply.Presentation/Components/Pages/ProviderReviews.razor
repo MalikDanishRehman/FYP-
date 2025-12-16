@@ -1,0 +1,198 @@
+﻿@page "/provider-reviews"
+@using Supabase.Postgrest.Attributes
+@using Supabase.Postgrest.Models
+@using AI_Driven_Water_Supply.Application.Interfaces
+@inject IAuthService AuthService
+@inject Supabase.Client _supabase
+@inject NavigationManager Nav
+@rendermode InteractiveServer
+
+<div class="container mt-4 pb-5">
+    <button class="btn btn-outline-secondary mb-4" @onclick='() => Nav.NavigateTo("/ProviderDashboard")'>
+        <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
+    </button>
+
+    @if (isLoading)
+    {
+        <div class="text-center text-white mt-5">
+            <div class="spinner-border text-warning" role="status"></div>
+            <p class="mt-2 text-muted">Analyzing your reputation...</p>
+        </div>
+    }
+    else
+    {
+        <div class="row">
+            <div class="col-md-4 mb-4">
+                <div class="card bg-dark text-white border-secondary shadow-lg">
+                    <div class="card-body text-center p-4">
+                        <h5 class="text-muted mb-3">Overall Rating</h5>
+
+                        <h1 class="display-1 fw-bold text-white mb-0">@averageRating.ToString("0.0")</h1>
+
+                        <div class="mb-2 fs-4 text-warning">
+                            @((MarkupString)GetStarHtml(averageRating))
+                        </div>
+
+                        <p class="text-muted small">Based on @totalReviews reviews</p>
+
+                        <hr class="border-secondary my-4" />
+
+                        <div class="text-start">
+                            @foreach (var star in new[] { 5, 4, 3, 2, 1 })
+                            {
+                                var count = starCounts.ContainsKey(star) ? starCounts[star] : 0;
+                                var percentage = totalReviews > 0 ? (count * 100 / totalReviews) : 0;
+
+                                <div class="d-flex align-items-center mb-2">
+                                    <span class="text-muted me-2 small" style="width: 15px;">@star</span>
+                                    <i class="fa-solid fa-star text-warning fs-6 me-2"></i>
+                                    <div class="progress flex-grow-1" style="height: 6px; background-color: #333;">
+                                        <div class="progress-bar bg-warning" role="progressbar"
+                                             style="width: @percentage%"></div>
+                                    </div>
+                                    <span class="text-muted ms-2 small" style="width: 30px; text-align: right;">@count</span>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-8">
+                <h4 class="text-white mb-3 border-bottom border-secondary pb-2">Recent Customer Feedback</h4>
+
+                @if (reviewsList.Count == 0)
+                {
+                    <div class="alert alert-secondary bg-dark border-secondary text-white">
+                        <i class="fa-regular fa-face-meh me-2"></i> No reviews received yet. Keep working hard!
+                    </div>
+                }
+                else
+                {
+                    <div class="reviews-container">
+                        @foreach (var review in reviewsList)
+                        {
+                            <div class="card bg-dark text-white border-secondary mb-3">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div class="d-flex align-items-center gap-3">
+                                            <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center fw-bold text-white"
+                                                 style="width: 45px; height: 45px; font-size: 18px;">
+                                                C
+                                            </div>
+                                            <div>
+                                                <h6 class="m-0 fw-bold">Verified Customer</h6>
+                                                <div class="text-warning small">
+                                                    @((MarkupString)GetStarHtml(review.Stars))
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <small class="text-muted">@review.CreatedAt.ToLocalTime().ToString("MMM dd, yyyy")</small>
+                                    </div>
+
+                                    <p class="mt-3 text-light">
+                                        @if (string.IsNullOrEmpty(review.ReviewText))
+                                        {
+                                            <em class="text-muted">No written comment provided.</em>
+                                        }
+                                        else
+                                        {
+                                            @review.ReviewText
+                                        }
+                                    </p>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private bool isLoading = true;
+    private double averageRating = 0;
+    private int totalReviews = 0;
+    private Dictionary<int, int> starCounts = new(); // Stores how many 5 stars, 4 stars etc.
+    private List<ProviderReview> reviewsList = new();
+
+    // ✅ MODEL for Database Table 'provider_reviews'
+    [Table("provider_reviews")]
+    public class ProviderReview : BaseModel
+    {
+        [Column("id")] public string Id { get; set; } = "";
+        [Column("provider_id")] public string ProviderId { get; set; } = "";
+        [Column("consumer_id")] public string ConsumerId { get; set; } = "";
+        [Column("stars")] public int Stars { get; set; }
+        [Column("review_text")] public string ReviewText { get; set; } = "";
+        [Column("created_at")] public DateTime CreatedAt { get; set; }
+    }
+
+    // ✅ MODEL for Profile (to get Average)
+    [Table("profiles")]
+    public class RatingProfile : BaseModel
+    {
+        [Column("id")] public string Id { get; set; } = "";
+        [Column("rating")] public double Rating { get; set; }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var user = AuthService.CurrentUser;
+            if (user == null) { Nav.NavigateTo("/login"); return; }
+
+            // 1. Get Main Profile Rating (Jo SQL Trigger ne calculate kiya)
+            var profileResponse = await _supabase.From<RatingProfile>()
+                                       .Where(x => x.Id == user.Id)
+                                       .Single();
+
+            if (profileResponse != null)
+            {
+                averageRating = profileResponse.Rating;
+            }
+
+            // 2. Get All Individual Reviews
+            var reviewsResponse = await _supabase.From<ProviderReview>()
+                                       .Where(x => x.ProviderId == user.Id)
+                                       .Order("created_at", Supabase.Postgrest.Constants.Ordering.Descending)
+                                       .Get();
+
+            reviewsList = reviewsResponse.Models;
+            totalReviews = reviewsList.Count;
+
+            // 3. Calculate Star Distribution for Progress Bars
+            starCounts = new Dictionary<int, int> { { 5, 0 }, { 4, 0 }, { 3, 0 }, { 2, 0 }, { 1, 0 } };
+            foreach (var r in reviewsList)
+            {
+                if (starCounts.ContainsKey(r.Stars)) starCounts[r.Stars]++;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error fetching reviews: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    // ⭐ Helper to generate Star Icons HTML
+    private string GetStarHtml(double rating)
+    {
+        int fullStars = (int)rating;
+        bool halfStar = (rating - fullStars) >= 0.5;
+        string html = "";
+
+        for (int i = 0; i < fullStars; i++) html += "<i class='fa-solid fa-star'></i> ";
+        if (halfStar) html += "<i class='fa-solid fa-star-half-stroke'></i> ";
+
+        int emptyStars = 5 - fullStars - (halfStar ? 1 : 0);
+        for (int i = 0; i < emptyStars; i++) html += "<i class='fa-regular fa-star'></i> ";
+
+        return html;
+    }
+}
