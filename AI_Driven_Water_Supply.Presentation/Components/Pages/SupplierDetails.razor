@@ -2,75 +2,325 @@
 @using Supabase.Postgrest.Attributes
 @using Supabase.Postgrest.Models
 @using System.ComponentModel.DataAnnotations
-@using Microsoft.AspNetCore.Components.Forms
+@using AI_Driven_Water_Supply.Application.Interfaces
 @inject Supabase.Client _supabase
 @inject NavigationManager Nav
+@inject IAuthService AuthService
 @rendermode InteractiveServer
 
-<div class="container mt-5 pb-5">
-    <button class="btn btn-outline-secondary mb-4" @onclick='() => Nav.NavigateTo("/order/tanker")'>
-        <i class="bi bi-arrow-left"></i> ← Back to List
+<style>
+    :root {
+        --primary-gradient: linear-gradient(135deg, #00c6ff 0%, #0072ff 100%);
+        --glass-bg: rgba(30, 35, 45, 0.7);
+        --glass-border: 1px solid rgba(255, 255, 255, 0.1);
+        --neon-glow: 0 0 10px rgba(0, 198, 255, 0.3);
+    }
+
+    body {
+        background-color: #0f1216;
+        font-family: 'Inter', sans-serif;
+    }
+
+    .pro-card {
+        background: var(--glass-bg);
+        backdrop-filter: blur(12px);
+        border: var(--glass-border);
+        border-radius: 16px;
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        transition: transform 0.2s ease;
+    }
+
+    .pro-image-container {
+        position: relative;
+        border-radius: 16px 16px 0 0;
+        overflow: hidden;
+    }
+
+        .pro-image-container img {
+            transition: transform 0.5s ease;
+        }
+
+        .pro-image-container:hover img {
+            transform: scale(1.05);
+        }
+
+    .rating-badge {
+        background: rgba(255, 193, 7, 0.2);
+        color: #ffc107;
+        border: 1px solid rgba(255, 193, 7, 0.3);
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+
+    .review-scroll-area::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .review-scroll-area::-webkit-scrollbar-track {
+        background: rgba(255,255,255,0.05);
+    }
+
+    .review-scroll-area::-webkit-scrollbar-thumb {
+        background: rgba(255,255,255,0.2);
+        border-radius: 10px;
+    }
+
+    .btn-gradient {
+        background: var(--primary-gradient);
+        border: none;
+        color: white;
+        font-weight: 600;
+        box-shadow: var(--neon-glow);
+        transition: all 0.3s ease;
+    }
+
+        .btn-gradient:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 20px rgba(0, 198, 255, 0.6);
+            color: white;
+        }
+
+    .btn-outline-glass {
+        background: transparent;
+        border: 1px solid rgba(255,255,255,0.2);
+        color: #ccc;
+        transition: 0.3s;
+    }
+
+        .btn-outline-glass:hover {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-color: white;
+        }
+
+    .qty-selector {
+        background: rgba(0,0,0,0.3);
+        border-radius: 12px;
+        padding: 5px;
+        display: flex;
+        align-items: center;
+        border: var(--glass-border);
+    }
+
+    .qty-input {
+        background: transparent;
+        border: none;
+        color: white;
+        font-weight: bold;
+        text-align: center;
+        font-size: 1.2rem;
+        width: 50px;
+    }
+
+    .qty-btn {
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        border: none;
+        background: rgba(255,255,255,0.1);
+        color: white;
+        font-weight: bold;
+        transition: 0.2s;
+    }
+
+        .qty-btn:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.85);
+        backdrop-filter: blur(5px);
+        z-index: 1050;
+        animation: fadeIn 0.3s;
+    }
+
+    .custom-modal {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 95%;
+        max-width: 500px;
+        background: #1a1d24;
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 16px;
+        z-index: 1060;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .form-control-custom {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: white;
+        border-radius: 8px;
+        padding: 12px;
+    }
+
+        .form-control-custom:focus {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: #0072ff;
+            color: white;
+            box-shadow: none;
+            outline: none;
+        }
+
+    @@keyframes fadeIn {
+        from {
+            opacity: 0;
+        }
+
+        to {
+            opacity: 1;
+        }
+    }
+
+    @@keyframes slideUp {
+        from {
+            transform: translate(-50%, -45%);
+            opacity: 0;
+        }
+
+        to {
+            transform: translate(-50%, -50%);
+            opacity: 1;
+        }
+    }
+</style>
+
+<div class="container py-5">
+    <button class="btn btn-outline-glass mb-4 rounded-pill px-4" @onclick='() => Nav.NavigateTo("/order/tanker")'>
+        <i class="bi bi-arrow-left me-2"></i> Back to Suppliers
     </button>
 
     @if (isLoading)
     {
-        <div class="text-center text-white mt-5">
-            <div class="spinner-border text-primary" role="status"></div>
-            <p class="mt-2">Loading Supplier Details...</p>
+        <div class="d-flex flex-column align-items-center justify-content-center" style="height: 50vh;">
+            <div class="spinner-border text-primary mb-3" role="status"></div>
+            <p class="text-muted letter-spacing-2">LOADING PROFILE...</p>
         </div>
     }
     else
     {
-        <div class="row">
-            <div class="col-md-5 mb-4">
-                <div class="card water-card text-white border-0 h-100">
+        <div class="row g-4">
+            <div class="col-lg-7">
+                <div class="pro-card mb-4 text-white">
+                    <div class="pro-image-container">
+                        <img src="@imageUrl" class="w-100" style="height: 300px; object-fit: cover;" onerror="this.src='/images/fallbackimg.jpg';">
+                        <div class="position-absolute bottom-0 start-0 w-100 p-4" style="background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);">
+                            <h1 class="fw-bold m-0">@name</h1>
+                            <div class="d-flex align-items-center gap-3 mt-2">
+                                <span class="rating-badge"><i class="bi bi-star-fill me-1"></i> @currentRating.ToString("0.0")</span>
+                                <span class="badge bg-primary bg-opacity-25 text-primary border border-primary px-3 rounded-pill">Verified Supplier</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="p-4">
+                        <h5 class="text-muted text-uppercase small fw-bold mb-2">About</h5>
+                        <p class="text-secondary lead fs-6">@description</p>
+                    </div>
+                </div>
 
-                    <div style="height: 250px; overflow: hidden; background-color: #000;">
-                        <img src="@imageUrl"
-                             class="card-img-top"
-                             alt="@name"
-                             onerror="this.src='/images/fallbackimg.jpg';"
-                             style="width: 100%; height: 100%; object-fit: cover;">
+                <div class="pro-card p-4 text-white">
+                    <div class="d-flex justify-content-between align-items-center mb-4 border-bottom border-secondary pb-3">
+                        <h4 class="m-0 fw-bold">Customer Reviews</h4>
+                        <span class="text-muted small">@reviewsList.Count feedback(s)</span>
                     </div>
 
-                    <div class="card-body">
-                        <h2 class="card-title text-info fw-bold">@name</h2>
-                        <div class="mb-2">
-                            <span class="badge bg-warning text-dark">
-                                ⭐ @(rating > 0 ? rating : 4.5) Rating
-                            </span>
-                            <span class="badge bg-success">Verified Supplier</span>
-                        </div>
-                        <p class="card-text text-secondary mt-3">@description</p>
+                    <div class="review-scroll-area pe-2" style="max-height: 400px; overflow-y: auto;">
+                        @if (reviewsList.Count == 0)
+                        {
+                            <div class="text-center py-5">
+                                <i class="bi bi-chat-square-dots text-secondary display-4"></i>
+                                <p class="text-muted mt-3">No reviews yet. Be the first to rate!</p>
+                            </div>
+                        }
+                        @foreach (var review in reviewsList)
+                        {
+                            <div class="bg-dark bg-opacity-50 p-3 rounded-3 mb-3 border border-secondary border-opacity-25">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="rounded-circle bg-gradient d-flex align-items-center justify-content-center text-white fw-bold" style="width: 32px; height: 32px; font-size: 12px; background: #333;">
+                                            @review.ConsumerName.Substring(0, 1).ToUpper()
+                                        </div>
+                                        <span class="fw-bold text-white">@review.ConsumerName</span>
+                                    </div>
+                                    <span class="text-warning small">@GetStars(review.Rating)</span>
+                                </div>
+                                <p class="text-secondary small m-0 ps-5">@review.Comment</p>
+                                <div class="text-end mt-1">
+                                    <small class="text-muted" style="font-size: 10px;">@review.CreatedAt.ToString("MMM dd, yyyy")</small>
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="mt-4 pt-3 border-top border-secondary border-opacity-25">
+                        <EditForm Model="newReview" OnValidSubmit="SubmitReview">
+                            <DataAnnotationsValidator />
+                            <div class="d-flex gap-3 align-items-center mb-3">
+                                <span class="text-white small">Your Rating:</span>
+                                <InputSelect @bind-Value="newReview.Rating" class="form-select form-select-sm bg-dark text-white border-secondary w-auto">
+                                    <option value="5">★★★★★ Excellent</option>
+                                    <option value="4">★★★★ Good</option>
+                                    <option value="3">★★★ Average</option>
+                                    <option value="2">★★ Poor</option>
+                                    <option value="1">★ Terrible</option>
+                                </InputSelect>
+                            </div>
+                            <div class="input-group">
+                                <InputText @bind-Value="newReview.Comment" class="form-control bg-dark text-white border-secondary" placeholder="Share your experience..." />
+                                <button type="submit" class="btn btn-outline-primary" disabled="@isSubmittingReview">
+                                    <i class="bi bi-send-fill"></i>
+                                </button>
+                            </div>
+                        </EditForm>
                     </div>
                 </div>
             </div>
 
-            <div class="col-md-7">
-                <div class="card water-card text-white border-0 p-4">
-                    <h4 class="mb-4 border-bottom pb-2 border-secondary">Create Your Order</h4>
+            <div class="col-lg-5">
+                <div class="pro-card p-4 text-white sticky-top" style="top: 20px; z-index: 100;">
+                    <h4 class="fw-bold mb-4">Place Order</h4>
+
                     <div class="mb-4">
-                        <label class="form-label text-light">Select Quantity (Bottles/Tankers)</label>
-                        <div class="input-group input-group-lg">
-                            <button class="btn btn-outline-light" @onclick="() => UpdateQty(-1)">-</button>
-                            <input type="number" class="form-control text-center bg-dark text-white border-secondary" @bind="quantity" readonly />
-                            <button class="btn btn-outline-light" @onclick="() => UpdateQty(1)">+</button>
+                        <label class="text-muted small text-uppercase fw-bold mb-2">Quantity (Units)</label>
+                        <div class="qty-selector justify-content-between">
+                            <button class="qty-btn" @onclick="() => UpdateQty(-1)"><i class="bi bi-dash"></i></button>
+                            <input type="number" class="qty-input" @bind="quantity" readonly />
+                            <button class="qty-btn" @onclick="() => UpdateQty(1)"><i class="bi bi-plus"></i></button>
                         </div>
                     </div>
 
-                    <div class="d-flex justify-content-between align-items-center bg-dark p-3 rounded border border-secondary mb-4">
-                        <div>
-                            <small class="text-muted">Price per unit</small>
-                            <h5 class="m-0 text-white">Rs @pricePerBottle</h5>
+                    <div class="bg-dark bg-opacity-50 p-3 rounded-3 mb-4">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted">Unit Price</span>
+                            <span class="text-white">Rs @pricePerBottle</span>
                         </div>
-                        <div class="text-end">
-                            <small class="text-muted">Total Amount</small>
-                            <h3 class="m-0 text-warning">Rs @totalPrice</h3>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted">Delivery Fee</span>
+                            <span class="text-success">Free</span>
+                        </div>
+                        <hr class="border-secondary opacity-25 my-2">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-white fw-bold">Total</span>
+                            <span class="display-6 fw-bold text-primary">Rs @totalPrice</span>
                         </div>
                     </div>
 
-                    <div class="d-grid gap-2">
-                        <button class="btn btn-success btn-lg py-3 fw-bold" @onclick="OpenOrderModal">Proceed to Order</button>
+                    <button class="btn btn-gradient w-100 py-3 rounded-3" @onclick="OpenOrderModal">
+                        PROCEED TO CHECKOUT <i class="bi bi-arrow-right ms-2"></i>
+                    </button>
+
+                    <div class="text-center mt-3">
+                        <small class="text-muted"><i class="bi bi-shield-check me-1"></i> Secure Transaction</small>
                     </div>
                 </div>
             </div>
@@ -80,64 +330,97 @@
 
 @if (showModal)
 {
-    <div class="modal-backdrop-custom" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1050;"></div>
-    <div class="modal d-block" tabindex="-1" style="z-index: 1055;">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="card modal-custom bg-dark text-white border-light shadow-lg w-100">
-                <div class="card-header border-secondary d-flex justify-content-between align-items-center">
-                    <h5 class="m-0">Confirm Delivery Details</h5>
-                    <button type="button" class="btn-close btn-close-white" @onclick="CloseModal"></button>
-                </div>
-                <div class="card-body">
-                    <EditForm Model="orderFormModel" OnValidSubmit="HandleOrderSubmit">
-                        <DataAnnotationsValidator />
-                        <div class="mb-3">
-                            <label class="form-label">Full Name</label>
-                            <InputText class="form-control bg-secondary text-white border-0" @bind-Value="orderFormModel.ConsumerName" placeholder="Enter your name" />
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Delivery Address</label>
-                            <InputTextArea class="form-control bg-secondary text-white border-0" rows="2" @bind-Value="orderFormModel.Address" placeholder="House #, Street, Area..." />
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Phone Number</label>
-                            <InputText class="form-control bg-secondary text-white border-0" @bind-Value="orderFormModel.Phone" placeholder="0300-1234567" />
-                        </div>
-                        <div class="d-grid">
-                            <button type="submit" class="btn btn-primary btn-lg">Confirm & Send Order 🚀</button>
-                        </div>
-                    </EditForm>
-                </div>
+    <div class="modal-overlay" @onclick="CloseModal"></div>
+    <div class="custom-modal p-0">
+        <div class="p-4 border-bottom border-secondary border-opacity-25 bg-dark bg-opacity-50 rounded-top">
+            <div class="d-flex justify-content-between align-items-center text-white">
+                <h5 class="m-0 fw-bold"><i class="bi bi-geo-alt-fill me-2 text-primary"></i>Delivery Details</h5>
+                <button type="button" class="btn-close btn-close-white" @onclick="CloseModal"></button>
             </div>
+        </div>
+
+        <div class="p-4 text-white">
+            <EditForm Model="orderFormModel" OnValidSubmit="HandleOrderSubmit">
+                <DataAnnotationsValidator />
+
+                <div class="mb-3">
+                    <label class="small text-muted mb-1">Full Name</label>
+                    <InputText class="form-control-custom w-100" @bind-Value="orderFormModel.ConsumerName" placeholder="e.g. Ali Khan" />
+                </div>
+
+                <div class="mb-3">
+                    <label class="small text-muted mb-1">Delivery Address</label>
+                    <InputTextArea class="form-control-custom w-100" rows="3" @bind-Value="orderFormModel.Address" placeholder="Complete address for delivery..." />
+                </div>
+
+                <div class="mb-4">
+                    <label class="small text-muted mb-1">Phone Number</label>
+                    <InputText class="form-control-custom w-100" @bind-Value="orderFormModel.Phone" placeholder="03XX-XXXXXXX" />
+                </div>
+
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-gradient py-2">
+                        CONFIRM ORDER - Rs @totalPrice
+                    </button>
+                </div>
+            </EditForm>
         </div>
     </div>
 }
 
 @code {
-    [Parameter]
-    public string? name { get; set; }
+    [Parameter] public string? name { get; set; }
 
+    // --- State Variables ---
     private bool isLoading = true;
-    private string imageUrl = "/images/fallbackimg.jpg"; // Default
-    private string description = "Providing clean and safe water services in your area.";
-    private double rating = 4.5;
+    private bool isSubmittingReview = false;
+    private bool showModal = false;
+
+    // Supplier Details
+    private string imageUrl = "/images/fallbackimg.jpg";
+    private string description = "";
+    private double currentRating = 4.5;
+    private string providerId = "";
 
     // Order Logic
     private int quantity = 1;
-    private int pricePerBottle = 150; // Example Price
+    private int pricePerBottle = 150;
     private int totalPrice => quantity * pricePerBottle;
-    private bool showModal = false;
-    private OrderModel orderFormModel = new();
 
-    // Database Model (Renamed to avoid conflict)
+    // Models
+    private OrderRequestForm orderFormModel = new();
+    private List<ReviewModel> reviewsList = new();
+    private ReviewModel newReview = new() { Rating = 5 };
+
+    // --- DB Models ---
+    // ✅ Fix CS8618: Properties initialized to string.Empty
     [Table("profiles")]
     public class ProviderDetailProfile : BaseModel
     {
-        [Column("id")] public string Id { get; set; } = "";
-        [Column("username")] public string Username { get; set; } = "";
-        [Column("role")] public string Role { get; set; } = "";
+        [Column("id")] public string Id { get; set; } = string.Empty;
+        [Column("username")] public string? Username { get; set; }
+        [Column("role")] public string? Role { get; set; }
         [Column("rating")] public double Rating { get; set; }
-        [Column("profilepic")] public string ProfilePic { get; set; } = "";
+        [Column("profilepic")] public string? ProfilePic { get; set; }
+    }
+
+    // ✅ Fix CS8618: Properties initialized to string.Empty
+    [Table("reviews")]
+    public class ReviewModel : BaseModel
+    {
+        [Column("id")] public string Id { get; set; } = string.Empty;
+        [Column("provider_id")] public string ProviderId { get; set; } = string.Empty;
+        [Column("consumer_name")] public string ConsumerName { get; set; } = "Anonymous";
+        [Column("rating")] public int Rating { get; set; }
+        [Column("comment")] public string Comment { get; set; } = string.Empty;
+        [Column("created_at")] public DateTime CreatedAt { get; set; }
+    }
+
+    public class OrderRequestForm
+    {
+        [Required] public string ConsumerName { get; set; } = "";
+        [Required] public string Address { get; set; } = "";
+        [Required] public string Phone { get; set; } = "";
     }
 
     protected override async Task OnInitializedAsync()
@@ -145,63 +428,129 @@
         try
         {
             isLoading = true;
-            if (string.IsNullOrEmpty(name)) return;
+            if (string.IsNullOrEmpty(name)) name = "Unknown";
 
-            // Fetch specific user details
+            description = $"Premium water supply service by {name}. Ensuring clean and timely delivery directly to your doorstep.";
+
+            var user = AuthService.CurrentUser;
+            string fetchedName = "Guest";
+            if (user != null)
+            {
+                if (user.UserMetadata != null && user.UserMetadata.TryGetValue("username", out var nameObj))
+                    fetchedName = nameObj?.ToString() ?? "";
+
+                if (string.IsNullOrEmpty(fetchedName) && !string.IsNullOrEmpty(user.Email))
+                    fetchedName = user.Email.Split('@')[0];
+            }
+
+            orderFormModel.ConsumerName = fetchedName;
+            await LoadProviderData();
+        }
+        catch (Exception ex) { Console.WriteLine($"Init Error: {ex.Message}"); }
+        finally { isLoading = false; }
+    }
+
+    private async Task LoadProviderData()
+    {
+        try
+        {
             var response = await _supabase.From<ProviderDetailProfile>()
                                           .Where(x => x.Username == name && x.Role == "Provider")
                                           .Single();
 
             if (response != null)
             {
-                rating = response.Rating;
-
+                // ✅ Fix CS8601: Assigning with fallback
+                providerId = response.Id ?? "";
+                currentRating = response.Rating;
                 if (!string.IsNullOrEmpty(response.ProfilePic))
                 {
-                    imageUrl = _supabase.Storage.From("Avatar").GetPublicUrl(response.ProfilePic);
+                    // ✅ Fix CS8601: Null check on GetPublicUrl
+                    string? url = _supabase.Storage.From("Avatar").GetPublicUrl(response.ProfilePic);
+                    imageUrl = url ?? "/images/fallbackimg.jpg";
                 }
+
+                await LoadReviews();
             }
         }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error fetching details: {ex.Message}");
-        }
-        finally
-        {
-            isLoading = false;
-        }
+        catch (Exception ex) { Console.WriteLine($"Provider Fetch Error: {ex.Message}"); }
+    }
+
+    private async Task LoadReviews()
+    {
+        var reviewRes = await _supabase.From<ReviewModel>()
+                                       .Where(x => x.ProviderId == providerId)
+                                       .Order("created_at", Supabase.Postgrest.Constants.Ordering.Descending)
+                                       .Get();
+        reviewsList = reviewRes.Models;
     }
 
     private void UpdateQty(int change)
     {
-        if (quantity + change >= 1)
+        if (quantity + change >= 1) quantity += change;
+    }
+
+    private void OpenOrderModal() => showModal = true;
+    private void CloseModal() => showModal = false;
+
+    private string GetStars(double rating) => new string('★', (int)rating).PadRight(5, '☆');
+
+    private async Task HandleOrderSubmit()
+    {
+        try
         {
-            quantity += change;
+            var newOrder = new AI_Driven_Water_Supply.Presentation.Order
+            {
+                ConsumerName = orderFormModel.ConsumerName,
+                Address = orderFormModel.Address,
+                Phone = orderFormModel.Phone,
+                Quantity = quantity,
+                ItemName = "Water Bottle",
+                TotalPrice = totalPrice,
+                SupplierName = name ?? "Unknown", // Safe check
+                Status = "Pending",
+                CreatedAt = DateTime.UtcNow
+            };
+
+            var response = await _supabase.From<AI_Driven_Water_Supply.Presentation.Order>().Insert(newOrder);
+            var insertedOrder = response.Models.FirstOrDefault();
+
+            if (insertedOrder != null)
+            {
+                var autoMsg = new AI_Driven_Water_Supply.Presentation.Message
+                {
+                    OrderId = insertedOrder.Id,
+                    SenderName = orderFormModel.ConsumerName,
+                    ReceiverName = name ?? "Supplier",
+                    Content = $"New Order! {quantity}x Bottles. Address: {orderFormModel.Address}",
+                    CreatedAt = DateTime.UtcNow
+                };
+                await _supabase.From<AI_Driven_Water_Supply.Presentation.Message>().Insert(autoMsg);
+
+                showModal = false;
+                Nav.NavigateTo("/Consumer");
+            }
         }
+        catch (Exception ex) { Console.WriteLine($"Order Error: {ex.Message}"); }
     }
 
-    private void OpenOrderModal()
+    private async Task SubmitReview()
     {
-        showModal = true;
-    }
+        if (string.IsNullOrEmpty(newReview.Comment)) return;
+        isSubmittingReview = true;
+        try
+        {
+            // ✅ Fix CS8601: Logic Safety
+            newReview.ProviderId = providerId;
+            newReview.ConsumerName = orderFormModel.ConsumerName ?? "Anonymous";
 
-    private void CloseModal()
-    {
-        showModal = false;
-    }
+            await _supabase.From<ReviewModel>().Insert(newReview);
 
-    private void HandleOrderSubmit()
-    {
-        Console.WriteLine($"Order Placed for {quantity} units by {orderFormModel.ConsumerName}");
-        // Future DB Code here
-        showModal = false;
-        Nav.NavigateTo("/Consumer");
-    }
-
-    public class OrderModel
-    {
-        [Required] public string ConsumerName { get; set; } = "";
-        [Required] public string Address { get; set; } = "";
-        [Required] public string Phone { get; set; } = "";
+            await LoadReviews();
+            newReview.Comment = string.Empty; // Reset safely
+            newReview.Rating = 5;
+        }
+        catch (Exception ex) { Console.WriteLine("Review Error: " + ex.Message); }
+        finally { isSubmittingReview = false; }
     }
 }
