@@ -27,7 +27,8 @@ builder.Services.AddScoped<Supabase.Client>(provider =>
 
 // Auth Service
 builder.Services.AddScoped<AI_Driven_Water_Supply.Application.Interfaces.IAuthService, AI_Driven_Water_Supply.Infrastructure.Services.AuthService>();
-
+// Add this line
+builder.Services.AddScoped<AI_Driven_Water_Supply.Client.Services.ToastService>();
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 

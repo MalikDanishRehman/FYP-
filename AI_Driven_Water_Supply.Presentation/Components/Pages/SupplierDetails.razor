@@ -7,6 +7,7 @@
 @inject NavigationManager Nav
 @inject IAuthService AuthService
 @rendermode InteractiveServer
+@inject AI_Driven_Water_Supply.Client.Services.ToastService ToastService
 
 <style>
     :root {
@@ -553,18 +554,26 @@
         var session = _supabase.Auth.CurrentSession;
         if (session == null || session.ExpiresAt() < DateTime.UtcNow)
         {
-            Console.WriteLine("Session Expired.");
+            // 🔴 Error Toast: Agar login nahi hai
+            ToastService.ShowToast("Login Required", "Please login to submit a review.", "error");
             return;
         }
 
-        if (string.IsNullOrEmpty(newReview.Comment)) return;
+        // 2. Validation Check
+        if (string.IsNullOrEmpty(newReview.Comment))
+        {
+            // 🟡 Warning Toast: Agar comment khali hai
+            ToastService.ShowToast("Empty Review", "Please write a comment first.", "warning");
+            return;
+        }
+
         if (string.IsNullOrEmpty(providerId)) return;
 
         isSubmittingReview = true;
         try
         {
             // --- STEP 1: Insert New Review ---
-            newReview.Id = Guid.NewGuid().ToString(); // ID Generate ki
+            newReview.Id = Guid.NewGuid().ToString();
             newReview.ProviderId = providerId;
             newReview.ConsumerName = orderFormModel.ConsumerName ?? "Anonymous";
             newReview.CreatedAt = DateTime.UtcNow;
@@ -572,7 +581,6 @@
             await _supabase.From<ReviewModel>().Insert(newReview);
 
             // --- STEP 2: Calculate New Average ---
-            // Saare reviews mangwayein taake average nikal sakein
             var response = await _supabase.From<ReviewModel>()
                                           .Where(x => x.ProviderId == providerId)
                                           .Get();
@@ -582,21 +590,21 @@
             double newAverageRating = 0;
             if (allReviews.Count > 0)
             {
-                // C# ka built-in function use karke average nikala
                 newAverageRating = allReviews.Average(r => r.Rating);
             }
 
             // --- STEP 3: Update Profile Table ---
-            // Ab ye nayi average rating Profiles table mein save karein
             await _supabase.From<ProviderDetailProfile>()
                            .Where(x => x.Id == providerId)
                            .Set(x => x.Rating, newAverageRating)
                            .Update();
 
             // --- STEP 4: Update UI ---
-            // Screen par bhi update dikhane ke liye
             currentRating = newAverageRating;
             reviewsList = allReviews.OrderByDescending(x => x.CreatedAt).ToList();
+
+            // 🟢 Success Toast: Jab sab kaam ho jaye
+            ToastService.ShowToast("Review Submitted", "Thank you! Your feedback helps others.", "success");
 
             // Reset form
             newReview = new ReviewModel { Rating = 5, Comment = string.Empty };
@@ -604,6 +612,9 @@
         catch (Exception ex)
         {
             Console.WriteLine("Review/Update Error: " + ex.Message);
+
+            // 🔴 Error Toast: Agar DB error aaye
+            ToastService.ShowToast("Error", "Something went wrong. Please try again.", "error");
         }
         finally { isSubmittingReview = false; }
     }
