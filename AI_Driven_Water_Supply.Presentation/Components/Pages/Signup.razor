@@ -55,12 +55,16 @@
         </div>
     </EditForm>
 </div>
-
 @code {
     [SupplyParameterFromForm] private SignupModel signupModel { get; set; } = new();
+
+    // ⚠️ FIX: Ye variables wapis laye hain taake HTML crash na ho
     private string message = "";
     private bool isSuccess = false;
     private bool isLoading = false;
+
+    // ⚠️ FIX: Maine yahan se [Inject] ToastService hata diya hai.
+    // Ensure karein ke file ke sabse upar "@inject ToastService ToastService" likha ho.
 
     [Table("profiles")]
     public class UserProfile : BaseModel
@@ -86,51 +90,48 @@
     private async Task HandleSignup()
     {
         isLoading = true;
-        message = "";
+        message = ""; // Reset message
 
         try
         {
-            // 🔥 Auto-generate Username from Email (e.g. ali@gmail.com -> ali)
-            // Kyunke Database ko username chahiye hota hai.
             string autoUsername = signupModel.Email.Split('@')[0];
 
-            // 1. Auth Signup
             var options = new Supabase.Gotrue.SignUpOptions { Data = new Dictionary<string, object> { { "username", autoUsername } } };
             var session = await _supabase.Auth.SignUp(signupModel.Email, signupModel.Password, options);
 
             if (session != null && session.User != null)
             {
-                // 2. Save Role in Database
                 var newProfile = new UserProfile
                 {
                     Id = session.User.Id,
-                    Username = autoUsername, // Using auto-generated name
+                    Username = autoUsername,
                     Role = signupModel.Role
                 };
                 await _supabase.From<UserProfile>().Insert(newProfile);
 
                 isSuccess = true;
                 message = "Account created! Redirecting...";
+                ToastService.ShowToast("Account Created", "Welcome! Redirecting...", "success");
+
                 await Task.Delay(1500);
                 NavigationManager.NavigateTo("/login");
             }
             else
             {
                 isSuccess = false;
-                message = "Signup failed. Try again.";
+                ToastService.ShowToast("Signup Failed", message, "error");
             }
         }
         catch (Exception ex)
         {
             isSuccess = false;
-            message = "Error: " + ex.Message;
+            ToastService.ShowToast("Error", "Something went wrong.", "error");
         }
         finally { isLoading = false; }
     }
 
     public class SignupModel
     {
-        // 🔥 Username field hata diya hai model se bhi
         [Required, EmailAddress] public string Email { get; set; } = "";
         [Required, MinLength(6)] public string Password { get; set; } = "";
         public string Role { get; set; } = "Consumer";

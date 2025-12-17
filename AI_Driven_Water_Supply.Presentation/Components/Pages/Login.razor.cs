@@ -1,13 +1,14 @@
-﻿using Microsoft.AspNetCore.Components;
-using AI_Driven_Water_Supply.Application.Interfaces;
+﻿using AI_Driven_Water_Supply.Application.Interfaces;
+using AI_Driven_Water_Supply.Presentation.Services;
+using Microsoft.AspNetCore.Components;
 using Supabase.Postgrest.Attributes;
 using Supabase.Postgrest.Models;
-using System.ComponentModel.DataAnnotations;
-using System.Threading.Tasks;
 using System;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using System.Threading.Tasks;
 
-namespace AI_Driven_Water_Supply.Presentation.Components.Pages // ⚠️ Check Namespace
+namespace AI_Driven_Water_Supply.Presentation.Components.Pages
 {
     public partial class Login : ComponentBase
     {
@@ -15,14 +16,18 @@ namespace AI_Driven_Water_Supply.Presentation.Components.Pages // ⚠️ Check N
         [Inject] public Supabase.Client _supabase { get; set; } = default!;
         [Inject] public NavigationManager Nav { get; set; } = default!;
 
+        // ⚠️ FIX: Agar "Ambiguity" error aye, to yahan se ye line hata dein 
+        // aur Login.razor ke top par "@inject ToastService ToastService" likh dein.
+        // Filhal main yahan se hata raha hun taake wo @inject use kare.
+       
         // Form Binding
         [SupplyParameterFromForm]
         protected LoginModel loginModel { get; set; } = new();
 
+        // ⚠️ FIX: Ye variables wapis add kiye hain taake HTML error na de
         protected string errorMessage = "";
         protected bool isLoading = false;
 
-        // 👇 Supabase Model for Role Checking
         [Table("profiles")]
         public class UserProfile : BaseModel
         {
@@ -33,56 +38,53 @@ namespace AI_Driven_Water_Supply.Presentation.Components.Pages // ⚠️ Check N
         protected async Task HandleLogin()
         {
             isLoading = true;
-            errorMessage = "";
+            errorMessage = ""; // Reset error
 
             try
             {
-                // 1. Auth Service se Login
                 bool isLoggedIn = await AuthService.SignIn(loginModel.Email, loginModel.Password);
 
                 if (isLoggedIn)
                 {
-                    // 2. User ID nikalo
                     var user = AuthService.CurrentUser;
                     if (user == null) user = _supabase.Auth.CurrentUser;
 
                     if (user != null)
                     {
-                        // 3. Supabase se Role check karo
                         var response = await _supabase.From<UserProfile>()
-                                                      .Where(x => x.Id == user.Id)
-                                                      .Get();
+                                                    .Where(x => x.Id == user.Id)
+                                                    .Get();
 
                         var profile = response.Models.FirstOrDefault();
 
                         if (profile != null)
                         {
-                            // 4. Role Based Redirect
+                            ToastService.ShowToast("Welcome Back", "Login successful.", "success");
+
                             if (profile.Role == "Consumer")
-                            {
                                 Nav.NavigateTo("/Consumer", forceLoad: true);
-                            }
                             else
-                            {
                                 Nav.NavigateTo("/ProviderDashboard", forceLoad: true);
-                            }
                         }
                         else
                         {
-                            // Agar Profile nahi mili (New User?)
+                            ToastService.ShowToast("Profile Missing", "Please complete your profile.", "info");
                             Nav.NavigateTo("/get-started");
                         }
                     }
                 }
                 else
                 {
-                    ToastService.ShowToast("Error Failed", "Invalid email or password.", "error");
+                    // Error message variable bhi set karein aur Toast bhi dikhayein
+                    errorMessage = "Invalid email or password.";
+                    ToastService.ShowToast("Login Failed", errorMessage, "error");
                 }
             }
             catch (Exception ex)
             {
                 errorMessage = "Login Error: " + ex.Message;
-
+                Console.WriteLine(errorMessage);
+                ToastService.ShowToast("System Error", "Unable to log in.", "error");
             }
             finally
             {

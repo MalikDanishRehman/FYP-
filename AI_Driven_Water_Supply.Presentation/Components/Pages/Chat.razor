@@ -108,16 +108,13 @@
     </button>
 
     <div class="chat-container shadow-lg">
-
         <div class="chat-header">
             <div>
                 <h5 class="m-0 fw-bold"><i class="fa-solid fa-user-circle me-2"></i> @DisplayChatName</h5>
                 <small class="text-muted">Order ID: #@OrderId | @ItemName</small>
             </div>
-
             <div class="d-flex align-items-center gap-3">
                 <span class="badge @GetStatusColor(OrderStatus) text-dark px-3 py-2">@OrderStatus</span>
-
                 @if (AmISupplier && OrderStatus != "Completed" && OrderStatus != "Cancelled")
                 {
                     <div class="status-btn-group">
@@ -178,12 +175,13 @@
                 <i class="fa-solid fa-paper-plane"></i>
             </button>
         </div>
-
     </div>
 </div>
 
 @code {
     [Parameter] public long OrderId { get; set; }
+
+    // 👇 Ensure ToastService is Injected via _Imports, but we use it below
 
     private string MyName = "";
     private string SupplierName = "";
@@ -194,28 +192,19 @@
     private string newMessageInput = "";
     private bool isLoading = true;
     private bool AmISupplier = false;
-
     private List<AI_Driven_Water_Supply.Presentation.Message> messages = new();
 
-    // Fix: CS8618 (Initialized properties)
     [Supabase.Postgrest.Attributes.Table("profiles")]
     public class Profile : Supabase.Postgrest.Models.BaseModel
     {
-        [Supabase.Postgrest.Attributes.Column("id")]
-        public string Id { get; set; } = string.Empty;
-
-        [Supabase.Postgrest.Attributes.Column("username")]
-        public string Username { get; set; } = string.Empty;
+        [Supabase.Postgrest.Attributes.Column("id")] public string Id { get; set; } = string.Empty;
+        [Supabase.Postgrest.Attributes.Column("username")] public string Username { get; set; } = string.Empty;
     }
 
     protected override async Task OnInitializedAsync()
     {
         var user = AuthService.CurrentUser;
-        if (user == null)
-        {
-            await AuthService.TryRefreshSession();
-            user = AuthService.CurrentUser;
-        }
+        if (user == null) { await AuthService.TryRefreshSession(); user = AuthService.CurrentUser; }
 
         if (user != null)
         {
@@ -224,19 +213,16 @@
             {
                 var response = await _supabase.From<Profile>().Where(x => x.Id == user.Id).Get();
                 var profile = response.Models.FirstOrDefault();
-                // Fix: CS8601 (Null assignment check)
                 if (profile != null) fetchedName = profile.Username ?? "";
             }
             catch { }
 
             if (string.IsNullOrEmpty(fetchedName) && user.UserMetadata != null)
                 if (user.UserMetadata.TryGetValue("username", out var nameObj))
-                    fetchedName = nameObj?.ToString() ?? ""; // Fix: Null coalescing
+                    fetchedName = nameObj?.ToString() ?? "";
 
-            // Fix: CS8602 (Possible null email)
             string email = user.Email ?? "";
-            if (string.IsNullOrEmpty(fetchedName) && !string.IsNullOrEmpty(email))
-                fetchedName = email.Split('@')[0];
+            if (string.IsNullOrEmpty(fetchedName) && !string.IsNullOrEmpty(email)) fetchedName = email.Split('@')[0];
 
             MyName = fetchedName;
         }
@@ -254,28 +240,16 @@
     {
         try
         {
-            var response = await _supabase.From<AI_Driven_Water_Supply.Presentation.Order>()
-                                          .Where(x => x.Id == OrderId)
-                                          .Get();
+            var response = await _supabase.From<AI_Driven_Water_Supply.Presentation.Order>().Where(x => x.Id == OrderId).Get();
             var order = response.Models.FirstOrDefault();
-
             if (order != null)
             {
                 ConsumerName = order.ConsumerName;
                 SupplierName = order.SupplierName;
                 ItemName = $"{order.Quantity}x {order.ItemName}";
                 OrderStatus = order.Status;
-
-                if (string.Equals(MyName, SupplierName, StringComparison.OrdinalIgnoreCase))
-                {
-                    AmISupplier = true;
-                    DisplayChatName = ConsumerName;
-                }
-                else
-                {
-                    AmISupplier = false;
-                    DisplayChatName = SupplierName;
-                }
+                AmISupplier = string.Equals(MyName, SupplierName, StringComparison.OrdinalIgnoreCase);
+                DisplayChatName = AmISupplier ? ConsumerName : SupplierName;
             }
         }
         catch (Exception ex) { Console.WriteLine("Error: " + ex.Message); }
@@ -287,9 +261,9 @@
         try
         {
             var response = await _supabase.From<AI_Driven_Water_Supply.Presentation.Message>()
-                                          .Where(x => x.OrderId == OrderId)
-                                          .Order("created_at", Supabase.Postgrest.Constants.Ordering.Ascending)
-                                          .Get();
+                                        .Where(x => x.OrderId == OrderId)
+                                        .Order("created_at", Supabase.Postgrest.Constants.Ordering.Ascending)
+                                        .Get();
             messages = response.Models;
         }
         finally { isLoading = false; }
@@ -330,8 +304,10 @@
 
             if (newStatus == "Accepted")
             {
-                var ordResponse = await _supabase.From<AI_Driven_Water_Supply.Presentation.Order>()
-                                                 .Where(x => x.Id == OrderId).Get();
+                // 🟢 Notify Provider
+                ToastService.ShowToast("Order Accepted", "Bill generated successfully.", "success");
+
+                var ordResponse = await _supabase.From<AI_Driven_Water_Supply.Presentation.Order>().Where(x => x.Id == OrderId).Get();
                 var orderData = ordResponse.Models.FirstOrDefault();
 
                 if (orderData != null)
@@ -348,18 +324,32 @@
                     await _supabase.From<Bill>().Insert(newBill);
                 }
             }
+            else if (newStatus == "Out for Delivery")
+            {
+                ToastService.ShowToast("Dispatched", "Customer has been notified.", "info");
+            }
+            else if (newStatus == "Completed")
+            {
+                ToastService.ShowToast("Completed", "Order marked as delivered.", "success");
+            }
 
-            string systemMsg = "";
-            if (newStatus == "Accepted") systemMsg = $"✅ Order Accepted by {SupplierName}. Bill Generated.";
-            else if (newStatus == "Out for Delivery") systemMsg = $"🚚 Order is Out for Delivery!";
-            else if (newStatus == "Completed") systemMsg = $"🎉 Order Delivered Successfully.";
-            else if (newStatus == "Cancelled") systemMsg = $"❌ Order was Cancelled by Provider.";
+            string systemMsg = newStatus switch
+            {
+                "Accepted" => $"✅ Order Accepted by {SupplierName}. Bill Generated.",
+                "Out for Delivery" => $"🚚 Order is Out for Delivery!",
+                "Completed" => $"🎉 Order Delivered Successfully.",
+                "Cancelled" => $"❌ Order was Cancelled by Provider.",
+                _ => $"Status updated to {newStatus}"
+            };
 
-            // Fix: CS4014 - Await added here
             await PostMessage("System", ConsumerName, systemMsg);
         }
-        catch (Exception ex) { Console.WriteLine("Status Update Error: " + ex.Message);
-                               ToastService.ShowToast("Error Failed", "Something went wrong!", "error"); }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Status Update Error: " + ex.Message);
+            // 🔴 Error Toast
+            ToastService.ShowToast("Update Failed", "Could not update order status.", "error");
+        }
     }
 
     private string GetStatusColor(string status) => status switch
@@ -373,8 +363,5 @@
         _ => "bg-secondary"
     };
 
-    void GoBack()
-    {
-        Nav.NavigateTo(AmISupplier ? "/ProviderDashboard" : "/Consumer");
-    }
+    void GoBack() => Nav.NavigateTo(AmISupplier ? "/ProviderDashboard" : "/Consumer");
 }
