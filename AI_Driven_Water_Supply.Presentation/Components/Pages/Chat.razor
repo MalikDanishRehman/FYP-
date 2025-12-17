@@ -358,7 +358,8 @@
             // Fix: CS4014 - Await added here
             await PostMessage("System", ConsumerName, systemMsg);
         }
-        catch (Exception ex) { Console.WriteLine("Status Update Error: " + ex.Message); }
+        catch (Exception ex) { Console.WriteLine("Status Update Error: " + ex.Message);
+                               ToastService.ShowToast("Error Failed", "Something went wrong!", "error"); }
     }
 
     private string GetStatusColor(string status) => status switch

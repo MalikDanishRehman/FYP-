@@ -76,12 +76,13 @@ namespace AI_Driven_Water_Supply.Presentation.Components.Pages // ⚠️ Check N
                 }
                 else
                 {
-                    errorMessage = "Invalid email or password.";
+                    ToastService.ShowToast("Error Failed", "Invalid email or password.", "error");
                 }
             }
             catch (Exception ex)
             {
                 errorMessage = "Login Error: " + ex.Message;
+
             }
             finally
             {

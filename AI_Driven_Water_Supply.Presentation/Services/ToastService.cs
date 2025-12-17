@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Timers;
+using System.Threading.Tasks; // Ye zaroori hai Task.Delay ke liye
 
-namespace AI_Driven_Water_Supply.Client.Services // Namespace check karlena
+namespace AI_Driven_Water_Supply.Presentation.Services
 {
+    // 👇 PEHLE YE "ToastService" THA, AB "ToastModel" HAI
     public class ToastModel
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
@@ -13,18 +14,21 @@ namespace AI_Driven_Water_Supply.Client.Services // Namespace check karlena
         public DateTime Posted { get; set; } = DateTime.Now;
     }
 
+    // 👇 YE MAIN SERVICE HAI
     public class ToastService
     {
         public event Action? OnChange;
+
+        // Ab ye line error nahi degi kyunki ToastModel upar bana diya hai
         public List<ToastModel> Toasts { get; private set; } = new();
 
         public void ShowToast(string title, string message, string type = "success")
         {
             var toast = new ToastModel { Title = title, Message = message, Type = type };
             Toasts.Add(toast);
-            OnChange?.Invoke(); // UI ko batao ke naya toast aaya hai
+            OnChange?.Invoke(); // UI update trigger
 
-            // 3 Second baad khud gayab ho jaye
+            // Timer start
             StartTimer(toast);
         }
 
@@ -39,7 +43,7 @@ namespace AI_Driven_Water_Supply.Client.Services // Namespace check karlena
             if (Toasts.Contains(toast))
             {
                 Toasts.Remove(toast);
-                OnChange?.Invoke(); // UI update
+                OnChange?.Invoke(); // UI update trigger
             }
         }
     }

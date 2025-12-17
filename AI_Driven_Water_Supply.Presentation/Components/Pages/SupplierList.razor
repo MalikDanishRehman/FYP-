@@ -214,21 +214,23 @@
                     : _supabase.Storage.From("Avatar").GetPublicUrl(item.ProfilePic);
 
                 filteredSuppliers.Add(new SupplierViewModel
-                {
-                    Name = item.Username,
-                    Rating = item.Rating,
-                    ImageUrl = finalImageUrl,
+                    {
+                        Name = item.Username,
+                        Rating = item.Rating,
+                        ImageUrl = finalImageUrl,
                     // Karachi Coordinates ke aas paas random variations generate kar raha hu
                     // Taake map par alag alag jagah dikhein
-                    Lat = 24.8607 + (rnd.NextDouble() * 0.1 - 0.05),
-                    Lng = 67.0011 + (rnd.NextDouble() * 0.1 - 0.05)
-                });
+                        Lat = 24.8607 + (rnd.NextDouble() * 0.1 - 0.05),
+                        Lng = 67.0011 + (rnd.NextDouble() * 0.1 - 0.05)
+                    });
             }
         }
-        catch (Exception ex) { Console.WriteLine(ex.Message); }
-        finally
+        catch (Exception ex)
         {
-            isLoading = false;
+            Console.WriteLine(ex.Message);
+
+            // 🔴 Secure Error Message
+            ToastService.ShowToast("Connection Error", "Unable to retrieve secure supplier list.", "error");
         }
     }
 

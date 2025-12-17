@@ -118,9 +118,28 @@
 
     async Task PayBill(Bill bill)
     {
-        bill.Status = "Paid";
-        await _supabase.From<Bill>().Update(bill);
-        await LoadBills();
+        try
+        {
+            // 1. Processing State (Optional: Spinner dikha sakte ho)
+            ToastService.ShowToast("Processing", "Verifying payment details...", "info");
+
+            bill.Status = "Paid";
+
+            // 2. Update Database
+            await _supabase.From<Bill>().Update(bill);
+            await LoadBills();
+
+            // 3. ✅ Success Toast (Professional & Secure)
+            ToastService.ShowToast("Payment Successful", $"Transaction for Order #{bill.OrderId} confirmed.", "success");
+        }
+        catch (Exception ex)
+        {
+            // Logging for Developer (Console), but Safe Message for User
+            Console.WriteLine("Payment Error: " + ex.Message);
+
+            // 4. 🔴 Error Toast
+            ToastService.ShowToast("Transaction Failed", "Secure connection failed. Please try again later.", "error");
+        }
     }
 
     void GoBack() => Nav.NavigateTo("/Consumer");

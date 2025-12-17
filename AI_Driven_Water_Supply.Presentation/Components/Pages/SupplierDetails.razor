@@ -7,8 +7,7 @@
 @inject NavigationManager Nav
 @inject IAuthService AuthService
 @rendermode InteractiveServer
-@inject AI_Driven_Water_Supply.Client.Services.ToastService ToastService
-
+@inject AI_Driven_Water_Supply.Presentation.Services.ToastService ToastService
 <style>
     :root {
         --primary-gradient: linear-gradient(135deg, #00c6ff 0%, #0072ff 100%);
@@ -509,9 +508,17 @@
     private void CloseModal() => showModal = false;
 
     private string GetStars(double rating) => new string('★', (int)rating).PadRight(5, '☆');
-
     private async Task HandleOrderSubmit()
     {
+        // 1. Security & Validation Check (Empty Fields)
+        if (string.IsNullOrWhiteSpace(orderFormModel.ConsumerName) ||
+            string.IsNullOrWhiteSpace(orderFormModel.Address) ||
+            string.IsNullOrWhiteSpace(orderFormModel.Phone))
+        {
+            ToastService.ShowToast("Missing Information", "Please fill in all delivery details securely.", "warning");
+            return;
+        }
+
         try
         {
             var newOrder = new AI_Driven_Water_Supply.Presentation.Order
@@ -522,16 +529,18 @@
                 Quantity = quantity,
                 ItemName = "Water Bottle",
                 TotalPrice = totalPrice,
-                SupplierName = name ?? "Unknown", // Safe check
+                SupplierName = name ?? "Unknown",
                 Status = "Pending",
                 CreatedAt = DateTime.UtcNow
             };
 
+            // 2. Database Insert
             var response = await _supabase.From<AI_Driven_Water_Supply.Presentation.Order>().Insert(newOrder);
             var insertedOrder = response.Models.FirstOrDefault();
 
             if (insertedOrder != null)
             {
+                // 3. Message Logic
                 var autoMsg = new AI_Driven_Water_Supply.Presentation.Message
                 {
                     OrderId = insertedOrder.Id,
@@ -542,11 +551,26 @@
                 };
                 await _supabase.From<AI_Driven_Water_Supply.Presentation.Message>().Insert(autoMsg);
 
+                // 4. Close Modal & Redirect
                 showModal = false;
+
+                // 🟢 Professional Success Message
+                ToastService.ShowToast("Order Placed", "Your order has been securely transmitted to the supplier.", "success");
+
                 Nav.NavigateTo("/Consumer");
             }
+            else
+            {
+                throw new Exception("Order returned null");
+            }
         }
-        catch (Exception ex) { Console.WriteLine($"Order Error: {ex.Message}"); }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Order Error: {ex.Message}");
+
+            // 🔴 Secure Error Message
+            ToastService.ShowToast("Order Failed", "System could not process request. Please try again.", "error");
+        }
     }
     private async Task SubmitReview()
     {

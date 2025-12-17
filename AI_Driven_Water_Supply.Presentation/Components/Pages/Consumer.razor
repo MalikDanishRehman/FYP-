@@ -407,6 +407,7 @@
             catch (Exception ex)
             {
                 Console.WriteLine("Profile Load Error: " + ex.Message);
+                ToastService.ShowToast("Error Failed", "Something went wrong!", "error");
             }
 
             // Fallback for Name
@@ -460,7 +461,7 @@
                 });
             }
         }
-        catch (Exception ex) { Console.WriteLine("Error: " + ex.Message); }
+        catch (Exception ex) { Console.WriteLine("Error: " + ex.Message); ToastService.ShowToast("Error Failed", "Something went wrong!", "error"); }
         finally { isLoading = false; }
     }
 
@@ -482,7 +483,8 @@
         const video = document.getElementById('myVideo');
         if(!video) return;
         video.playbackRate = 1;
-        video.play().catch(e => console.log("Autoplay blocked"));
+        video.play().catch(e => console.log("Autoplay blocked")
+        ToastService.ShowToast("Error Failed", "Animation Block!", "error"););
     }
     setTimeout(startVideoLoop, 1000);
 </script>

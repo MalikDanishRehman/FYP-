@@ -336,7 +336,7 @@
                 w.TodayStatus = log != null ? log.Status : "Pending";
             }
         }
-        catch (Exception ex) { Console.WriteLine("Error: " + ex.Message); }
+        catch (Exception ex) { Console.WriteLine("Error: " + ex.Message); ToastService.ShowToast("Error Failed", "Something went wrong!", "error"); }
         finally { isLoading = false; }
     }
 
