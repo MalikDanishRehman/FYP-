@@ -73,16 +73,12 @@
                             }
                             else
                             {
-
                                 <span>Update Profile</span>
                             }
                         </button>
                     </div>
 
-                    @if (!string.IsNullOrEmpty(message))
-                    {
-                        <div class="alert @(isSuccess ? "alert-success" : "alert-danger") mt-3 text-center">@message</div>
-                    }
+                    @* Purana Alert Box Hata Diya - Ab Toast ayega *@
                 </EditForm>
             </div>
         }
@@ -223,25 +219,24 @@
 </style>
 
 @code {
-    // Ye wahi Model hai jo step 2 me banaya
     [Table("profiles")]
     public class Profile : BaseModel
     {
         [Column("id")] public string Id { get; set; } = "";
         [Column("username")] public string Username { get; set; } = "";
         [Column("role")] public string Role { get; set; } = "";
-        [Column("profilepic")] public string ProfilePic { get; set; } = ""; // Unique ID stored here
-        [Column("location")] public string Location { get; set; } = "";     // Location stored here
+        [Column("profilepic")] public string ProfilePic { get; set; } = "";
+        [Column("location")] public string Location { get; set; } = "";
     }
 
     private Profile userProfile = new Profile();
-    private string DisplayUrl = ""; // Ye HTML me image dikhane ke liye use hoga
+    private string DisplayUrl = "";
     private bool isLoading = true;
     private bool isSaving = false;
     private bool isUploading = false;
     private bool showImageModal = false;
-    private string message = "";
-    private bool isSuccess = false;
+
+    // Purane message variables hata diye
 
     protected override async Task OnInitializedAsync()
     {
@@ -261,7 +256,6 @@
 
             if (user != null && !string.IsNullOrEmpty(user.Id))
             {
-                // 1. Fetch Profile from 'profiles' table
                 var response = await _supabase.From<Profile>()
                                             .Where(x => x.Id == user.Id)
                                             .Get();
@@ -273,9 +267,6 @@
                     userProfile = data;
                     if (string.IsNullOrEmpty(userProfile.Id)) userProfile.Id = user.Id;
 
-                    // ✅ UNIQUE ID LOGIC:
-                    // Agar DB me 'ProfilePic' ki value hai (e.g., "unique-id-123.jpg")
-                    // To Bucket se uska URL banao
                     if (!string.IsNullOrEmpty(userProfile.ProfilePic))
                     {
                         DisplayUrl = _supabase.Storage.From("Avatar").GetPublicUrl(userProfile.ProfilePic);
@@ -283,7 +274,6 @@
                 }
                 else
                 {
-                    // Agar naya user hai
                     userProfile.Id = user.Id;
                 }
             }
@@ -295,6 +285,7 @@
         catch (Exception ex)
         {
             Console.WriteLine("Load Error: " + ex.Message);
+            ToastService.ShowToast("Connection Error", "Failed to load profile data.", "error");
         }
         finally
         {
@@ -317,30 +308,29 @@
             await stream.CopyToAsync(memoryStream);
             var bytes = memoryStream.ToArray();
 
-            // ✅ STEP 1: Generate Unique ID (Filename)
-            // Hum UserID + Timestamp use karenge taake hamesha unique rahe
             string fileExtension = System.IO.Path.GetExtension(file.Name);
             string uniqueFileId = $"{user.Id}_{DateTime.Now.Ticks}{fileExtension}";
 
-            // ✅ STEP 2: Bucket me Upload karo (Isi Unique ID se)
             await _supabase.Storage.From("Avatar").Upload(bytes, uniqueFileId);
 
-            // ✅ STEP 3: Database Update karo
-            // Hum sirf 'uniqueFileId' save kar rahe hain, poora URL nahi.
             await _supabase.From<Profile>()
                            .Where(x => x.Id == user.Id)
                            .Set(x => x.ProfilePic, uniqueFileId)
                            .Update();
 
-            // ✅ STEP 4: UI Update
             userProfile.ProfilePic = uniqueFileId;
-            DisplayUrl = _supabase.Storage.From("Avatar").GetPublicUrl(uniqueFileId); // Display ke liye URL banao
+            DisplayUrl = _supabase.Storage.From("Avatar").GetPublicUrl(uniqueFileId);
 
             showImageModal = false;
+
+            // 🟢 SUCCESS TOAST
+            ToastService.ShowToast("Image Updated", "Profile picture uploaded successfully.", "success");
         }
         catch (Exception ex)
         {
             Console.WriteLine("Upload Error: " + ex.Message);
+            // 🔴 ERROR TOAST
+            ToastService.ShowToast("Upload Failed", "Could not upload image.", "error");
         }
         finally
         {
@@ -354,34 +344,29 @@
         isSaving = true;
         try
         {
-            // Update Username and Location
             await _supabase.From<Profile>()
                            .Where(x => x.Id == userProfile.Id)
                            .Set(x => x.Username, userProfile.Username)
-                           .Set(x => x.Location, userProfile.Location) // ✅ Location Save ho rahi hai
+                           .Set(x => x.Location, userProfile.Location)
                            .Update();
 
-            isSuccess = true;
-            message = "Profile Updated Successfully!";
+            // 🟢 SUCCESS TOAST
+            ToastService.ShowToast("Profile Saved", "Your details have been updated.", "success");
         }
         catch (Exception ex)
         {
-            isSuccess = false;
-            message = "Error: " + ex.Message;
+            // 🔴 ERROR TOAST
+            ToastService.ShowToast("Save Failed", "Could not update profile.", "error");
         }
         finally
         {
             isSaving = false;
-            StateHasChanged();
-            await Task.Delay(3000);
-            message = "";
             StateHasChanged();
         }
     }
 
     private void GoBack()
     {
-        // Role check karke wapas bhejo
         if (userProfile.Role == "Provider") Nav.NavigateTo("/ProviderDashboard");
         else Nav.NavigateTo("/Consumer");
     }
