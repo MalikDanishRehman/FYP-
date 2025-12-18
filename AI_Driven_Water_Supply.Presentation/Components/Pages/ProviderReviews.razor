@@ -16,7 +16,7 @@
     {
         <div class="text-center text-white mt-5">
             <div class="spinner-border text-warning" role="status"></div>
-            <p class="mt-2 text-muted">Analyzing your reputation...</p>
+            <p class="mt-2 text-muted">Loading...</p>
         </div>
     }
     else
@@ -26,25 +26,21 @@
                 <div class="card bg-dark text-white border-secondary shadow-lg">
                     <div class="card-body text-center p-4">
                         <h5 class="text-muted mb-3">Overall Rating</h5>
-
                         <h1 class="display-1 fw-bold text-white mb-0">@averageRating.ToString("0.0")</h1>
-
                         <div class="mb-2 fs-4 text-warning">
                             @((MarkupString)GetStarHtml(averageRating))
                         </div>
-
                         <p class="text-muted small">Based on @totalReviews reviews</p>
-
                         <hr class="border-secondary my-4" />
 
                         <div class="text-start">
-                            @foreach (var star in new[] { 5, 4, 3, 2, 1 })
+                            @for (int i = 5; i >= 1; i--)
                             {
-                                var count = starCounts.ContainsKey(star) ? starCounts[star] : 0;
-                                var percentage = totalReviews > 0 ? (count * 100 / totalReviews) : 0;
+                                var count = starCounts.ContainsKey(i) ? starCounts[i] : 0;
+                                var percentage = totalReviews > 0 ? (int)((double)count / totalReviews * 100) : 0;
 
                                 <div class="d-flex align-items-center mb-2">
-                                    <span class="text-muted me-2 small" style="width: 15px;">@star</span>
+                                    <span class="text-muted me-2 small" style="width: 15px;">@i</span>
                                     <i class="fa-solid fa-star text-warning fs-6 me-2"></i>
                                     <div class="progress flex-grow-1" style="height: 6px; background-color: #333;">
                                         <div class="progress-bar bg-warning" role="progressbar"
@@ -61,10 +57,12 @@
             <div class="col-md-8">
                 <h4 class="text-white mb-3 border-bottom border-secondary pb-2">Recent Customer Feedback</h4>
 
-                @if (reviewsList.Count == 0)
+                @if (reviewsList == null || reviewsList.Count == 0)
                 {
                     <div class="alert alert-secondary bg-dark border-secondary text-white">
-                        <i class="fa-regular fa-face-meh me-2"></i> No reviews received yet. Keep working hard!
+                        <i class="fa-regular fa-face-meh me-2"></i> No reviews received yet.
+                        <br />
+                        <small class="text-muted">Debug: List is empty.</small>
                     </div>
                 }
                 else
@@ -78,26 +76,25 @@
                                         <div class="d-flex align-items-center gap-3">
                                             <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center fw-bold text-white"
                                                  style="width: 45px; height: 45px; font-size: 18px;">
-                                                C
+                                                @(!string.IsNullOrEmpty(review.UserName) ? review.UserName.Substring(0, 1).ToUpper() : "U")
                                             </div>
                                             <div>
-                                                <h6 class="m-0 fw-bold">Verified Customer</h6>
+                                                <h6 class="m-0 fw-bold">@(review.UserName ?? "Customer")</h6>
                                                 <div class="text-warning small">
-                                                    @((MarkupString)GetStarHtml(review.Stars))
+                                                    @((MarkupString)GetStarHtml(review.Rating))
                                                 </div>
                                             </div>
                                         </div>
                                         <small class="text-muted">@review.CreatedAt.ToLocalTime().ToString("MMM dd, yyyy")</small>
                                     </div>
-
                                     <p class="mt-3 text-light">
-                                        @if (string.IsNullOrEmpty(review.ReviewText))
+                                        @if (string.IsNullOrWhiteSpace(review.Comment))
                                         {
-                                            <em class="text-muted">No written comment provided.</em>
+                                            <em class="text-muted">No written comment.</em>
                                         }
                                         else
                                         {
-                                            @review.ReviewText
+                                            @review.Comment
                                         }
                                     </p>
                                 </div>
@@ -114,85 +111,122 @@
     private bool isLoading = true;
     private double averageRating = 0;
     private int totalReviews = 0;
-    private Dictionary<int, int> starCounts = new(); // Stores how many 5 stars, 4 stars etc.
-    private List<ProviderReview> reviewsList = new();
+    private Dictionary<int, int> starCounts = new();
+    private List<ReviewModel> reviewsList = new();
 
-    // ✅ MODEL for Database Table 'provider_reviews'
-    [Table("provider_reviews")]
-    public class ProviderReview : BaseModel
+    // ✅ MODEL 1: Reviews Table (Corrected)
+    [Table("reviews")]
+    public class ReviewModel : BaseModel
     {
-        [Column("id")] public string Id { get; set; } = "";
-        [Column("provider_id")] public string ProviderId { get; set; } = "";
-        [Column("consumer_id")] public string ConsumerId { get; set; } = "";
-        [Column("stars")] public int Stars { get; set; }
-        [Column("review_text")] public string ReviewText { get; set; } = "";
+        // 👇 Yahan pehle 'int' tha, ab 'string' kar diya hai
+        [Column("id")] public string Id { get; set; }
+
+        [Column("provider_id")] public string ProviderId { get; set; }
+        [Column("comment")] public string Comment { get; set; }
+        [Column("rating")] public int Rating { get; set; }
+        [Column("user_name")] public string UserName { get; set; }
         [Column("created_at")] public DateTime CreatedAt { get; set; }
     }
 
-    // ✅ MODEL for Profile (to get Average)
     [Table("profiles")]
-    public class RatingProfile : BaseModel
+    public class ProfileModel : BaseModel
     {
-        [Column("id")] public string Id { get; set; } = "";
+        [Column("id")] public string Id { get; set; }
         [Column("rating")] public double Rating { get; set; }
     }
 
     protected override async Task OnInitializedAsync()
     {
+        bool shouldRedirect = false;
+
         try
         {
+            isLoading = true;
+
+            // 1. User Check
             var user = AuthService.CurrentUser;
-            if (user == null) { Nav.NavigateTo("/login"); return; }
-
-            // 1. Get Main Profile Rating (Jo SQL Trigger ne calculate kiya)
-            var profileResponse = await _supabase.From<RatingProfile>()
-                                       .Where(x => x.Id == user.Id)
-                                       .Single();
-
-            if (profileResponse != null)
+            if (user == null)
             {
-                averageRating = profileResponse.Rating;
+                await AuthService.TryRefreshSession();
+                user = AuthService.CurrentUser;
             }
 
-            // 2. Get All Individual Reviews
-            var reviewsResponse = await _supabase.From<ProviderReview>()
-                                       .Where(x => x.ProviderId == user.Id)
-                                       .Order("created_at", Supabase.Postgrest.Constants.Ordering.Descending)
-                                       .Get();
-
-            reviewsList = reviewsResponse.Models;
-            totalReviews = reviewsList.Count;
-
-            // 3. Calculate Star Distribution for Progress Bars
-            starCounts = new Dictionary<int, int> { { 5, 0 }, { 4, 0 }, { 3, 0 }, { 2, 0 }, { 1, 0 } };
-            foreach (var r in reviewsList)
+            if (user == null)
             {
-                if (starCounts.ContainsKey(r.Stars)) starCounts[r.Stars]++;
+                shouldRedirect = true;
+            }
+            else
+            {
+                Console.WriteLine($"DEBUG: Fetching reviews for Provider ID: {user.Id}");
+
+                // 2. Fetch from Profiles
+                var profileResponse = await _supabase
+                    .From<ProfileModel>()
+                    .Where(p => p.Id == user.Id)
+                    .Get();
+
+                var profile = profileResponse.Models.FirstOrDefault();
+                if (profile != null)
+                {
+                    averageRating = profile.Rating;
+                    Console.WriteLine($"DEBUG: Profile Rating found: {averageRating}");
+                }
+
+                // 3. Fetch Reviews
+                var response = await _supabase
+                    .From<ReviewModel>()
+                    .Where(x => x.ProviderId == user.Id)
+                    .Order("created_at", Supabase.Postgrest.Constants.Ordering.Descending)
+                    .Get();
+
+                reviewsList = response.Models;
+                totalReviews = reviewsList.Count;
+
+                Console.WriteLine($"DEBUG: Reviews Found: {totalReviews}");
+
+                // 4. Calculate Data
+                if (totalReviews > 0)
+                {
+                    starCounts = reviewsList
+                        .GroupBy(r => r.Rating)
+                        .ToDictionary(g => g.Key, g => g.Count());
+
+                    // FAILSAFE: Agar profile table mein 0 hai, lekin reviews hain, to yahan se calculate karlo
+                    if (averageRating == 0)
+                    {
+                        averageRating = reviewsList.Average(r => r.Rating);
+                    }
+                }
+                else
+                {
+                    starCounts = new Dictionary<int, int>();
+                }
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error fetching reviews: {ex.Message}");
+            Console.WriteLine($"CRITICAL ERROR: {ex.Message}");
         }
         finally
         {
             isLoading = false;
         }
+
+        if (shouldRedirect)
+        {
+            Nav.NavigateTo("/login");
+        }
     }
 
-    // ⭐ Helper to generate Star Icons HTML
     private string GetStarHtml(double rating)
     {
         int fullStars = (int)rating;
         bool halfStar = (rating - fullStars) >= 0.5;
         string html = "";
-
         for (int i = 0; i < fullStars; i++) html += "<i class='fa-solid fa-star'></i> ";
         if (halfStar) html += "<i class='fa-solid fa-star-half-stroke'></i> ";
-
-        int emptyStars = 5 - fullStars - (halfStar ? 1 : 0);
-        for (int i = 0; i < emptyStars; i++) html += "<i class='fa-regular fa-star'></i> ";
-
+        int filledCount = fullStars + (halfStar ? 1 : 0);
+        for (int i = 0; i < (5 - filledCount); i++) html += "<i class='fa-regular fa-star'></i> ";
         return html;
     }
 }
