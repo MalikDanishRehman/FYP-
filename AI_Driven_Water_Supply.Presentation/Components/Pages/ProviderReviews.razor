@@ -121,10 +121,10 @@
         // 👇 Yahan pehle 'int' tha, ab 'string' kar diya hai
         [Column("id")] public string Id { get; set; }
 
-        [Column("provider_id")] public string ProviderId { get; set; }
-        [Column("comment")] public string Comment { get; set; }
+        [Column("provider_id")] public string ProviderId { get; set; } = "";
+        [Column("comment")] public string Comment { get; set; } = "";
         [Column("rating")] public int Rating { get; set; }
-        [Column("user_name")] public string UserName { get; set; }
+        [Column("user_name")] public string UserName { get; set; } = "";
         [Column("created_at")] public DateTime CreatedAt { get; set; }
     }
 
