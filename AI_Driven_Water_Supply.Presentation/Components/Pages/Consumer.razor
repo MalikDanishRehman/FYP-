@@ -8,31 +8,34 @@
 @inject IJSRuntime JS
 @rendermode InteractiveServer
 
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
-<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-
 <style>
+    :root {
+        --primary-glow: #00C9FF;
+        --secondary-glow: #92FE9D;
+        --glass-bg: rgba(20, 20, 20, 0.6);
+        --glass-border: rgba(255, 255, 255, 0.08);
+    }
+
     body {
         margin: 0;
         padding: 0;
-        background-color: #000000;
+        background-color: #000000; /* Pure Black */
         color: white;
         font-family: 'Inter', sans-serif;
-        overflow: hidden;
+        overflow: hidden; /* Prevents scrollbars */
+        height: 100vh;
     }
 
-    /* NAVBAR STYLES */
+    /* --- NAVBAR --- */
     .glass-nav {
         position: fixed;
         top: 0;
         left: 0;
         width: 100%;
-        height: 70px;
-        background: rgba(10, 10, 10, 0.8);
-        backdrop-filter: blur(15px);
-        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-        padding: 0 30px;
+        height: 80px;
+        background: black; /* Very subtle background */
+      
+        padding: 0 40px;
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -40,55 +43,61 @@
     }
 
     .brand-logo {
-        font-weight: 700;
-        font-size: 1.3rem;
-        background: linear-gradient(90deg, #00C9FF 0%, #92FE9D 100%);
+        font-weight: 800;
+        font-size: 1.5rem;
+        background: linear-gradient(90deg, var(--primary-glow) 0%, var(--secondary-glow) 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         text-transform: uppercase;
-        letter-spacing: 1px;
+        letter-spacing: 1.5px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        filter: drop-shadow(0 0 10px rgba(0, 201, 255, 0.3));
     }
 
     .nav-icons {
         display: flex;
-        gap: 20px;
+        gap: 25px;
         align-items: center;
     }
 
+    /* --- ICON BUTTONS --- */
     .icon-btn {
         position: relative;
-        font-size: 1.2rem;
-        color: #e0e0e0;
+        font-size: 1.3rem;
+        color: #888;
         cursor: pointer;
-        transition: 0.3s;
-        width: 40px;
-        height: 40px;
+        transition: all 0.3s ease;
+        width: 45px;
+        height: 45px;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
+        background: rgba(255, 255, 255, 0.03);
     }
 
         .icon-btn:hover {
-            background: rgba(255,255,255,0.1);
-            color: #00C9FF;
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--primary-glow);
+            transform: translateY(-2px);
+            box-shadow: 0 0 15px rgba(0, 201, 255, 0.2);
         }
 
-    /* ✅ NEW PROFILE IMAGE STYLE */
     .profile-trigger {
-        width: 45px;
-        height: 45px;
+        width: 48px;
+        height: 48px;
         border-radius: 50%;
         cursor: pointer;
-        border: 2px solid #00C9FF;
+        border: 2px solid transparent;
+        background: linear-gradient(#000, #000) padding-box, linear-gradient(45deg, var(--primary-glow), var(--secondary-glow)) border-box;
         overflow: hidden;
-        position: relative;
-        transition: transform 0.2s;
+        transition: transform 0.3s ease;
     }
 
         .profile-trigger:hover {
-            transform: scale(1.05);
-            border-color: #92FE9D;
+            transform: scale(1.1);
         }
 
         .profile-trigger img {
@@ -99,32 +108,33 @@
 
     .badge-dot {
         position: absolute;
-        top: 8px;
-        right: 8px;
+        top: 10px;
+        right: 10px;
         width: 8px;
         height: 8px;
         background: #ff4757;
         border-radius: 50%;
-        border: 2px solid #1e1e1e;
+        box-shadow: 0 0 5px #ff4757;
     }
 
-    /* DROPDOWN STYLES */
+    /* --- DROPDOWNS --- */
     .custom-dropdown {
         position: absolute;
-        top: 60px;
-        right: 10px;
-        background: #18181b;
-        border: 1px solid rgba(255,255,255,0.1);
-        border-radius: 12px;
-        width: 320px;
-        padding: 5px;
+        top: 70px;
+        right: 0;
+        background: #0a0a0a;
+        border: 1px solid var(--glass-border);
+        border-radius: 16px;
+        width: 340px;
+        padding: 8px;
         display: none;
         flex-direction: column;
-        gap: 2px;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+        gap: 4px;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.9);
         opacity: 0;
         transform: translateY(-10px);
-        transition: 0.3s ease;
+        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        z-index: 1001;
     }
 
         .custom-dropdown.show {
@@ -134,137 +144,160 @@
         }
 
     .chat-item {
-        padding: 12px;
-        border-radius: 8px;
+        padding: 14px;
+        border-radius: 12px;
         color: #ccc;
         text-decoration: none;
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 15px;
         transition: 0.2s;
         cursor: pointer;
-        border-bottom: 1px solid rgba(255,255,255,0.05);
+        border-bottom: 1px solid rgba(255,255,255,0.02);
     }
 
         .chat-item:hover {
-            background: rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
         }
 
     .supplier-avatar {
-        width: 40px;
-        height: 40px;
-        background: linear-gradient(45deg, #00C9FF, #92FE9D);
-        border-radius: 50%;
+        width: 42px;
+        height: 42px;
+        background: linear-gradient(135deg, var(--primary-glow), var(--secondary-glow));
+        border-radius: 12px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-weight: bold;
+        font-weight: 700;
         color: black;
-        font-size: 1rem;
-        flex-shrink: 0;
-    }
-
-    .chat-info {
-        flex: 1;
-        overflow: hidden;
     }
 
     .chat-name {
         font-weight: 600;
-        font-size: 0.9rem;
+        font-size: 0.95rem;
         color: white;
         display: flex;
         justify-content: space-between;
     }
 
     .chat-msg {
-        font-size: 0.8rem;
-        opacity: 0.7;
+        font-size: 0.85rem;
+        opacity: 0.6;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        color: #a0a0a0;
+        max-width: 180px;
     }
 
     .chat-time {
         font-size: 0.7rem;
         color: #666;
-        font-weight: normal;
     }
 
-    /* CONTENT STYLES */
-    .bg-full {
+    /* --- HERO & VIDEO SECTION --- */
+    .hero-container {
         height: 100vh;
         width: 100%;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        padding-top: 50px;
-        background-color: black;
+        position: relative;
     }
 
+    /* This is the key fix for the video shadow/border.
+           1. mix-blend-mode: screen -> Makes black pixels transparent.
+           2. mask-image -> Fades the edges into transparency using a radial gradient.
+        */
     #myVideo {
-        width: 500px;
+        margin-top:-200px;
+        width: 600px; /* Adjust size as needed */
         max-width: 90%;
-        transform: translateY(-50px);
+        z-index: 0;
+        pointer-events: none;
+        /* THE MAGIC FIX FOR SHADOWS */
         mix-blend-mode: screen;
-        opacity: 0.9;
-        -webkit-mask-image: radial-gradient(circle, rgba(0,0,0,1) 20%, rgba(0,0,0,0) 80%);
-        mask-image: radial-gradient(circle, rgba(0,0,0,1) 20%, rgba(0,0,0,0) 80%);
+        -webkit-mask-image: radial-gradient(circle, rgba(0,0,0,1) 30%, rgba(0,0,0,0) 70%);
+        mask-image: radial-gradient(circle, rgba(0,0,0,1) 30%, rgba(0,0,0,0) 70%);
+        /* Optional: Add a subtle glow behind the video */
+        filter: drop-shadow(0 0 30px rgba(0, 201, 255, 0.1));
     }
 
-    .chat-input-container {
+    /* --- CHAT INPUT --- */
+    .chat-input-wrapper {
         position: absolute;
-        bottom: 40px;
+        bottom: 15%;
         width: 100%;
         display: flex;
         justify-content: center;
+        z-index: 10;
     }
 
     .chat-input-box {
         width: 90%;
-        max-width: 600px;
-        background: rgba(30, 30, 30, 0.8);
-        backdrop-filter: blur(10px);
-        border: 1px solid #333;
-        border-radius: 50px;
-        padding: 12px 25px;
+        max-width: 650px;
+        background: rgba(20, 20, 20, 0.8);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 20px;
+        padding: 16px 25px;
         display: flex;
         align-items: center;
         gap: 15px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        transition: all 0.3s ease;
     }
+
+        .chat-input-box:focus-within {
+            border-color: rgba(0, 201, 255, 0.5);
+            box-shadow: 0 0 25px rgba(0, 201, 255, 0.15);
+            transform: translateY(-2px);
+        }
 
         .chat-input-box input {
             flex: 1;
             background: transparent;
             border: none;
             color: white;
+            font-size: 1.1rem;
             outline: none;
+            font-weight: 300;
         }
 
-        .chat-input-box button {
-            background: none;
-            border: none;
-            color: #00C9FF;
-            font-size: 1.2rem;
-            cursor: pointer;
-            transition: 0.3s;
-        }
-
-            .chat-input-box button:hover {
-                transform: scale(1.1);
-                color: #92FE9D;
+            .chat-input-box input::placeholder {
+                color: #666;
             }
+
+    .send-btn {
+        background: linear-gradient(135deg, var(--primary-glow), var(--secondary-glow));
+        border: none;
+        border-radius: 12px;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: black;
+        font-size: 1.1rem;
+        cursor: pointer;
+        transition: 0.3s;
+    }
+
+        .send-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 15px var(--secondary-glow);
+        }
 </style>
 
 <div class="glass-nav">
-    <div class="brand-logo"><i class="fa-solid fa-droplet"></i> HydroAI</div>
+    <div class="brand-logo">
+        <i class="fa-solid fa-droplet"></i> HydroAI
+    </div>
 
     <div class="nav-icons">
         <div style="position: relative;">
-            <div class="icon-btn" @onclick="ToggleMsgDropdown">
+            <div class="icon-btn" @onclick="ToggleMsgDropdown" title="Messages">
                 <i class="fa-regular fa-comment-dots"></i>
                 @if (chatList.Any(c => c.UnreadCount > 0))
                 {
@@ -274,19 +307,19 @@
 
             <div class="custom-dropdown @(showMsgDropdown ? "show" : "")">
                 <div class="d-flex justify-content-between align-items-center px-3 py-2">
-                    <h6 class="text-white m-0 small fw-bold">Messages</h6>
+                    <h6 class="text-white m-0 small fw-bold" style="letter-spacing: 1px; text-transform: uppercase; color: #888 !important;">Recent Chats</h6>
                     <small class="text-muted" style="cursor:pointer" @onclick="RefreshChats"><i class="fa-solid fa-rotate-right"></i></small>
                 </div>
-                <hr class="my-0 border-secondary" />
+                <div style="height: 1px; background: rgba(255,255,255,0.1); margin: 5px 0;"></div>
 
-                <div style="max-height: 300px; overflow-y: auto;">
+                <div style="max-height: 350px; overflow-y: auto;">
                     @if (isLoading)
                     {
-                        <div class="p-3 text-center text-muted small"><div class="spinner-border spinner-border-sm text-info"></div> Loading...</div>
+                        <div class="p-4 text-center text-muted small"><div class="spinner-border spinner-border-sm text-info"></div> Loading...</div>
                     }
                     else if (chatList.Count == 0)
                     {
-                        <div class="p-3 text-center text-muted small">No active chats found.</div>
+                        <div class="p-4 text-center text-muted small">No active conversations.</div>
                     }
                     else
                     {
@@ -316,35 +349,41 @@
 
         <div style="position: relative;">
             <div class="profile-trigger" @onclick="ToggleProfileDropdown" title="@MyName">
-                <img src="@ProfileImageUrl" alt="User">
+                <img src="@ProfileImageUrl" alt="Profile">
             </div>
 
-            <div class="custom-dropdown @(showProfileDropdown ? "show" : "")" style="width: 200px;">
-                <a href="/profilepro" class="chat-item"><i class="fa-solid fa-user-pen me-2"></i> Edit Profile</a>
-                <a href="/Cardpage" class="chat-item"><i class="fa-solid fa-bag-shopping me-2"></i> My Orders</a>
-                <a href="/bills" class="chat-item"><i class="fa-solid fa-receipt me-2"></i> Bills</a>
-                <a href="#" class="chat-item text-danger" @onclick="HandleLogout"><i class="fa-solid fa-power-off me-2"></i> Logout</a>
+            <div class="custom-dropdown @(showProfileDropdown ? "show" : "")" style="width: 220px;">
+                <div class="px-3 py-2 text-center">
+                    <span class="text-white fw-bold d-block">@MyName</span>
+                    <span class="text-muted small">Consumer</span>
+                </div>
+                <div style="height: 1px; background: rgba(255,255,255,0.1); margin: 5px 0;"></div>
+
+                <a href="/profilepro" class="chat-item"><i class="fa-solid fa-user-pen me-2" style="width:20px"></i> Profile</a>
+                <a href="/Cardpage" class="chat-item"><i class="fa-solid fa-bag-shopping me-2" style="width:20px"></i> Orders</a>
+                <a href="/bills" class="chat-item"><i class="fa-solid fa-receipt me-2" style="width:20px"></i> Bills</a>
+                <a href="#" class="chat-item" style="color: #ff4757;" @onclick="HandleLogout"><i class="fa-solid fa-power-off me-2" style="width:20px"></i> Logout</a>
             </div>
         </div>
     </div>
 </div>
 
-<div class="bg-full" @onclick="CloseDropdowns">
+<div class="hero-container" @onclick="CloseDropdowns">
     <video id="myVideo" autoplay muted playsinline loop>
         <source src="/video/blob.mp4" type="video/mp4">
     </video>
-    <div class="chat-input-container">
+
+    <div class="chat-input-wrapper">
         <div class="chat-input-box">
-            <i class="fa-solid fa-magnifying-glass text-muted"></i>
-            <input type="text" placeholder="Search suppliers..." />
-            <button><i class="bi bi-send-fill"></i></button>
+            <i class="fa-solid fa-sparkles" style="color: var(--primary-glow);"></i>
+            <input type="text" placeholder="Ask HydroAI for water supply..." />
+            <button class="send-btn"><i class="bi bi-send-fill"></i></button>
         </div>
     </div>
 </div>
 
 @code {
     string MyName = "";
-    // ✅ DEFAULT IMAGE (Wahi jo provider me use ki thi)
     string ProfileImageUrl = "/images/fallbackimg.jpg";
     bool showMsgDropdown = false;
     bool showProfileDropdown = false;
@@ -362,13 +401,12 @@
 
     List<ChatViewModel> chatList = new();
 
-    // ✅ UPDATED MODEL (Added ProfilePic)
     [Table("profiles")]
     public class Profile : BaseModel
     {
         [Column("id")] public string Id { get; set; } = "";
         [Column("username")] public string Username { get; set; } = "";
-        [Column("profilepic")] public string ProfilePic { get; set; } = ""; // Fetch Filename
+        [Column("profilepic")] public string ProfilePic { get; set; } = "";
     }
 
     protected override async Task OnInitializedAsync()
@@ -382,7 +420,6 @@
 
         if (user != null)
         {
-            // ✅ NEW FETCH LOGIC (Name + Photo)
             string fetchedName = "";
             try
             {
@@ -392,25 +429,17 @@
                 if (profile != null)
                 {
                     fetchedName = profile.Username;
-
-                    // Logic: Agar DB me photo hai, to URL banao
                     if (!string.IsNullOrEmpty(profile.ProfilePic))
                     {
                         ProfileImageUrl = _supabase.Storage.From("Avatar").GetPublicUrl(profile.ProfilePic);
-                    }
-                    else
-                    {
-                        ProfileImageUrl = "/images/fallbackimg.jpg";
                     }
                 }
             }
             catch (Exception ex)
             {
                 Console.WriteLine("Profile Load Error: " + ex.Message);
-                ToastService.ShowToast("Error Failed", "Something went wrong!", "error");
             }
 
-            // Fallback for Name
             if (string.IsNullOrEmpty(fetchedName) && user.UserMetadata != null)
                 if (user.UserMetadata.TryGetValue("username", out var nameObj)) fetchedName = nameObj?.ToString() ?? "";
 
@@ -429,7 +458,6 @@
     async Task LoadChats()
     {
         if (string.IsNullOrEmpty(MyName)) return;
-
         isLoading = true;
         chatList.Clear();
         try
@@ -438,7 +466,6 @@
                                                .Where(x => x.ConsumerName == MyName)
                                                .Order("created_at", Supabase.Postgrest.Constants.Ordering.Descending)
                                                .Get();
-
             var myOrders = orderResponse.Models;
 
             foreach (var order in myOrders)
@@ -450,7 +477,6 @@
                                                  .Get();
 
                 var lastMsg = msgResponse.Models.FirstOrDefault();
-
                 chatList.Add(new ChatViewModel
                 {
                     OrderId = order.Id,
@@ -461,7 +487,7 @@
                 });
             }
         }
-        catch (Exception ex) { Console.WriteLine("Error: " + ex.Message); ToastService.ShowToast("Error Failed", "Something went wrong!", "error"); }
+        catch (Exception ex) { Console.WriteLine("Error: " + ex.Message); }
         finally { isLoading = false; }
     }
 
@@ -470,12 +496,7 @@
     void CloseDropdowns() { showMsgDropdown = false; showProfileDropdown = false; }
     void OpenChat(long orderId) { Nav.NavigateTo($"/chat/{orderId}"); }
     async Task RefreshChats() { await LoadChats(); }
-
-    async Task HandleLogout()
-    {
-        await AuthService.SignOut();
-        Nav.NavigateTo("/login");
-    }
+    async Task HandleLogout() { await AuthService.SignOut(); Nav.NavigateTo("/login"); }
 }
 
 <script>
@@ -483,8 +504,7 @@
         const video = document.getElementById('myVideo');
         if(!video) return;
         video.playbackRate = 1;
-        video.play().catch(e => console.log("Autoplay blocked")
-        ToastService.ShowToast("Error Failed", "Animation Block!", "error"););
+        video.play().catch(e => console.log("Autoplay blocked"));
     }
     setTimeout(startVideoLoop, 1000);
 </script>
