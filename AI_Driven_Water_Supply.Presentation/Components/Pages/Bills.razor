@@ -21,8 +21,16 @@
         color: white;
     }
 
-    .back-btn { cursor: pointer; font-size: 1.2rem; }
-    .brand-logo { font-weight: bold; font-size: 1.2rem; margin-left: 10px; }
+    .back-btn {
+        cursor: pointer;
+        font-size: 1.2rem;
+    }
+
+    .brand-logo {
+        font-weight: bold;
+        font-size: 1.2rem;
+        margin-left: 10px;
+    }
 
     .container-bills {
         padding: 20px;
@@ -33,7 +41,13 @@
     }
 
     /* --- Summary Cards --- */
-    .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 30px; }
+    .summary-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+        margin-bottom: 30px;
+    }
+
     .summary-card {
         background: linear-gradient(145deg, #1e1e1e, #2a2a2a);
         padding: 15px;
@@ -42,12 +56,38 @@
         border: 1px solid rgba(255, 255, 255, 0.05);
         box-shadow: 0 4px 15px rgba(0,0,0,0.3);
     }
-    .summary-label { font-size: 0.8rem; color: #aaa; text-transform: uppercase; letter-spacing: 1px; }
-    .summary-val { font-size: 1.4rem; font-weight: bold; margin-top: 5px; }
-    .text-danger-neon { color: #ff4d4d; text-shadow: 0 0 10px rgba(255, 77, 77, 0.3); }
-    .text-neon { color: #00e676; text-shadow: 0 0 10px rgba(0, 230, 118, 0.3); }
 
-    .section-title { font-size: 1.1rem; margin-bottom: 15px; font-weight: 600; color: #ddd; border-left: 4px solid #00e676; padding-left: 10px; }
+    .summary-label {
+        font-size: 0.8rem;
+        color: #aaa;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .summary-val {
+        font-size: 1.4rem;
+        font-weight: bold;
+        margin-top: 5px;
+    }
+
+    .text-danger-neon {
+        color: #ff4d4d;
+        text-shadow: 0 0 10px rgba(255, 77, 77, 0.3);
+    }
+
+    .text-neon {
+        color: #00e676;
+        text-shadow: 0 0 10px rgba(0, 230, 118, 0.3);
+    }
+
+    .section-title {
+        font-size: 1.1rem;
+        margin-bottom: 15px;
+        font-weight: 600;
+        color: #ddd;
+        border-left: 4px solid #00e676;
+        padding-left: 10px;
+    }
 
     /* --- Bill Cards --- */
     .bill-card {
@@ -61,19 +101,49 @@
         align-items: center;
         transition: transform 0.2s;
     }
-    .bill-info { display: flex; align-items: center; gap: 15px; }
+
+    .bill-info {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
     .bill-icon {
-        width: 40px; height: 40px;
+        width: 40px;
+        height: 40px;
         background: rgba(255, 255, 255, 0.1);
         border-radius: 50%;
-        display: flex; align-items: center; justify-content: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         color: #00d2ff;
     }
-    .bill-details h6 { margin: 0; font-size: 1rem; color: white; }
-    .bill-details p { margin: 0; font-size: 0.75rem; color: #888; }
-    
-    .bill-action { text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 5px; }
-    .bill-amount { font-weight: bold; font-size: 1.1rem; color: white; }
+
+    .bill-details h6 {
+        margin: 0;
+        font-size: 1rem;
+        color: white;
+    }
+
+    .bill-details p {
+        margin: 0;
+        font-size: 0.75rem;
+        color: #888;
+    }
+
+    .bill-action {
+        text-align: right;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 5px;
+    }
+
+    .bill-amount {
+        font-weight: bold;
+        font-size: 1.1rem;
+        color: white;
+    }
 
     .btn-pay {
         background: linear-gradient(90deg, #00d2ff, #3a7bd5);
@@ -85,22 +155,38 @@
         cursor: pointer;
         box-shadow: 0 4px 10px rgba(0, 210, 255, 0.3);
     }
-    .status-badge { padding: 4px 10px; border-radius: 10px; font-size: 0.7rem; }
-    .status-paid { background: rgba(0, 230, 118, 0.2); color: #00e676; }
+
+    .status-badge {
+        padding: 4px 10px;
+        border-radius: 10px;
+        font-size: 0.7rem;
+    }
+
+    .status-paid {
+        background: rgba(0, 230, 118, 0.2);
+        color: #00e676;
+    }
 
     /* --- PAYMENT MODAL STYLES (New) --- */
     .modal-overlay {
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
         background: rgba(0, 0, 0, 0.85); /* Dark background */
         backdrop-filter: blur(5px);
-        display: flex; justify-content: center; align-items: center;
+        display: flex;
+        justify-content: center;
+        align-items: center;
         z-index: 1000;
         animation: fadeIn 0.2s ease-in-out;
     }
 
     .payment-modal {
         background: #1e1e1e;
-        width: 90%; max-width: 400px;
+        width: 90%;
+        max-width: 400px;
         border-radius: 20px;
         padding: 25px;
         border: 1px solid rgba(255, 255, 255, 0.1);
@@ -110,19 +196,37 @@
         animation: slideUp 0.3s ease-out;
     }
 
-    .modal-header h4 { color: white; margin-bottom: 5px; }
-    .modal-header p { color: #888; font-size: 0.9rem; margin-bottom: 20px; }
-    
-    .amount-tag {
-        background: rgba(0, 210, 255, 0.1); color: #00d2ff;
-        padding: 5px 12px; border-radius: 8px; font-weight: bold;
-        display: inline-block; margin-bottom: 20px;
+    .modal-header h4 {
+        color: white;
+        margin-bottom: 5px;
     }
 
-    .payment-options { display: flex; flex-direction: column; gap: 12px; }
+    .modal-header p {
+        color: #888;
+        font-size: 0.9rem;
+        margin-bottom: 20px;
+    }
+
+    .amount-tag {
+        background: rgba(0, 210, 255, 0.1);
+        color: #00d2ff;
+        padding: 5px 12px;
+        border-radius: 8px;
+        font-weight: bold;
+        display: inline-block;
+        margin-bottom: 20px;
+    }
+
+    .payment-options {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
 
     .pay-opt-btn {
-        display: flex; align-items: center; justify-content: space-between;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
         padding: 15px 20px;
         border: 1px solid rgba(255, 255, 255, 0.1);
         border-radius: 12px;
@@ -134,20 +238,56 @@
     }
 
     /* JazzCash Specific Style */
-    .jazz-btn:hover { background: #b71c1c; border-color: #b71c1c; }
-    .card-btn:hover { background: #1565c0; border-color: #1565c0; }
+    .jazz-btn:hover {
+        background: #b71c1c;
+        border-color: #b71c1c;
+    }
 
-    .pay-opt-btn i { font-size: 1.2rem; }
-    .pay-opt-btn span { font-weight: 600; font-size: 1rem; }
+    .card-btn:hover {
+        background: #1565c0;
+        border-color: #1565c0;
+    }
+
+    .pay-opt-btn i {
+        font-size: 1.2rem;
+    }
+
+    .pay-opt-btn span {
+        font-weight: 600;
+        font-size: 1rem;
+    }
 
     .btn-close-modal {
         margin-top: 20px;
-        background: transparent; border: none; color: #888;
-        font-size: 0.9rem; text-decoration: underline; cursor: pointer;
+        background: transparent;
+        border: none;
+        color: #888;
+        font-size: 0.9rem;
+        text-decoration: underline;
+        cursor: pointer;
     }
 
-    @@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-    @@keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    @@keyframes fadeIn {
+        from {
+            opacity: 0;
+        }
+
+        to {
+            opacity: 1;
+        }
+    }
+
+    @@keyframes slideUp {
+        from {
+            transform: translateY(20px);
+            opacity: 0;
+        }
+
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
 
 </style>
 
@@ -219,7 +359,7 @@
 {
     <div class="modal-overlay" @onclick="CloseModal">
         <div class="payment-modal" @onclick:stopPropagation="true">
-            
+
             <div class="modal-header">
                 <h4>Choose Payment</h4>
                 <p>Order #@selectedBill.OrderId</p>
@@ -319,12 +459,12 @@
             ToastService.ShowToast("Processing", $"Connecting to {method}...", "info");
 
             // Mock Delay to simulate payment gateway
-            await Task.Delay(1500); 
+            await Task.Delay(1500);
 
             // Update DB
             selectedBill.Status = "Paid";
             await _supabase.From<Bill>().Update(selectedBill);
-            
+
             // Refresh List
             await LoadBills();
 
