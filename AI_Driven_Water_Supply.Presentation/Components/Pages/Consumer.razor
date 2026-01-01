@@ -34,7 +34,6 @@
         width: 100%;
         height: 80px;
         background: black; /* Very subtle background */
-      
         padding: 0 40px;
         display: flex;
         justify-content: space-between;
@@ -206,12 +205,8 @@
         position: relative;
     }
 
-    /* This is the key fix for the video shadow/border.
-           1. mix-blend-mode: screen -> Makes black pixels transparent.
-           2. mask-image -> Fades the edges into transparency using a radial gradient.
-        */
     #myVideo {
-        margin-top:-200px;
+        margin-top: -200px;
         width: 600px; /* Adjust size as needed */
         max-width: 90%;
         z-index: 0;
@@ -459,11 +454,19 @@
     {
         if (string.IsNullOrEmpty(MyName)) return;
         isLoading = true;
+
+        // --- FIX START ---
+        // Pehle naam ko clean karein (variable mein)
+        string nameWithoutSpace = MyName.Replace(" ", "");
+        Console.WriteLine($"🔍 Debugging: Searching orders for: '{nameWithoutSpace}' (Original: {MyName})");
+        // --- FIX END ---
+
         chatList.Clear();
         try
         {
             var orderResponse = await _supabase.From<AI_Driven_Water_Supply.Presentation.Order>()
-                                               .Where(x => x.ConsumerName == MyName)
+                                               // Ab variable use karein, direct function nahi
+                                               .Where(x => x.ConsumerName == nameWithoutSpace)
                                                .Order("created_at", Supabase.Postgrest.Constants.Ordering.Descending)
                                                .Get();
             var myOrders = orderResponse.Models;
