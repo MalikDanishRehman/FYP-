@@ -1,9 +1,77 @@
 ﻿@page "/supplier-bills"
 @using AI_Driven_Water_Supply.Presentation
 @using Supabase.Postgrest.Models
+@using Supabase.Postgrest.Attributes
 @inject Supabase.Client _supabase
 @inject NavigationManager Nav
 @inject AI_Driven_Water_Supply.Application.Interfaces.IAuthService AuthService
+@inject AI_Driven_Water_Supply.Presentation.Services.ToastService ToastService
+
+<style>
+    .custom-modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.8);
+        z-index: 2000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(5px);
+    }
+
+    .custom-modal {
+        background: #1a1a1a;
+        padding: 25px;
+        border-radius: 16px;
+        width: 90%;
+        max-width: 350px;
+        text-align: center;
+        border: 1px solid #333;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+
+    .btn-mode {
+        width: 100%;
+        padding: 12px;
+        margin-bottom: 10px;
+        border-radius: 10px;
+        border: none;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        transition: 0.2s;
+    }
+
+    .btn-cash {
+        background: #2ecc71;
+        color: black;
+    }
+
+    .btn-jazz {
+        background: #e74c3c;
+        color: white;
+    }
+
+    .btn-cancel {
+        background: #333;
+        color: white;
+        margin-top: 10px;
+    }
+
+    .clickable-card {
+        cursor: pointer;
+        transition: 0.2s;
+    }
+
+        .clickable-card:active {
+            transform: scale(0.98);
+        }
+</style>
 
 <div class="glass-nav">
     <div class="d-flex align-items-center gap-3">
@@ -27,8 +95,13 @@
     </div>
 
     <div class="section-title">Pending Collections</div>
+    <small class="text-muted d-block mb-3">Tap on a bill to receive payment.</small>
 
-    @if (collections.Count == 0)
+    @if (isLoading)
+    {
+        <div class="text-center mt-5"><div class="spinner-border text-success"></div></div>
+    }
+    else if (collections.Count == 0)
     {
         <p class="text-center text-muted py-3">All payments collected.</p>
     }
@@ -36,7 +109,7 @@
     {
         @foreach (var bill in collections)
         {
-            <div class="bill-card">
+            <div class="bill-card clickable-card" @onclick="() => OpenPaymentModal(bill)">
                 <div class="bill-info">
                     <div class="bill-icon"><i class="fa-solid fa-hand-holding-dollar"></i></div>
                     <div class="bill-details">
@@ -46,7 +119,7 @@
                 </div>
                 <div class="bill-action">
                     <span class="bill-amount">Rs @bill.Amount</span>
-                    <span class="status-badge status-due mb-2">Payment Due</span>
+                    <span class="status-badge status-due mb-2">Collect Payment</span>
                 </div>
             </div>
         }
@@ -60,7 +133,10 @@
                 <div class="bill-icon" style="color: #24FE41;"><i class="fa-solid fa-sack-dollar"></i></div>
                 <div class="bill-details">
                     <h6>Consumer: @bill.ConsumerName</h6>
-                    <p>Order #@bill.OrderId • @bill.CreatedAt.ToLocalTime().ToString("dd MMM")</p>
+                    <p>
+                        Order #@bill.OrderId
+                        <br /><span style="font-size:0.8rem; color:#aaa;">Via: @(bill.PaymentMethod ?? "Unknown")</span>
+                    </p>
                 </div>
             </div>
             <div class="bill-action">
@@ -71,26 +147,90 @@
     }
 </div>
 
+@if (showModal && selectedBill != null)
+{
+    <div class="custom-modal-overlay">
+        <div class="custom-modal fade-in">
+            <h4 class="text-white mb-1">Receive Payment?</h4>
+            <p class="text-muted mb-4">Amount: <strong class="text-white">Rs @selectedBill.Amount</strong><br />Consumer: @selectedBill.ConsumerName</p>
+
+            <button class="btn-mode btn-cash" @onclick='() => ProcessPayment("Cash")'>
+                <i class="fa-solid fa-money-bill-wave"></i> Cash Received
+            </button>
+
+            <button class="btn-mode btn-jazz" @onclick='() => ProcessPayment("JazzCash")'>
+                <i class="fa-solid fa-mobile-screen"></i> JazzCash / EasyPaisa
+            </button>
+
+            <button class="btn-mode btn-cancel" @onclick="CloseModal">Cancel</button>
+        </div>
+    </div>
+}
+
 @code {
+    // 👇 MODEL (Sab kuch float mein rakha hai taake errors na aayen)
+    [Table("bills")]
+    public class Bill : BaseModel
+    {
+        [Column("id")] public int Id { get; set; }
+        [Column("order_id")] public int OrderId { get; set; }
+        [Column("consumer_name")] public string ConsumerName { get; set; } = "";
+        [Column("supplier_name")] public string SupplierName { get; set; } = "";
+
+        // 👇 Yeh float hai taake "300.0" ko handle kare
+        [Column("amount")] public float Amount { get; set; }
+
+        [Column("status")] public string Status { get; set; } = "";
+        [Column("created_at")] public DateTime CreatedAt { get; set; }
+        [Column("payment_method")] public string? PaymentMethod { get; set; }
+    }
+
     List<Bill> collections = new();
     List<Bill> history = new();
-    decimal TotalEarnings = 0;
-    decimal PendingAmount = 0;
-    string MyName = "M.Akmal"; // Ya Dynamic Logic
+
+    // 👇 VARIABLES (Yeh bhi float hain taake Model ke sath match karein)
+    float TotalEarnings = 0;
+    float PendingAmount = 0;
+
+    string MyName = "";
+    bool isLoading = true;
+
+    // Modal State
+    bool showModal = false;
+    Bill? selectedBill = null;
 
     protected override async Task OnInitializedAsync()
     {
-        // Yahan wohi Profile/Metadata wali logic lagani hai
-        // jo ProviderDashboard mein lagayi thi
-        // Filhal testing ke liye hardcode hai:
-
-        await LoadData();
+        await LoadProfileAndData();
     }
 
-    async Task LoadData()
+    async Task LoadProfileAndData()
+    {
+        try
+        {
+            var user = AuthService.CurrentUser;
+            if (user != null)
+            {
+                MyName = user.UserMetadata.ContainsKey("full_name")
+                         ? user.UserMetadata["full_name"].ToString()
+                         : "M.Akmal";
+            }
+            await LoadBills();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Error: " + ex.Message);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    async Task LoadBills()
     {
         var response = await _supabase.From<Bill>()
-            .Where(x => x.SupplierName == MyName)
+            .Where(x => x.SupplierName == "M.Akmal")
             .Order("created_at", Supabase.Postgrest.Constants.Ordering.Descending)
             .Get();
 
@@ -99,8 +239,46 @@
         collections = allBills.Where(b => b.Status == "Unpaid").ToList();
         history = allBills.Where(b => b.Status == "Paid").ToList();
 
+        // 👇 Ab yeh line error nahi degi kyunke dono taraf 'float' hai
         TotalEarnings = history.Sum(x => x.Amount);
         PendingAmount = collections.Sum(x => x.Amount);
+
+        StateHasChanged();
+    }
+
+    void OpenPaymentModal(Bill bill)
+    {
+        selectedBill = bill;
+        showModal = true;
+    }
+
+    void CloseModal()
+    {
+        showModal = false;
+        selectedBill = null;
+    }
+
+    async Task ProcessPayment(string method)
+    {
+        if (selectedBill == null) return;
+
+        try
+        {
+            await _supabase.From<Bill>()
+                .Where(x => x.Id == selectedBill.Id)
+                .Set(x => x.Status, "Paid")
+                .Set(x => x.PaymentMethod, method)
+                .Update();
+
+            ToastService.ShowToast("Success", $"Payment received via {method}", "success");
+            CloseModal();
+            await LoadBills();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Payment Error: " + ex.Message);
+            ToastService.ShowToast("Error", "Failed to update payment", "error");
+        }
     }
 
     void GoBack() => Nav.NavigateTo("/ProviderDashboard");
