@@ -4,16 +4,19 @@
 @using Supabase.Postgrest.Models
 @using System.ComponentModel.DataAnnotations
 @using Microsoft.AspNetCore.Components.Forms
+@using AI_Driven_Water_Supply.Presentation.Services
+
 @inject Supabase.Client _supabase
 @inject IAuthService AuthService
 @inject NavigationManager Nav
+@inject IJSRuntime JS
+@inject ToastService ToastService
 @rendermode InteractiveServer
 
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
 
 <div class="page-wrapper">
     <div class="container">
-
         <button class="btn-back" @onclick="GoBack">
             <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
         </button>
@@ -27,9 +30,8 @@
         }
         else
         {
-            <div class="glass-card">
-
-                <div class="avatar-section">
+            <div class="glass-card fade-in">
+                <div class="profile-header text-center mb-4">
                     <div class="avatar-wrapper">
                         @if (!string.IsNullOrEmpty(DisplayUrl))
                         {
@@ -41,31 +43,47 @@
                                 @(string.IsNullOrEmpty(userProfile.Username) ? "U" : userProfile.Username.Substring(0, 1).ToUpper())
                             </div>
                         }
-
                         <div class="edit-icon-overlay" @onclick="() => showImageModal = true">
                             <i class="fa-solid fa-camera"></i>
                         </div>
                     </div>
-                    <h3 class="text-white mt-2">@userProfile.Username</h3>
-                    <span class="badge bg-primary">@userProfile.Role</span>
+                    <h2 class="text-white mt-3 fw-bold">@userProfile.Username</h2>
+                    <span class="badge-role">@userProfile.Role</span>
                 </div>
 
                 <EditForm Model="userProfile" OnValidSubmit="HandleSave">
                     <DataAnnotationsValidator />
 
-                    <div class="row mt-4">
-                        <div class="col-md-6">
-                            <label class="form-label text-muted">Username</label>
-                            <InputText @bind-Value="userProfile.Username" class="form-control-custom" />
+                    <div class="row g-4">
+                        <div class="col-lg-5">
+                            <div class="p-3 info-box">
+                                <label class="form-label text-highlight"><i class="fa-solid fa-user"></i> Username</label>
+                                <InputText @bind-Value="userProfile.Username" class="form-control-custom mb-3" />
+
+                                <div class="alert alert-dark mt-3 small">
+                                    <i class="fa-solid fa-circle-info text-info"></i>
+                                    Role: <strong>@userProfile.Role</strong> (Fixed).
+                                </div>
+                            </div>
                         </div>
 
-                        <div class="col-md-6">
-                            <label class="form-label text-muted">Location / Address</label>
-                            <InputText @bind-Value="userProfile.Location" class="form-control-custom" placeholder="e.g. Sector 11-B, North Karachi" />
+                        <div class="col-lg-7">
+                            <div class="location-box p-3">
+                                <label class="form-label text-highlight mb-2">
+                                    <i class="fa-solid fa-map-location-dot"></i> Delivery Location
+                                </label>
+                                <div class="input-group mb-3">
+                                    <InputText @bind-Value="userProfile.Location" class="form-control-custom" placeholder="Search Area (e.g. Clifton, Karachi)" />
+                                    <button type="button" class="btn btn-outline-info" @onclick="SearchAddress">
+                                        <i class="fa-solid fa-magnifying-glass"></i> Search
+                                    </button>
+                                </div>
+                                <div id="pickMap" style="height: 300px; width: 100%; border-radius: 12px; background: #222;"></div>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="mt-4">
+                    <div class="mt-5 text-center">
                         <button type="submit" class="btn-save">
                             @if (isSaving)
                             {
@@ -77,8 +95,6 @@
                             }
                         </button>
                     </div>
-
-                    @* Purana Alert Box Hata Diya - Ab Toast ayega *@
                 </EditForm>
             </div>
         }
@@ -90,27 +106,31 @@
     <div class="custom-modal-overlay">
         <div class="custom-modal">
             <h5 class="text-white mb-3">Update Profile Picture</h5>
-
-            <label class="upload-box">
+            <div class="upload-box" @onclick="TriggerFileUpload">
                 @if (isUploading)
                 {
                     <div class="spinner-border text-success spinner-border-sm"></div>
-                    <span class="ms-2">Uploading...</span>
                 }
                 else
                 {
-                    <InputFile OnChange="UploadImage" accept=".jpg,.png,.jpeg" style="display:none;" />
                     <i class="fa-solid fa-cloud-arrow-up fs-1 mb-2 text-success"></i>
-                    <p>Click to Select Image</p>
+                    <p>Click to Select</p>
                 }
-            </label>
+            </div>
+            <InputFile id="fileInput" OnChange="UploadImage" accept=".jpg,.png,.jpeg" style="display:none;" />
+
             <button class="btn btn-secondary mt-3 btn-sm" @onclick="() => showImageModal = false">Cancel</button>
         </div>
     </div>
 }
 
+<script>
+    function triggerFileClick() {
+        document.getElementById('fileInput').click();
+    }
+</script>
+
 <style>
-    /* SIMPLE CSS */
     .page-wrapper {
         background: #050505;
         min-height: 100vh;
@@ -132,7 +152,7 @@
         margin: 0 auto;
     }
 
-    .profile-img {
+    .profile-img, .profile-placeholder {
         width: 100%;
         height: 100%;
         border-radius: 50%;
@@ -141,16 +161,12 @@
     }
 
     .profile-placeholder {
-        width: 100%;
-        height: 100%;
-        border-radius: 50%;
         background: #222;
         display: flex;
         align-items: center;
         justify-content: center;
         font-size: 3rem;
         color: #BFFF27;
-        border: 3px solid #BFFF27;
     }
 
     .edit-icon-overlay {
@@ -215,7 +231,13 @@
         border-radius: 10px;
         cursor: pointer;
         display: block;
+        transition: 0.3s;
     }
+
+        .upload-box:hover {
+            border-color: #BFFF27;
+            background: rgba(191, 255, 39, 0.1);
+        }
 </style>
 
 @code {
@@ -235,12 +257,53 @@
     private bool isSaving = false;
     private bool isUploading = false;
     private bool showImageModal = false;
+    private bool isMapInitialized = false;
 
-    // Purane message variables hata diye
+    // 👇 Zaroori: Class ka naam wahi hona chahiye jo file ka hai (Profilepro)
+    private DotNetObjectReference<Profileprovider>? dotNetHelper;
 
     protected override async Task OnInitializedAsync()
     {
+        dotNetHelper = DotNetObjectReference.Create(this);
         await LoadProfile();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // Jab loading khatam ho, tab map chalao
+        if (!isLoading && !isMapInitialized)
+        {
+            try
+            {
+                await Task.Delay(500); // Thora wait taake HTML render hojaye
+                await JS.InvokeVoidAsync("mapFunctions.initPickMap", "pickMap", dotNetHelper, userProfile.Location);
+                isMapInitialized = true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Map Init Error: " + ex.Message);
+            }
+        }
+    }
+
+    private async Task TriggerFileUpload()
+    {
+        await JS.InvokeVoidAsync("triggerFileClick");
+    }
+
+    [JSInvokable]
+    public void UpdateLocationFromMap(string address)
+    {
+        userProfile.Location = address;
+        StateHasChanged();
+    }
+
+    private async Task SearchAddress()
+    {
+        if (!string.IsNullOrEmpty(userProfile.Location))
+        {
+            await JS.InvokeVoidAsync("window.searchAddressOnMap", userProfile.Location);
+        }
     }
 
     private async Task LoadProfile()
@@ -256,21 +319,15 @@
 
             if (user != null && !string.IsNullOrEmpty(user.Id))
             {
-                var response = await _supabase.From<Profile>()
-                                            .Where(x => x.Id == user.Id)
-                                            .Get();
-
+                var response = await _supabase.From<Profile>().Where(x => x.Id == user.Id).Get();
                 var data = response.Models.FirstOrDefault();
 
                 if (data != null)
                 {
                     userProfile = data;
                     if (string.IsNullOrEmpty(userProfile.Id)) userProfile.Id = user.Id;
-
                     if (!string.IsNullOrEmpty(userProfile.ProfilePic))
-                    {
                         DisplayUrl = _supabase.Storage.From("Avatar").GetPublicUrl(userProfile.ProfilePic);
-                    }
                 }
                 else
                 {
@@ -285,7 +342,7 @@
         catch (Exception ex)
         {
             Console.WriteLine("Load Error: " + ex.Message);
-            ToastService.ShowToast("Connection Error", "Failed to load profile data.", "error");
+            ToastService.ShowToast("Error", "Failed to load profile.", "error");
         }
         finally
         {
@@ -314,23 +371,19 @@
             await _supabase.Storage.From("Avatar").Upload(bytes, uniqueFileId);
 
             await _supabase.From<Profile>()
-                           .Where(x => x.Id == user.Id)
-                           .Set(x => x.ProfilePic, uniqueFileId)
-                           .Update();
+                        .Where(x => x.Id == user.Id)
+                        .Set(x => x.ProfilePic, uniqueFileId)
+                        .Update();
 
             userProfile.ProfilePic = uniqueFileId;
             DisplayUrl = _supabase.Storage.From("Avatar").GetPublicUrl(uniqueFileId);
-
             showImageModal = false;
-
-            // 🟢 SUCCESS TOAST
-            ToastService.ShowToast("Image Updated", "Profile picture uploaded successfully.", "success");
+            ToastService.ShowToast("Success", "Profile Picture Updated!", "success");
         }
         catch (Exception ex)
         {
             Console.WriteLine("Upload Error: " + ex.Message);
-            // 🔴 ERROR TOAST
-            ToastService.ShowToast("Upload Failed", "Could not upload image.", "error");
+            ToastService.ShowToast("Error", "Upload failed.", "error");
         }
         finally
         {
@@ -345,18 +398,17 @@
         try
         {
             await _supabase.From<Profile>()
-                           .Where(x => x.Id == userProfile.Id)
-                           .Set(x => x.Username, userProfile.Username)
-                           .Set(x => x.Location, userProfile.Location)
-                           .Update();
+                        .Where(x => x.Id == userProfile.Id)
+                        .Set(x => x.Username, userProfile.Username)
+                        .Set(x => x.Location, userProfile.Location)
+                        .Update();
 
-            // 🟢 SUCCESS TOAST
-            ToastService.ShowToast("Profile Saved", "Your details have been updated.", "success");
+            ToastService.ShowToast("Success", "Profile & Location Saved!", "success");
         }
         catch (Exception ex)
         {
-            // 🔴 ERROR TOAST
-            ToastService.ShowToast("Save Failed", "Could not update profile.", "error");
+            Console.WriteLine("Save Error: " + ex.Message);
+            ToastService.ShowToast("Error", "Could not save profile.", "error");
         }
         finally
         {
@@ -369,5 +421,10 @@
     {
         if (userProfile.Role == "Provider") Nav.NavigateTo("/ProviderDashboard");
         else Nav.NavigateTo("/Consumer");
+    }
+
+    public void Dispose()
+    {
+        dotNetHelper?.Dispose();
     }
 }

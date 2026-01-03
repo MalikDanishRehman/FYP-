@@ -1,36 +1,82 @@
-﻿window.mapFunctions = {
-    loadMap: function (type, suppliers) {
+﻿// File Path: wwwroot/js/map.js
 
-        if (window.myMap) window.myMap.remove();
+window.mapFunctions = {
+    initPickMap: function (elementId, dotnetHelper, initialAddress) {
+        console.log("Map Init Start: " + elementId);
 
-        // Karachi center
-        window.myMap = L.map('map').setView([24.8607, 67.0011], 12);
+        var container = document.getElementById(elementId);
+        if (!container) {
+            console.error("Map container not found!");
+            return;
+        }
+
+        // Agar map pehle se hai to usay clear karo (Grey box fix)
+        if (container._leaflet_id) {
+            container._leaflet_id = null;
+            container.innerHTML = "";
+        }
+
+        // Default Karachi Location
+        var lat = 24.8607;
+        var lng = 67.0011;
+        var zoom = 12;
+
+        var map = L.map(elementId).setView([lat, lng], zoom);
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
-            attribution: '© OpenStreetMap' // Attribution dena achi practice hai
-        }).addTo(window.myMap);
+            attribution: '© OpenStreetMap'
+        }).addTo(map);
 
-        suppliers.forEach(s => {
-            // 🔒 SECURITY FIX: Create Element instead of String
-            var container = document.createElement('div');
+        var marker = L.marker([lat, lng], { draggable: true }).addTo(map);
 
-            var title = document.createElement('b');
-            title.innerText = s.name || "Unknown"; // Script tags yahan text ban jayenge
+        // 👇 ZAROORI: Grey box fix karne ke liye
+        setTimeout(function () {
+            map.invalidateSize();
+        }, 500);
 
-            var lineBreak = document.createElement('br');
-
-            var desc = document.createElement('span');
-            desc.innerText = s.description || "No description"; // Secure
-
-            // Elements ko combine karna
-            container.appendChild(title);
-            container.appendChild(lineBreak);
-            container.appendChild(desc);
-
-            L.marker([s.lat, s.lng])
-                .addTo(window.myMap)
-                .bindPopup(container); // Ab hum secure DOM element pass kar rahe hain
+        // Click Event
+        map.on('click', function (e) {
+            marker.setLatLng(e.latlng);
+            getAddress(e.latlng.lat, e.latlng.lng);
         });
+
+        // Drag Event
+        marker.on('dragend', function (e) {
+            var pos = marker.getLatLng();
+            getAddress(pos.lat, pos.lng);
+        });
+
+        function getAddress(lat, lng) {
+            fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (dotnetHelper) {
+                        dotnetHelper.invokeMethodAsync('UpdateLocationFromMap', data.display_name);
+                    }
+                });
+        }
+
+        // Global Search Function attach
+        window.searchAddressOnMap = function (addressQuery) {
+            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${addressQuery}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data && data.length > 0) {
+                        var newLat = data[0].lat;
+                        var newLon = data[0].lon;
+                        var newLatLng = new L.LatLng(newLat, newLon);
+
+                        marker.setLatLng(newLatLng);
+                        map.setView(newLatLng, 15);
+
+                        if (dotnetHelper) {
+                            dotnetHelper.invokeMethodAsync('UpdateLocationFromMap', data[0].display_name);
+                        }
+                    } else {
+                        alert("Address not found!");
+                    }
+                });
+        };
     }
-}
+};
