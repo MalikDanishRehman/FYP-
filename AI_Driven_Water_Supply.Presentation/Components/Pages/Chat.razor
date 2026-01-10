@@ -8,142 +8,211 @@
 @rendermode InteractiveServer
 
 <style>
-    /* ... (Styles Same as before) ... */
+    /* Global Styles */
+    body, html {
+        height: 100%;
+        overflow: hidden; /* Prevent double scrollbars */
+        background-color: #000;
+    }
+
+    /* Desktop Wrapper */
+    .chat-wrapper {
+        height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    }
+
+    /* Main Chat Box */
     .chat-container {
+        width: 100%;
         max-width: 800px;
-        margin: 0 auto;
-        height: 85vh;
+        height: 85vh; /* Desktop Height */
         display: flex;
         flex-direction: column;
         background: #171a2b;
-        border-radius: 15px;
+        border-radius: 16px;
         overflow: hidden;
         border: 1px solid rgba(255,255,255,0.1);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        position: relative;
     }
 
+    /* Header */
     .chat-header {
-        padding: 15px;
+        padding: 15px 20px;
         background: #1f233a;
-        border-bottom: 1px solid rgba(255,255,255,0.1);
+        border-bottom: 1px solid rgba(255,255,255,0.05);
         display: flex;
         justify-content: space-between;
         align-items: center;
         color: white;
+        flex-shrink: 0; /* Header shrink na ho */
     }
 
+    /* Body (Scrollable Area) */
     .chat-body {
         flex: 1;
         overflow-y: auto;
         padding: 20px;
         display: flex;
         flex-direction: column;
-        gap: 15px;
+        gap: 12px;
         background-color: #0b0d17;
+        scrollbar-width: thin; /* Firefox */
+        scrollbar-color: #2c3e50 #0b0d17;
     }
 
-    .message-bubble {
-        max-width: 70%;
-        padding: 10px 15px;
-        border-radius: 15px;
-        color: white;
-        position: relative;
-        font-size: 0.95rem;
-    }
-
-    .sent {
-        align-self: flex-end;
-        background-color: #BFFF27;
-        color: black;
-        border-bottom-right-radius: 2px;
-    }
-
-    .received {
-        align-self: flex-start;
-        background-color: #2c3e50;
-        border-bottom-left-radius: 2px;
-    }
-
-    .system-msg {
-        align-self: center;
-        background-color: rgba(255,255,255,0.1);
-        color: #ccc;
-        font-size: 0.8rem;
-        padding: 5px 15px;
-        border-radius: 20px;
-        margin: 10px 0;
-        border: 1px solid rgba(255,255,255,0.1);
-    }
-
+    /* Footer (Input Area) */
     .chat-footer {
         padding: 15px;
         background: #1f233a;
         display: flex;
         gap: 10px;
+        flex-shrink: 0; /* Footer shrink na ho */
+        border-top: 1px solid rgba(255,255,255,0.05);
+    }
+
+    /* Message Bubbles */
+    .message-bubble {
+        max-width: 75%;
+        padding: 10px 15px;
+        border-radius: 18px;
+        color: white;
+        position: relative;
+        font-size: 0.95rem;
+        line-height: 1.4;
+        word-wrap: break-word;
+    }
+
+    .sent {
+        align-self: flex-end;
+        background: linear-gradient(135deg, #BFFF27, #92FE9D);
+        color: black;
+        border-bottom-right-radius: 4px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+
+    .received {
+        align-self: flex-start;
+        background-color: #2c3e50;
+        border-bottom-left-radius: 4px;
+    }
+
+    .system-msg {
+        align-self: center;
+        background-color: rgba(255,255,255,0.08);
+        color: #aaa;
+        font-size: 0.75rem;
+        padding: 4px 12px;
+        border-radius: 20px;
+        margin: 8px 0;
     }
 
     .time-stamp {
-        font-size: 0.7rem;
+        font-size: 0.65rem;
         opacity: 0.7;
         display: block;
-        margin-top: 5px;
+        margin-top: 4px;
         text-align: right;
     }
 
+    /* Status Buttons */
     .status-btn-group {
         display: flex;
         gap: 5px;
     }
 
     .btn-xs {
-        font-size: 0.75rem;
-        padding: 5px 10px;
-        font-weight: bold;
-        border-radius: 20px;
+        font-size: 0.7rem;
+        padding: 4px 8px;
+        border-radius: 6px;
+    }
+
+    /* --- MOBILE RESPONSIVENESS (Magic Here) --- */
+
+    @@media (max-width: 768px) {
+        .chat-wrapper {
+            padding: 0;
+            height: 100vh; /* Full Mobile Height */
+            align-items: flex-start;
+        }
+
+        .chat-container {
+            height: 100%; /* Fill Screen */
+            max-width: 100%;
+            border-radius: 0;
+            border: none;
+        }
+
+        .chat-header {
+            padding: 10px 15px;
+        }
+
+        .chat-body {
+            padding: 15px;
+        }
+        /* Adjust font size for mobile */
+        h5 {
+            font-size: 1rem !important;
+        }
+
+        small {
+            font-size: 0.75rem;
+        }
     }
 </style>
 
-<div class="container mt-4">
-    <button class="btn btn-outline-light mb-2" @onclick="GoBack">
-        <i class="fa-solid fa-arrow-left"></i> Back
-    </button>
-
-    <div class="chat-container shadow-lg">
+<div class="chat-wrapper">
+    <div class="chat-container">
         <div class="chat-header">
-            <div>
-                <h5 class="m-0 fw-bold"><i class="fa-solid fa-user-circle me-2"></i> @DisplayChatName</h5>
-                <small class="text-muted">Order ID: #@OrderId | @ItemName</small>
+            <div class="d-flex align-items-center gap-2">
+                <button class="btn btn-sm btn-outline-secondary border-0 text-white" @onclick="GoBack">
+                    <i class="fa-solid fa-arrow-left"></i>
+                </button>
+
+                <div>
+                    <h5 class="m-0 fw-bold">@DisplayChatName</h5>
+                    <small class="text-muted d-block" style="line-height:1;">
+                        #@OrderId | <span class="badge @GetStatusColor(OrderStatus) p-1" style="font-size:0.6rem;">@OrderStatus</span>
+                    </small>
+                </div>
             </div>
-            <div class="d-flex align-items-center gap-3">
-                <span class="badge @GetStatusColor(OrderStatus) text-dark px-3 py-2">@OrderStatus</span>
-                @if (AmISupplier && OrderStatus != "Completed" && OrderStatus != "Cancelled")
-                {
-                    <div class="status-btn-group">
-                        @if (OrderStatus == "Pending")
-                        {
-                            <button class="btn btn-success btn-xs" @onclick='() => UpdateStatus("Accepted")'>Accept</button>
-                            <button class="btn btn-danger btn-xs" @onclick='() => UpdateStatus("Cancelled")'>Reject</button>
-                        }
-                        else if (OrderStatus == "Accepted")
-                        {
-                            <button class="btn btn-warning btn-xs" @onclick='() => UpdateStatus("Out for Delivery")'>Dispatch 🚚</button>
-                        }
-                        else if (OrderStatus == "Out for Delivery")
-                        {
-                            <button class="btn btn-info btn-xs" @onclick='() => UpdateStatus("Completed")'>Complete ✅</button>
-                        }
-                    </div>
-                }
-            </div>
+
+            @if (AmISupplier && OrderStatus != "Completed" && OrderStatus != "Cancelled")
+            {
+                <div class="status-btn-group">
+                    @if (OrderStatus == "Pending")
+                    {
+                        <button class="btn btn-success btn-xs" @onclick='() => UpdateStatus("Accepted")'><i class="fa-solid fa-check"></i></button>
+                        <button class="btn btn-danger btn-xs" @onclick='() => UpdateStatus("Cancelled")'><i class="fa-solid fa-xmark"></i></button>
+                    }
+                    else if (OrderStatus == "Accepted")
+                    {
+                        <button class="btn btn-warning btn-xs text-dark" @onclick='() => UpdateStatus("Out for Delivery")'>Dispatch</button>
+                    }
+                    else if (OrderStatus == "Out for Delivery")
+                    {
+                        <button class="btn btn-info btn-xs text-dark" @onclick='() => UpdateStatus("Completed")'>Finish</button>
+                    }
+                </div>
+            }
         </div>
 
-        <div class="chat-body">
+        <div class="chat-body" id="chatList">
             @if (isLoading)
             {
-                <div class="text-center text-white mt-5"><div class="spinner-border text-success"></div></div>
+                <div class="d-flex justify-content-center align-items-center h-100">
+                    <div class="spinner-border text-success"></div>
+                </div>
             }
             else if (messages.Count == 0)
             {
-                <div class="text-center text-muted mt-5">No messages yet.</div>
+                <div class="d-flex flex-column justify-content-center align-items-center h-100 opacity-50">
+                    <i class="fa-regular fa-comments fa-3x mb-3"></i>
+                    <p>No messages yet.</p>
+                </div>
             }
             else
             {
@@ -156,7 +225,6 @@
                     else
                     {
                         <div class="message-bubble @(msg.SenderName == MyName ? "sent" : "received")">
-                            <strong>@(msg.SenderName == MyName ? "You" : msg.SenderName)</strong> <br />
                             @msg.Content
                             <span class="time-stamp">@msg.CreatedAt.ToLocalTime().ToString("hh:mm tt")</span>
                         </div>
@@ -166,12 +234,15 @@
         </div>
 
         <div class="chat-footer">
-            <input type="text" class="form-control bg-dark text-white border-secondary"
+            <input type="text" class="form-control bg-dark text-white border-secondary shadow-none"
+                   style="border-radius: 20px;"
                    placeholder="Type a message..."
                    @bind="newMessageInput"
+                   @bind:event="oninput"
                    @onkeyup="@(e => { if (e.Key == "Enter") SendMessage(); })" />
 
-            <button class="btn btn-success fw-bold" @onclick="SendMessage">
+            <button class="btn btn-success fw-bold rounded-circle" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;"
+                    @onclick="SendMessage" disabled="@(string.IsNullOrWhiteSpace(newMessageInput))">
                 <i class="fa-solid fa-paper-plane"></i>
             </button>
         </div>
@@ -181,19 +252,21 @@
 @code {
     [Parameter] public long OrderId { get; set; }
 
-    // 👇 Ensure ToastService is Injected via _Imports, but we use it below
+    // Use [Inject] inside Code block if needed, or stick to @inject at top
+    [Inject] public Supabase.Client SupabaseClient { get; set; }
+    // Ensure ToastService is available if you use it
 
     private string MyName = "";
     private string SupplierName = "";
     private string ConsumerName = "";
     private string DisplayChatName = "Loading...";
-    private string ItemName = "";
     private string OrderStatus = "";
     private string newMessageInput = "";
     private bool isLoading = true;
     private bool AmISupplier = false;
     private List<AI_Driven_Water_Supply.Presentation.Message> messages = new();
 
+    // Models definitions (Same as yours)
     [Supabase.Postgrest.Attributes.Table("profiles")]
     public class Profile : Supabase.Postgrest.Models.BaseModel
     {
@@ -218,11 +291,9 @@
             catch { }
 
             if (string.IsNullOrEmpty(fetchedName) && user.UserMetadata != null)
-                if (user.UserMetadata.TryGetValue("username", out var nameObj))
-                    fetchedName = nameObj?.ToString() ?? "";
+                if (user.UserMetadata.TryGetValue("username", out var nameObj)) fetchedName = nameObj?.ToString() ?? "";
 
-            string email = user.Email ?? "";
-            if (string.IsNullOrEmpty(fetchedName) && !string.IsNullOrEmpty(email)) fetchedName = email.Split('@')[0];
+            if (string.IsNullOrEmpty(fetchedName) && !string.IsNullOrEmpty(user.Email)) fetchedName = user.Email.Split('@')[0];
 
             MyName = fetchedName;
         }
@@ -236,6 +307,15 @@
         await LoadMessages();
     }
 
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (messages.Count > 0)
+        {
+            // Auto scroll to bottom when messages load
+            try { await JS.InvokeVoidAsync("scrollToBottom", "chatList"); } catch { }
+        }
+    }
+
     private async Task LoadOrderDetails()
     {
         try
@@ -246,7 +326,6 @@
             {
                 ConsumerName = order.ConsumerName;
                 SupplierName = order.SupplierName;
-                ItemName = $"{order.Quantity}x {order.ItemName}";
                 OrderStatus = order.Status;
                 AmISupplier = string.Equals(MyName, SupplierName, StringComparison.OrdinalIgnoreCase);
                 DisplayChatName = AmISupplier ? ConsumerName : SupplierName;
@@ -261,9 +340,9 @@
         try
         {
             var response = await _supabase.From<AI_Driven_Water_Supply.Presentation.Message>()
-                                        .Where(x => x.OrderId == OrderId)
-                                        .Order("created_at", Supabase.Postgrest.Constants.Ordering.Ascending)
-                                        .Get();
+                                            .Where(x => x.OrderId == OrderId)
+                                            .Order("created_at", Supabase.Postgrest.Constants.Ordering.Ascending)
+                                            .Get();
             messages = response.Models;
         }
         finally { isLoading = false; }
@@ -273,7 +352,17 @@
     {
         if (string.IsNullOrWhiteSpace(newMessageInput)) return;
         var content = newMessageInput;
-        newMessageInput = "";
+        newMessageInput = ""; // Clear immediately for UX
+
+        // Optimistic UI Update (Show message immediately)
+        var tempMsg = new AI_Driven_Water_Supply.Presentation.Message
+        {
+            SenderName = MyName,
+            Content = content,
+            CreatedAt = DateTime.UtcNow
+        };
+        messages.Add(tempMsg);
+
         await PostMessage(MyName, AmISupplier ? ConsumerName : SupplierName, content);
     }
 
@@ -287,7 +376,7 @@
             Content = content,
             CreatedAt = DateTime.UtcNow
         };
-        messages.Add(newMsg);
+        // Already added to list optimistically, just saving to DB
         await _supabase.From<AI_Driven_Water_Supply.Presentation.Message>().Insert(newMsg);
     }
 
@@ -302,53 +391,23 @@
 
             OrderStatus = newStatus;
 
-            if (newStatus == "Accepted")
-            {
-                // 🟢 Notify Provider
-                ToastService.ShowToast("Order Accepted", "Bill generated successfully.", "success");
-
-                var ordResponse = await _supabase.From<AI_Driven_Water_Supply.Presentation.Order>().Where(x => x.Id == OrderId).Get();
-                var orderData = ordResponse.Models.FirstOrDefault();
-
-                if (orderData != null)
-                {
-                    var newBill = new Bill
-                    {
-                        OrderId = OrderId,
-                        ConsumerName = ConsumerName,
-                        SupplierName = SupplierName,
-                        Amount = (decimal)orderData.TotalPrice,
-                        Status = "Unpaid",
-                        CreatedAt = DateTime.UtcNow
-                    };
-                    await _supabase.From<Bill>().Insert(newBill);
-                }
-            }
-            else if (newStatus == "Out for Delivery")
-            {
-                ToastService.ShowToast("Dispatched", "Customer has been notified.", "info");
-            }
-            else if (newStatus == "Completed")
-            {
-                ToastService.ShowToast("Completed", "Order marked as delivered.", "success");
-            }
-
             string systemMsg = newStatus switch
             {
-                "Accepted" => $"✅ Order Accepted by {SupplierName}. Bill Generated.",
+                "Accepted" => $"✅ Order Accepted by {SupplierName}.",
                 "Out for Delivery" => $"🚚 Order is Out for Delivery!",
                 "Completed" => $"🎉 Order Delivered Successfully.",
-                "Cancelled" => $"❌ Order was Cancelled by Provider.",
+                "Cancelled" => $"❌ Order was Cancelled.",
                 _ => $"Status updated to {newStatus}"
             };
 
             await PostMessage("System", ConsumerName, systemMsg);
+
+            // Re-fetch messages to show system message
+            await LoadMessages();
         }
         catch (Exception ex)
         {
             Console.WriteLine("Status Update Error: " + ex.Message);
-            // 🔴 Error Toast
-            ToastService.ShowToast("Update Failed", "Could not update order status.", "error");
         }
     }
 
@@ -359,9 +418,15 @@
         "Out for Delivery" => "bg-primary",
         "Completed" => "bg-success",
         "Cancelled" => "bg-danger",
-        "Paid" => "bg-success",
         _ => "bg-secondary"
     };
 
     void GoBack() => Nav.NavigateTo(AmISupplier ? "/ProviderDashboard" : "/Consumer");
 }
+
+<script>
+    window.scrollToBottom = (id) => {
+        const element = document.getElementById(id);
+        if (element) element.scrollTop = element.scrollHeight;
+    }
+</script>
