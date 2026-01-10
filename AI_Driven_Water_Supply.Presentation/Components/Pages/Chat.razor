@@ -8,38 +8,45 @@
 @rendermode InteractiveServer
 
 <style>
-    /* Global Styles */
+    /* --- GLOBAL & LAYOUT --- */
     body, html {
-        height: 100%;
-        overflow: hidden; /* Prevent double scrollbars */
+        height: auto; /* Fixed height hata di */
+        min-height: 100%;
+        overflow-y: auto; /* Page scroll enable kar diya */
         background-color: #000;
+        margin: 0;
+        padding: 0;
     }
 
-    /* Desktop Wrapper */
+    /* Is wrapper ne ab padding le li hai taaki upar/neche jagah bane */
     .chat-wrapper {
-        height: 100vh;
+        min-height: 100vh; /* Kam se kam puri screen jitna ho */
+        width: 100%;
         display: flex;
         align-items: center;
         justify-content: center;
-        padding: 20px;
+        padding: 50px 20px; /* TOP/BOTTOM Extra Space yahan se aayi */
+        background-color: #000;
+        box-sizing: border-box;
     }
 
-    /* Main Chat Box */
+    /* --- CHAT BOX CONTAINER --- */
     .chat-container {
         width: 100%;
         max-width: 800px;
-        height: 85vh; /* Desktop Height */
+        height: 80vh; /* Fixed height relative to viewport */
+        min-height: 500px; /* Bahut chota na ho */
         display: flex;
         flex-direction: column;
         background: #171a2b;
         border-radius: 16px;
         overflow: hidden;
         border: 1px solid rgba(255,255,255,0.1);
-        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        box-shadow: 0 10px 40px rgba(0,0,0,0.6);
         position: relative;
     }
 
-    /* Header */
+    /* --- HEADER --- */
     .chat-header {
         padding: 15px 20px;
         background: #1f233a;
@@ -48,33 +55,23 @@
         justify-content: space-between;
         align-items: center;
         color: white;
-        flex-shrink: 0; /* Header shrink na ho */
+        flex-shrink: 0;
     }
 
-    /* Body (Scrollable Area) */
+    /* --- BODY (MESSAGES AREA) --- */
     .chat-body {
         flex: 1;
-        overflow-y: auto;
+        overflow-y: auto; /* Sirf messages scroll honge andar */
         padding: 20px;
         display: flex;
         flex-direction: column;
         gap: 12px;
         background-color: #0b0d17;
-        scrollbar-width: thin; /* Firefox */
+        scrollbar-width: thin;
         scrollbar-color: #2c3e50 #0b0d17;
     }
 
-    /* Footer (Input Area) */
-    .chat-footer {
-        padding: 15px;
-        background: #1f233a;
-        display: flex;
-        gap: 10px;
-        flex-shrink: 0; /* Footer shrink na ho */
-        border-top: 1px solid rgba(255,255,255,0.05);
-    }
-
-    /* Message Bubbles */
+    /* --- MESSAGE BUBBLES --- */
     .message-bubble {
         max-width: 75%;
         padding: 10px 15px;
@@ -91,7 +88,6 @@
         background: linear-gradient(135deg, #BFFF27, #92FE9D);
         color: black;
         border-bottom-right-radius: 4px;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
     }
 
     .received {
@@ -118,7 +114,17 @@
         text-align: right;
     }
 
-    /* Status Buttons */
+    /* --- FOOTER (INPUT AREA) --- */
+    .chat-footer {
+        padding: 15px;
+        background: #1f233a;
+        display: flex;
+        gap: 10px;
+        flex-shrink: 0;
+        border-top: 1px solid rgba(255,255,255,0.05);
+    }
+
+    /* Buttons */
     .status-btn-group {
         display: flex;
         gap: 5px;
@@ -130,20 +136,19 @@
         border-radius: 6px;
     }
 
-    /* --- MOBILE RESPONSIVENESS (Magic Here) --- */
-
+    /* --- MOBILE RESPONSIVENESS --- */
     @@media (max-width: 768px) {
         .chat-wrapper {
-            padding: 0;
-            height: 100vh; /* Full Mobile Height */
-            align-items: flex-start;
+            padding: 20px 10px; /* Mobile pe thoda kam space taaki content dikhe */
+            height: auto;
+            min-height: 100vh;
+            align-items: center;
         }
 
         .chat-container {
-            height: 100%; /* Fill Screen */
+            height: 85vh; /* Mobile par bhi box bada rahega */
             max-width: 100%;
-            border-radius: 0;
-            border: none;
+            border-radius: 12px; /* Thoda radius wapas laye */
         }
 
         .chat-header {
@@ -152,8 +157,16 @@
 
         .chat-body {
             padding: 15px;
+            padding-bottom: 20px;
         }
-        /* Adjust font size for mobile */
+
+        .chat-footer {
+            padding: 10px;
+            /* Mobile par footer sticky hataya taaki wo box ke andar hi rahe */
+            position: relative;
+            z-index: 10;
+        }
+
         h5 {
             font-size: 1rem !important;
         }
@@ -166,6 +179,7 @@
 
 <div class="chat-wrapper">
     <div class="chat-container">
+
         <div class="chat-header">
             <div class="d-flex align-items-center gap-2">
                 <button class="btn btn-sm btn-outline-secondary border-0 text-white" @onclick="GoBack">
@@ -233,28 +247,27 @@
             }
         </div>
 
-        <div class="chat-footer">
+        <form class="chat-footer" @onsubmit="SendMessage" autocomplete="off">
             <input type="text" class="form-control bg-dark text-white border-secondary shadow-none"
                    style="border-radius: 20px;"
                    placeholder="Type a message..."
                    @bind="newMessageInput"
-                   @bind:event="oninput"
-                   @onkeyup="@(e => { if (e.Key == "Enter") SendMessage(); })" />
+                   @bind:event="oninput" />
 
-            <button class="btn btn-success fw-bold rounded-circle" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;"
-                    @onclick="SendMessage" disabled="@(string.IsNullOrWhiteSpace(newMessageInput))">
+            <button type="submit" class="btn btn-success fw-bold rounded-circle"
+                    style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;"
+                    disabled="@(string.IsNullOrWhiteSpace(newMessageInput))">
                 <i class="fa-solid fa-paper-plane"></i>
             </button>
-        </div>
+        </form>
+
     </div>
 </div>
 
 @code {
     [Parameter] public long OrderId { get; set; }
 
-    // Use [Inject] inside Code block if needed, or stick to @inject at top
     [Inject] public Supabase.Client SupabaseClient { get; set; }
-    // Ensure ToastService is available if you use it
 
     private string MyName = "";
     private string SupplierName = "";
@@ -266,7 +279,7 @@
     private bool AmISupplier = false;
     private List<AI_Driven_Water_Supply.Presentation.Message> messages = new();
 
-    // Models definitions (Same as yours)
+    // Profile Model
     [Supabase.Postgrest.Attributes.Table("profiles")]
     public class Profile : Supabase.Postgrest.Models.BaseModel
     {
@@ -311,7 +324,6 @@
     {
         if (messages.Count > 0)
         {
-            // Auto scroll to bottom when messages load
             try { await JS.InvokeVoidAsync("scrollToBottom", "chatList"); } catch { }
         }
     }
@@ -351,10 +363,10 @@
     private async Task SendMessage()
     {
         if (string.IsNullOrWhiteSpace(newMessageInput)) return;
-        var content = newMessageInput;
-        newMessageInput = ""; // Clear immediately for UX
 
-        // Optimistic UI Update (Show message immediately)
+        var content = newMessageInput;
+        newMessageInput = string.Empty;
+
         var tempMsg = new AI_Driven_Water_Supply.Presentation.Message
         {
             SenderName = MyName,
@@ -362,6 +374,8 @@
             CreatedAt = DateTime.UtcNow
         };
         messages.Add(tempMsg);
+
+        await JS.InvokeVoidAsync("scrollToBottom", "chatList");
 
         await PostMessage(MyName, AmISupplier ? ConsumerName : SupplierName, content);
     }
@@ -376,7 +390,6 @@
             Content = content,
             CreatedAt = DateTime.UtcNow
         };
-        // Already added to list optimistically, just saving to DB
         await _supabase.From<AI_Driven_Water_Supply.Presentation.Message>().Insert(newMsg);
     }
 
@@ -391,9 +404,28 @@
 
             OrderStatus = newStatus;
 
+            if (newStatus == "Accepted")
+            {
+                var ordResponse = await _supabase.From<AI_Driven_Water_Supply.Presentation.Order>().Where(x => x.Id == OrderId).Get();
+                var orderData = ordResponse.Models.FirstOrDefault();
+                if (orderData != null)
+                {
+                    var newBill = new Bill
+                    {
+                        OrderId = OrderId,
+                        ConsumerName = ConsumerName,
+                        SupplierName = SupplierName,
+                        Amount = (decimal)orderData.TotalPrice,
+                        Status = "Unpaid",
+                        CreatedAt = DateTime.UtcNow
+                    };
+                    await _supabase.From<Bill>().Insert(newBill);
+                }
+            }
+
             string systemMsg = newStatus switch
             {
-                "Accepted" => $"✅ Order Accepted by {SupplierName}.",
+                "Accepted" => $"✅ Order Accepted by {SupplierName}. Bill Generated.",
                 "Out for Delivery" => $"🚚 Order is Out for Delivery!",
                 "Completed" => $"🎉 Order Delivered Successfully.",
                 "Cancelled" => $"❌ Order was Cancelled.",
@@ -401,8 +433,6 @@
             };
 
             await PostMessage("System", ConsumerName, systemMsg);
-
-            // Re-fetch messages to show system message
             await LoadMessages();
         }
         catch (Exception ex)
@@ -427,6 +457,8 @@
 <script>
     window.scrollToBottom = (id) => {
         const element = document.getElementById(id);
-        if (element) element.scrollTop = element.scrollHeight;
+        if (element) {
+            element.scrollTop = element.scrollHeight;
+        }
     }
 </script>
