@@ -19,10 +19,10 @@
     body {
         margin: 0;
         padding: 0;
-        background-color: #000000; /* Pure Black */
+        background-color: #000000;
         color: white;
         font-family: 'Inter', sans-serif;
-        overflow: hidden; /* Prevents scrollbars */
+        overflow: hidden;
         height: 100vh;
     }
 
@@ -33,12 +33,13 @@
         left: 0;
         width: 100%;
         height: 80px;
-        background: black; /* Very subtle background */
-        padding: 0 40px;
+        background: black;
+        padding: 0 20px;
         display: flex;
         justify-content: space-between;
         align-items: center;
         z-index: 1000;
+        box-sizing: border-box;
     }
 
     .brand-logo {
@@ -52,12 +53,12 @@
         display: flex;
         align-items: center;
         gap: 10px;
-        filter: drop-shadow(0 0 10px rgba(0, 201, 255, 0.3));
     }
 
+    /* Right Side Icons Container */
     .nav-icons {
         display: flex;
-        gap: 25px;
+        gap: 15px;
         align-items: center;
     }
 
@@ -77,16 +78,15 @@
         background: rgba(255, 255, 255, 0.03);
     }
 
-        .icon-btn:hover {
+        .icon-btn:hover, .icon-btn.active {
             background: rgba(255, 255, 255, 0.1);
             color: var(--primary-glow);
             transform: translateY(-2px);
-            box-shadow: 0 0 15px rgba(0, 201, 255, 0.2);
         }
 
     .profile-trigger {
-        width: 48px;
-        height: 48px;
+        width: 42px;
+        height: 42px;
         border-radius: 50%;
         cursor: pointer;
         border: 2px solid transparent;
@@ -96,7 +96,7 @@
     }
 
         .profile-trigger:hover {
-            transform: scale(1.1);
+            transform: scale(1.05);
         }
 
         .profile-trigger img {
@@ -116,11 +116,11 @@
         box-shadow: 0 0 5px #ff4757;
     }
 
-    /* --- DROPDOWNS --- */
+    /* --- DROPDOWNS (Desktop Default) --- */
     .custom-dropdown {
         position: absolute;
-        top: 70px;
-        right: 0;
+        top: 65px;
+        right: 0; /* Default Desktop Alignment: Right side */
         background: #0a0a0a;
         border: 1px solid var(--glass-border);
         border-radius: 16px;
@@ -130,17 +130,46 @@
         flex-direction: column;
         gap: 4px;
         box-shadow: 0 20px 50px rgba(0,0,0,0.9);
-        opacity: 0;
-        transform: translateY(-10px);
-        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-        z-index: 1001;
+        z-index: 2000;
+        animation: fadeIn 0.2s ease;
     }
 
         .custom-dropdown.show {
             display: flex;
+        }
+
+    /* --- MOBILE SPECIFIC MAGIC (Fixed Syntax Here) --- */
+    /* Note: @@media use kiya hai taaki C# error na de */
+    @@media (max-width: 768px) {
+        .msg-dropdown-mobile-center.show {
+            position: fixed !important; /* Screen ke hisaab se fix */
+            top: 50% !important;
+            left: 50% !important;
+            transform: translate(-50%, -50%) !important; /* Perfect Center */
+            width: 90% !important; /* Mobile width */
+            max-width: 350px;
+            box-shadow: 0 0 100px rgba(0,0,0,1); /* Deep Shadow */
+            border: 1px solid rgba(255,255,255,0.2);
+            z-index: 9999;
+        }
+
+        .glass-nav {
+            padding: 0 15px;
+        }
+    }
+
+    /* Note: @@keyframes use kiya hai taaki C# error na de */
+    @@keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+
+        to {
             opacity: 1;
             transform: translateY(0);
         }
+    }
 
     .chat-item {
         padding: 14px;
@@ -170,6 +199,7 @@
         justify-content: center;
         font-weight: 700;
         color: black;
+        flex-shrink: 0;
     }
 
     .chat-name {
@@ -178,6 +208,7 @@
         color: white;
         display: flex;
         justify-content: space-between;
+        width: 100%;
     }
 
     .chat-msg {
@@ -194,7 +225,7 @@
         color: #666;
     }
 
-    /* --- HERO & VIDEO SECTION --- */
+    /* Hero & Video */
     .hero-container {
         height: 100vh;
         width: 100%;
@@ -206,20 +237,16 @@
     }
 
     #myVideo {
-        margin-top: -200px;
-        width: 600px; /* Adjust size as needed */
+        margin-top: -150px;
+        width: 600px;
         max-width: 90%;
-        z-index: 0;
         pointer-events: none;
-        /* THE MAGIC FIX FOR SHADOWS */
         mix-blend-mode: screen;
         -webkit-mask-image: radial-gradient(circle, rgba(0,0,0,1) 30%, rgba(0,0,0,0) 70%);
         mask-image: radial-gradient(circle, rgba(0,0,0,1) 30%, rgba(0,0,0,0) 70%);
-        /* Optional: Add a subtle glow behind the video */
-        filter: drop-shadow(0 0 30px rgba(0, 201, 255, 0.1));
     }
 
-    /* --- CHAT INPUT --- */
+    /* Input */
     .chat-input-wrapper {
         position: absolute;
         bottom: 15%;
@@ -230,39 +257,26 @@
     }
 
     .chat-input-box {
-        width: 90%;
-        max-width: 650px;
+        width: 85%;
+        max-width: 600px;
         background: rgba(20, 20, 20, 0.8);
         backdrop-filter: blur(20px);
         border: 1px solid rgba(255, 255, 255, 0.1);
         border-radius: 20px;
-        padding: 16px 25px;
+        padding: 14px 20px;
         display: flex;
         align-items: center;
         gap: 15px;
         box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-        transition: all 0.3s ease;
     }
-
-        .chat-input-box:focus-within {
-            border-color: rgba(0, 201, 255, 0.5);
-            box-shadow: 0 0 25px rgba(0, 201, 255, 0.15);
-            transform: translateY(-2px);
-        }
 
         .chat-input-box input {
             flex: 1;
             background: transparent;
             border: none;
             color: white;
-            font-size: 1.1rem;
             outline: none;
-            font-weight: 300;
         }
-
-            .chat-input-box input::placeholder {
-                color: #666;
-            }
 
     .send-btn {
         background: linear-gradient(135deg, var(--primary-glow), var(--secondary-glow));
@@ -274,15 +288,8 @@
         align-items: center;
         justify-content: center;
         color: black;
-        font-size: 1.1rem;
         cursor: pointer;
-        transition: 0.3s;
     }
-
-        .send-btn:hover {
-            transform: scale(1.1);
-            box-shadow: 0 0 15px var(--secondary-glow);
-        }
 </style>
 
 <div class="glass-nav">
@@ -291,8 +298,9 @@
     </div>
 
     <div class="nav-icons">
+
         <div style="position: relative;">
-            <div class="icon-btn" @onclick="ToggleMsgDropdown" title="Messages">
+            <div class="icon-btn @(showMsgDropdown ? "active" : "")" @onclick="ToggleMsgDropdown">
                 <i class="fa-regular fa-comment-dots"></i>
                 @if (chatList.Any(c => c.UnreadCount > 0))
                 {
@@ -300,9 +308,9 @@
                 }
             </div>
 
-            <div class="custom-dropdown @(showMsgDropdown ? "show" : "")">
+            <div class="custom-dropdown msg-dropdown-mobile-center @(showMsgDropdown ? "show" : "")">
                 <div class="d-flex justify-content-between align-items-center px-3 py-2">
-                    <h6 class="text-white m-0 small fw-bold" style="letter-spacing: 1px; text-transform: uppercase; color: #888 !important;">Recent Chats</h6>
+                    <h6 class="text-white m-0 small fw-bold" style="color: #888 !important;">CHATS</h6>
                     <small class="text-muted" style="cursor:pointer" @onclick="RefreshChats"><i class="fa-solid fa-rotate-right"></i></small>
                 </div>
                 <div style="height: 1px; background: rgba(255,255,255,0.1); margin: 5px 0;"></div>
@@ -322,7 +330,7 @@
                         {
                             <div class="chat-item" @onclick="() => OpenChat(chat.OrderId)">
                                 <div class="supplier-avatar">@(!string.IsNullOrEmpty(chat.SupplierName) ? chat.SupplierName.Substring(0, 1).ToUpper() : "S")</div>
-                                <div class="chat-info">
+                                <div class="chat-info" style="flex:1;">
                                     <div class="chat-name">
                                         @chat.SupplierName
                                         <span class="chat-time">@chat.LastMsgTime</span>
@@ -343,7 +351,7 @@
         </div>
 
         <div style="position: relative;">
-            <div class="profile-trigger" @onclick="ToggleProfileDropdown" title="@MyName">
+            <div class="profile-trigger" @onclick="ToggleProfileDropdown">
                 <img src="@ProfileImageUrl" alt="Profile">
             </div>
 
@@ -353,13 +361,13 @@
                     <span class="text-muted small">Consumer</span>
                 </div>
                 <div style="height: 1px; background: rgba(255,255,255,0.1); margin: 5px 0;"></div>
-
-                <a href="/profilepro" class="chat-item"><i class="fa-solid fa-user-pen me-2" style="width:20px"></i> Profile</a>
-                <a href="/Cardpage" class="chat-item"><i class="fa-solid fa-bag-shopping me-2" style="width:20px"></i> Orders</a>
-                <a href="/bills" class="chat-item"><i class="fa-solid fa-receipt me-2" style="width:20px"></i> Bills</a>
-                <a href="#" class="chat-item" style="color: #ff4757;" @onclick="HandleLogout"><i class="fa-solid fa-power-off me-2" style="width:20px"></i> Logout</a>
+                <a href="/profilepro" class="chat-item"><i class="fa-solid fa-user-pen me-2"></i> Profile</a>
+                <a href="/Cardpage" class="chat-item"><i class="fa-solid fa-bag-shopping me-2"></i> Orders</a>
+                <a href="/bills" class="chat-item"><i class="fa-solid fa-receipt me-2"></i> Bills</a>
+                <a href="#" class="chat-item" style="color: #ff4757;" @onclick="HandleLogout"><i class="fa-solid fa-power-off me-2"></i> Logout</a>
             </div>
         </div>
+
     </div>
 </div>
 
@@ -455,17 +463,12 @@
         if (string.IsNullOrEmpty(MyName)) return;
         isLoading = true;
 
-        // --- FIX START ---
-        // Pehle naam ko clean karein (variable mein)
         string nameWithoutSpace = MyName.Replace(" ", "");
-        Console.WriteLine($"🔍 Debugging: Searching orders for: '{nameWithoutSpace}' (Original: {MyName})");
-        // --- FIX END ---
 
         chatList.Clear();
         try
         {
             var orderResponse = await _supabase.From<AI_Driven_Water_Supply.Presentation.Order>()
-                                               // Ab variable use karein, direct function nahi
                                                .Where(x => x.ConsumerName == nameWithoutSpace)
                                                .Order("created_at", Supabase.Postgrest.Constants.Ordering.Descending)
                                                .Get();
