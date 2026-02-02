@@ -167,8 +167,8 @@
     </div>
 }
 
-@code {
-    // 👇 MODEL (Sab kuch float mein rakha hai taake errors na aayen)
+  @code {
+    // 👇 MODEL 
     [Table("bills")]
     public class Bill : BaseModel
     {
@@ -176,11 +176,10 @@
         [Column("order_id")] public int OrderId { get; set; }
         [Column("consumer_name")] public string ConsumerName { get; set; } = "";
         [Column("supplier_name")] public string SupplierName { get; set; } = "";
+        
+        [Column("amount")] public float Amount { get; set; } // Float to avoid casting errors
 
-        // 👇 Yeh float hai taake "300.0" ko handle kare
-        [Column("amount")] public float Amount { get; set; }
-
-        [Column("status")] public string Status { get; set; } = "";
+        [Column("status")] public string Status { get; set; } = ""; // "Unpaid" or "Paid"
         [Column("created_at")] public DateTime CreatedAt { get; set; }
         [Column("payment_method")] public string? PaymentMethod { get; set; }
     }
@@ -188,10 +187,8 @@
     List<Bill> collections = new();
     List<Bill> history = new();
 
-    // 👇 VARIABLES (Yeh bhi float hain taake Model ke sath match karein)
     float TotalEarnings = 0;
     float PendingAmount = 0;
-
     string MyName = "";
     bool isLoading = true;
 
@@ -211,9 +208,10 @@
             var user = AuthService.CurrentUser;
             if (user != null)
             {
+                // User ka naam fetch kar rahe hain taaki usi ke bills dikhein
                 MyName = user.UserMetadata.ContainsKey("full_name")
-                         ? user.UserMetadata["full_name"].ToString()
-                         : "M.Akmal";
+                          ? user.UserMetadata["full_name"].ToString()
+                          : "M.Akmal"; // Fallback
             }
             await LoadBills();
         }
@@ -229,17 +227,19 @@
 
     async Task LoadBills()
     {
+        // 👇 Yahan filter "MyName" se laga diya hai taaki sirf logged-in supplier ka data aaye
         var response = await _supabase.From<Bill>()
-            .Where(x => x.SupplierName == "M.Akmal")
+            .Where(x => x.SupplierName == MyName) 
             .Order("created_at", Supabase.Postgrest.Constants.Ordering.Descending)
             .Get();
 
         var allBills = response.Models;
 
+        // 👇 Yahi MAGIC hai: Jo "Paid" ho gaya wo History me, jo "Unpaid" hai wo Collections me
         collections = allBills.Where(b => b.Status == "Unpaid").ToList();
         history = allBills.Where(b => b.Status == "Paid").ToList();
 
-        // 👇 Ab yeh line error nahi degi kyunke dono taraf 'float' hai
+        // Totals calculate karna
         TotalEarnings = history.Sum(x => x.Amount);
         PendingAmount = collections.Sum(x => x.Amount);
 
@@ -258,20 +258,27 @@
         selectedBill = null;
     }
 
+    // 👇 MAIN FUNCTION: Ye Status ko "Paid" karega
     async Task ProcessPayment(string method)
     {
         if (selectedBill == null) return;
 
         try
         {
+            // 1. Database Update
             await _supabase.From<Bill>()
                 .Where(x => x.Id == selectedBill.Id)
-                .Set(x => x.Status, "Paid")
-                .Set(x => x.PaymentMethod, method)
+                .Set(x => x.Status, "Paid")          // Status change
+                .Set(x => x.PaymentMethod, method)   // Cash or JazzCash
                 .Update();
 
+            // 2. Success Message
             ToastService.ShowToast("Success", $"Payment received via {method}", "success");
+            
+            // 3. Modal Band
             CloseModal();
+
+            // 4. UI Refresh (Taaki list update ho jaye aur bill neeche shift ho jaye)
             await LoadBills();
         }
         catch (Exception ex)
