@@ -1,296 +1,15 @@
 ﻿@page "/Consumer"
-@using AI_Driven_Water_Supply.Presentation
-@using Supabase.Postgrest.Models
+@rendermode InteractiveServer
 @using Supabase.Postgrest.Attributes
+@using Supabase.Postgrest.Models
 @inject Supabase.Client _supabase
 @inject NavigationManager Nav
 @inject AI_Driven_Water_Supply.Application.Interfaces.IAuthService AuthService
-@inject IJSRuntime JS
-@rendermode InteractiveServer
 
-<style>
-    :root {
-        --primary-glow: #00C9FF;
-        --secondary-glow: #92FE9D;
-        --glass-bg: rgba(20, 20, 20, 0.6);
-        --glass-border: rgba(255, 255, 255, 0.08);
-    }
-
-    body {
-        margin: 0;
-        padding: 0;
-        background-color: #000000;
-        color: white;
-        font-family: 'Inter', sans-serif;
-        overflow: hidden;
-        height: 100vh;
-    }
-
-    /* --- NAVBAR --- */
-    .glass-nav {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 80px;
-        background: black;
-        padding: 0 20px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        z-index: 1000;
-        box-sizing: border-box;
-    }
-
-    .brand-logo {
-        font-weight: 800;
-        font-size: 1.5rem;
-        background: linear-gradient(90deg, var(--primary-glow) 0%, var(--secondary-glow) 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        text-transform: uppercase;
-        letter-spacing: 1.5px;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-
-    /* Right Side Icons Container */
-    .nav-icons {
-        display: flex;
-        gap: 15px;
-        align-items: center;
-    }
-
-    /* --- ICON BUTTONS --- */
-    .icon-btn {
-        position: relative;
-        font-size: 1.3rem;
-        color: #888;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        width: 45px;
-        height: 45px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: rgba(255, 255, 255, 0.03);
-    }
-
-        .icon-btn:hover, .icon-btn.active {
-            background: rgba(255, 255, 255, 0.1);
-            color: var(--primary-glow);
-            transform: translateY(-2px);
-        }
-
-    .profile-trigger {
-        width: 42px;
-        height: 42px;
-        border-radius: 50%;
-        cursor: pointer;
-        border: 2px solid transparent;
-        background: linear-gradient(#000, #000) padding-box, linear-gradient(45deg, var(--primary-glow), var(--secondary-glow)) border-box;
-        overflow: hidden;
-        transition: transform 0.3s ease;
-    }
-
-        .profile-trigger:hover {
-            transform: scale(1.05);
-        }
-
-        .profile-trigger img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-    .badge-dot {
-        position: absolute;
-        top: 10px;
-        right: 10px;
-        width: 8px;
-        height: 8px;
-        background: #ff4757;
-        border-radius: 50%;
-        box-shadow: 0 0 5px #ff4757;
-    }
-
-    /* --- DROPDOWNS (Desktop Default) --- */
-    .custom-dropdown {
-        position: absolute;
-        top: 65px;
-        right: 0; /* Default Desktop Alignment: Right side */
-        background: #0a0a0a;
-        border: 1px solid var(--glass-border);
-        border-radius: 16px;
-        width: 340px;
-        padding: 8px;
-        display: none;
-        flex-direction: column;
-        gap: 4px;
-        box-shadow: 0 20px 50px rgba(0,0,0,0.9);
-        z-index: 2000;
-        animation: fadeIn 0.2s ease;
-    }
-
-        .custom-dropdown.show {
-            display: flex;
-        }
-
-    /* --- MOBILE SPECIFIC MAGIC (Fixed Syntax Here) --- */
-    /* Note: @@media use kiya hai taaki C# error na de */
-    @@media (max-width: 768px) {
-        .msg-dropdown-mobile-center.show {
-            position: fixed !important; /* Screen ke hisaab se fix */
-            top: 50% !important;
-            left: 50% !important;
-            transform: translate(-50%, -50%) !important; /* Perfect Center */
-            width: 90% !important; /* Mobile width */
-            max-width: 350px;
-            box-shadow: 0 0 100px rgba(0,0,0,1); /* Deep Shadow */
-            border: 1px solid rgba(255,255,255,0.2);
-            z-index: 9999;
-        }
-
-        .glass-nav {
-            padding: 0 15px;
-        }
-    }
-
-    /* Note: @@keyframes use kiya hai taaki C# error na de */
-    @@keyframes fadeIn {
-        from {
-            opacity: 0;
-            transform: translateY(-10px);
-        }
-
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    .chat-item {
-        padding: 14px;
-        border-radius: 12px;
-        color: #ccc;
-        text-decoration: none;
-        display: flex;
-        align-items: center;
-        gap: 15px;
-        transition: 0.2s;
-        cursor: pointer;
-        border-bottom: 1px solid rgba(255,255,255,0.02);
-    }
-
-        .chat-item:hover {
-            background: rgba(255, 255, 255, 0.05);
-            color: white;
-        }
-
-    .supplier-avatar {
-        width: 42px;
-        height: 42px;
-        background: linear-gradient(135deg, var(--primary-glow), var(--secondary-glow));
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 700;
-        color: black;
-        flex-shrink: 0;
-    }
-
-    .chat-name {
-        font-weight: 600;
-        font-size: 0.95rem;
-        color: white;
-        display: flex;
-        justify-content: space-between;
-        width: 100%;
-    }
-
-    .chat-msg {
-        font-size: 0.85rem;
-        opacity: 0.6;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        max-width: 180px;
-    }
-
-    .chat-time {
-        font-size: 0.7rem;
-        color: #666;
-    }
-
-    /* Hero & Video */
-    .hero-container {
-        height: 100vh;
-        width: 100%;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        position: relative;
-    }
-
-    #myVideo {
-        margin-top: -150px;
-        width: 600px;
-        max-width: 90%;
-        pointer-events: none;
-        mix-blend-mode: screen;
-        -webkit-mask-image: radial-gradient(circle, rgba(0,0,0,1) 30%, rgba(0,0,0,0) 70%);
-        mask-image: radial-gradient(circle, rgba(0,0,0,1) 30%, rgba(0,0,0,0) 70%);
-    }
-
-    /* Input */
-    .chat-input-wrapper {
-        position: absolute;
-        bottom: 15%;
-        width: 100%;
-        display: flex;
-        justify-content: center;
-        z-index: 10;
-    }
-
-    .chat-input-box {
-        width: 85%;
-        max-width: 600px;
-        background: rgba(20, 20, 20, 0.8);
-        backdrop-filter: blur(20px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 20px;
-        padding: 14px 20px;
-        display: flex;
-        align-items: center;
-        gap: 15px;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-    }
-
-        .chat-input-box input {
-            flex: 1;
-            background: transparent;
-            border: none;
-            color: white;
-            outline: none;
-        }
-
-    .send-btn {
-        background: linear-gradient(135deg, var(--primary-glow), var(--secondary-glow));
-        border: none;
-        border-radius: 12px;
-        width: 40px;
-        height: 40px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: black;
-        cursor: pointer;
-    }
-</style>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Poppins:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
 <div class="glass-nav">
     <div class="brand-logo">
@@ -298,7 +17,6 @@
     </div>
 
     <div class="nav-icons">
-
         <div style="position: relative;">
             <div class="icon-btn @(showMsgDropdown ? "active" : "")" @onclick="ToggleMsgDropdown">
                 <i class="fa-regular fa-comment-dots"></i>
@@ -355,35 +73,110 @@
                 <img src="@ProfileImageUrl" alt="Profile">
             </div>
 
-            <div class="custom-dropdown @(showProfileDropdown ? "show" : "")" style="width: 220px;">
-                <div class="px-3 py-2 text-center">
-                    <span class="text-white fw-bold d-block">@MyName</span>
-                    <span class="text-muted small">Consumer</span>
-                </div>
-                <div style="height: 1px; background: rgba(255,255,255,0.1); margin: 5px 0;"></div>
-                <a href="/profilepro" class="chat-item"><i class="fa-solid fa-user-pen me-2"></i> Profile</a>
-                <a href="/Cardpage" class="chat-item"><i class="fa-solid fa-bag-shopping me-2"></i> Orders</a>
-                <a href="/bills" class="chat-item"><i class="fa-solid fa-receipt me-2"></i> Bills</a>
-                <a href="#" class="chat-item" style="color: #ff4757;" @onclick="HandleLogout"><i class="fa-solid fa-power-off me-2"></i> Logout</a>
+            <div class="profile-menu-custom @(showProfileDropdown ? "show" : "")">
+                <a href="/profilepro" class="menu-link">
+                    <i class="bi bi-person"></i> My Profile
+                </a>
+                <a href="/Cardpage" class="menu-link">
+                    <i class="bi bi-box-seam"></i> My Orders
+                </a>
+                <a href="/bills" class="menu-link">
+                    <i class="bi bi-receipt"></i> Billing
+                </a>
+                <div class="menu-divider"></div>
+                <a href="#" class="menu-link logout-link" @onclick="HandleLogout">
+                    <i class="bi bi-box-arrow-right"></i> Logout
+                </a>
             </div>
         </div>
 
     </div>
 </div>
 
-<div class="hero-container" @onclick="CloseDropdowns">
-    <video id="myVideo" autoplay muted playsinline loop>
-        <source src="/video/blob.mp4" type="video/mp4">
-    </video>
+<div class="page-container">
 
-    <div class="chat-input-wrapper">
-        <div class="chat-input-box">
-            <i class="fa-solid fa-sparkles" style="color: var(--primary-glow);"></i>
-            <input type="text" placeholder="Ask HydroAI for water supply..." />
-            <button class="send-btn"><i class="bi bi-send-fill"></i></button>
+    <div class="container mb-5">
+        <h2 class="mb-2 fw-bold">Welcome back, @MyName! 👋</h2>
+        <p class="mb-0 opacity-75">Manage your water supply and track your orders easily.</p>
+    </div>
+
+    <div class="marketplace-hero">
+        <h1 class="hero-title">Marketplace</h1>
+        <p class="section-subtitle">Choose the type of water supply that fits your needs</p>
+    </div>
+
+    <section class="container pb-5">
+        <div class="row g-4 justify-content-center">
+            <div class="col-md-4 col-lg-3">
+                <div class="glass-card text-center">
+                    <div class="img-wrapper">
+                        <img src="/images/bottle.jpg" alt="1 Litre Bottle" />
+                    </div>
+                    <h5 class="card-title">1 Litre Bottle</h5>
+                    <a class="btn-neon" href="/order/bottle">Order Now</a>
+                </div>
+            </div>
+            <div class="col-md-4 col-lg-3">
+                <div class="glass-card text-center">
+                    <div class="img-wrapper">
+                        <img src="/images/plant.jpg" alt="Plant Water" />
+                    </div>
+                    <h5 class="card-title">Plant Water Supply</h5>
+                    <a class="btn-neon" href="/order/plant">Order Now</a>
+                </div>
+            </div>
+            <div class="col-md-4 col-lg-3">
+                <div class="glass-card text-center">
+                    <div class="img-wrapper">
+                        <img src="/images/tanker.jpg" alt="Tanker Supply" />
+                    </div>
+                    <h5 class="card-title">Tanker Water Supply</h5>
+                    <a class="btn-neon" href="/order/tanker">Order Now</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+</div>
+
+<div class="ai-widget-container">
+
+    <div class="ai-trigger-card" @onclick="GoToBotPage">
+        <div class="orb-container">
+            <div class="video-wrapper">
+                <video id="myVideo" class="ai-video-element" autoplay muted playsinline loop>
+                    <source src="/video/blob.mp4" type="video/mp4">
+                </video>
+            </div>
+        </div>
+        <div class="trigger-content">
+            <span class="trigger-label">Need help?</span>
+            <div class="trigger-btn">
+                <i class="fa-solid fa-phone-volume"></i> Ask anything
+            </div>
         </div>
     </div>
+
 </div>
+<script>
+    function startVideoLoop() {
+        const video = document.getElementById('myVideo');
+        if(!video) return;
+        video.playbackRate = 1;
+        // Handling promise to avoid console errors if interaction is needed
+        video.play().catch(e => console.log("Autoplay blocked, waiting for interaction"));
+    }
+    // Try to start immediately
+    setTimeout(startVideoLoop, 1000);
+
+    // Also try on click just in case
+    document.addEventListener('click', function() {
+        const video = document.getElementById('myVideo');
+        if(video && video.paused) {
+            video.play();
+        }
+    }, { once: true });
+</script>
 
 @code {
     string MyName = "";
@@ -391,7 +184,9 @@
     bool showMsgDropdown = false;
     bool showProfileDropdown = false;
     bool isLoading = true;
+    bool isBotOpen = false;
 
+    // View Model for Chats
     class ChatViewModel
     {
         public long OrderId { get; set; }
@@ -404,6 +199,7 @@
 
     List<ChatViewModel> chatList = new();
 
+    // Models for DB Fetching
     [Table("profiles")]
     public class Profile : BaseModel
     {
@@ -423,7 +219,6 @@
 
         if (user != null)
         {
-            string fetchedName = "";
             try
             {
                 var response = await _supabase.From<Profile>().Where(x => x.Id == user.Id).Get();
@@ -431,30 +226,22 @@
 
                 if (profile != null)
                 {
-                    fetchedName = profile.Username;
+                    MyName = profile.Username;
                     if (!string.IsNullOrEmpty(profile.ProfilePic))
                     {
                         ProfileImageUrl = _supabase.Storage.From("Avatar").GetPublicUrl(profile.ProfilePic);
                     }
                 }
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Profile Load Error: " + ex.Message);
-            }
+            catch (Exception ex) { Console.WriteLine("Profile Error: " + ex.Message); }
 
-            if (string.IsNullOrEmpty(fetchedName) && user.UserMetadata != null)
-                if (user.UserMetadata.TryGetValue("username", out var nameObj)) fetchedName = nameObj?.ToString() ?? "";
+            if (string.IsNullOrEmpty(MyName) && user.UserMetadata != null && user.UserMetadata.ContainsKey("username"))
+                MyName = user.UserMetadata["username"].ToString();
 
-            if (string.IsNullOrEmpty(fetchedName) && !string.IsNullOrEmpty(user.Email))
-                fetchedName = user.Email.Split('@')[0];
+            if (string.IsNullOrEmpty(MyName) && !string.IsNullOrEmpty(user.Email))
+                MyName = user.Email.Split('@')[0];
 
-            MyName = fetchedName;
             await LoadChats();
-        }
-        else
-        {
-            Nav.NavigateTo("/login");
         }
     }
 
@@ -462,7 +249,6 @@
     {
         if (string.IsNullOrEmpty(MyName)) return;
         isLoading = true;
-
         string nameWithoutSpace = MyName.Replace(" ", "");
 
         chatList.Clear();
@@ -493,24 +279,607 @@
                 });
             }
         }
-        catch (Exception ex) { Console.WriteLine("Error: " + ex.Message); }
+        catch (Exception ex) { Console.WriteLine("Chat Load Error: " + ex.Message); }
         finally { isLoading = false; }
     }
 
     void ToggleMsgDropdown() { showMsgDropdown = !showMsgDropdown; showProfileDropdown = false; }
     void ToggleProfileDropdown() { showProfileDropdown = !showProfileDropdown; showMsgDropdown = false; }
-    void CloseDropdowns() { showMsgDropdown = false; showProfileDropdown = false; }
     void OpenChat(long orderId) { Nav.NavigateTo($"/chat/{orderId}"); }
     async Task RefreshChats() { await LoadChats(); }
     async Task HandleLogout() { await AuthService.SignOut(); Nav.NavigateTo("/login"); }
+
+    void GoToBotPage()
+    {
+        // Nav is already injected at the top of your file
+        Nav.NavigateTo("/Helper_Agent");
+    }
+
 }
 
-<script>
-    function startVideoLoop() {
-        const video = document.getElementById('myVideo');
-        if(!video) return;
-        video.playbackRate = 1;
-        video.play().catch(e => console.log("Autoplay blocked"));
+<style>
+    /* --- NAVBAR STYLES (ORIGINAL) --- */
+    :root {
+        --primary-glow: #00C9FF;
+        --secondary-glow: #92FE9D;
+        --glass-bg: rgba(20, 20, 20, 0.6);
+        --glass-border: rgba(255, 255, 255, 0.08);
     }
-    setTimeout(startVideoLoop, 1000);
-</script>
+
+    .glass-nav {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 80px;
+        background: black;
+        padding: 0 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        z-index: 1000;
+        box-sizing: border-box;
+    }
+
+    .brand-logo {
+        font-weight: 800;
+        font-size: 1.5rem;
+        background: linear-gradient(90deg, var(--primary-glow) 0%, var(--secondary-glow) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .nav-icons {
+        display: flex;
+        gap: 15px;
+        align-items: center;
+    }
+
+    .icon-btn {
+        position: relative;
+        font-size: 1.3rem;
+        color: #888;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        width: 45px;
+        height: 45px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255, 255, 255, 0.03);
+    }
+
+        .icon-btn:hover, .icon-btn.active {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--primary-glow);
+            transform: translateY(-2px);
+        }
+
+    .profile-trigger {
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        cursor: pointer;
+        border: 2px solid transparent;
+        background: linear-gradient(#000, #000) padding-box, linear-gradient(45deg, var(--primary-glow), var(--secondary-glow)) border-box;
+        overflow: hidden;
+        transition: transform 0.3s ease;
+    }
+
+        .profile-trigger:hover {
+            transform: scale(1.05);
+        }
+
+        .profile-trigger img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+    .badge-dot {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        width: 8px;
+        height: 8px;
+        background: #ff4757;
+        border-radius: 50%;
+        box-shadow: 0 0 5px #ff4757;
+    }
+
+    /* --- DROPDOWNS --- */
+    .custom-dropdown {
+        position: absolute;
+        top: 65px;
+        right: 0;
+        background: #0a0a0a;
+        border: 1px solid var(--glass-border);
+        border-radius: 16px;
+        width: 340px;
+        padding: 8px;
+        display: none;
+        flex-direction: column;
+        gap: 4px;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.9);
+        z-index: 2000;
+        animation: fadeIn 0.2s ease;
+    }
+
+        .custom-dropdown.show {
+            display: flex;
+        }
+
+    .profile-menu-custom {
+        position: absolute;
+        top: 60px;
+        right: 0;
+        background-color: #1a202c; /* Dark Navy Blue */
+        border-radius: 10px;
+        width: 200px;
+        padding: 10px;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+        display: none;
+        flex-direction: column;
+        z-index: 2000;
+        border: 1px solid rgba(255,255,255,0.1);
+    }
+
+        .profile-menu-custom.show {
+            display: flex;
+            animation: fadeIn 0.2s ease;
+        }
+
+    .menu-link {
+        color: #e2e8f0;
+        text-decoration: none;
+        padding: 10px 12px;
+        border-radius: 6px;
+        font-size: 0.95rem;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        transition: background 0.2s;
+    }
+
+        .menu-link:hover {
+            background-color: rgba(255,255,255,0.1);
+            color: #fff;
+        }
+
+        .menu-link i {
+            font-size: 1.1rem;
+        }
+
+    .menu-divider {
+        height: 1px;
+        background: rgba(255,255,255,0.1);
+        margin: 5px 0;
+    }
+
+    .logout-link {
+        color: #ef4444;
+    }
+        /* Red Color */
+        .logout-link:hover {
+            background-color: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+        }
+
+    .chat-item {
+        padding: 14px;
+        border-radius: 12px;
+        color: #ccc;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        transition: 0.2s;
+        cursor: pointer;
+        border-bottom: 1px solid rgba(255,255,255,0.02);
+    }
+
+        .chat-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+        }
+
+    .supplier-avatar {
+        width: 42px;
+        height: 42px;
+        background: linear-gradient(135deg, var(--primary-glow), var(--secondary-glow));
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        color: black;
+        flex-shrink: 0;
+    }
+
+    .chat-name {
+        font-weight: 600;
+        font-size: 0.95rem;
+        color: white;
+        display: flex;
+        justify-content: space-between;
+        width: 100%;
+    }
+
+    .chat-msg {
+        font-size: 0.85rem;
+        opacity: 0.6;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 180px;
+    }
+
+    .chat-time {
+        font-size: 0.7rem;
+        color: #666;
+    }
+
+    /* --- PAGE CONTENT STYLES --- */
+    .page-container {
+        --primary-color: #b2f94e;
+        --primary-glow-pg: rgba(178, 249, 78, 0.4);
+        --bg-dark: #02040a;
+        --card-glass: rgba(255, 255, 255, 0.03);
+        --card-border: rgba(255, 255, 255, 0.08);
+        --text-white: #ffffff;
+        background-color: var(--bg-dark);
+        background-image: radial-gradient(circle at 50% 0%, #111a3b 0%, #02040a 80%);
+        color: var(--text-white);
+        font-family: 'Inter', sans-serif;
+        min-height: 100vh;
+        padding-top: 50px;
+        padding-bottom: 50px;
+    }
+
+    h1, h2, h3, h5 {
+        font-family: 'Poppins', sans-serif;
+    }
+
+    /* --- HERO SECTION --- */
+    .marketplace-hero {
+        padding: 0px 0 40px;
+        text-align: center;
+        position: relative;
+    }
+
+    .hero-title {
+        font-size: 4rem;
+        font-weight: 700;
+        background: linear-gradient(90deg, #fff, #b2f94e);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        margin-bottom: 10px;
+    }
+
+    .section-subtitle {
+        color: #a0a0a0;
+        font-size: 1.1rem;
+        margin-bottom: 50px;
+    }
+
+    /* --- CARDS GRID --- */
+    .glass-card {
+        background: var(--card-glass);
+        border: 1px solid var(--card-border);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border-radius: 20px;
+        padding: 20px;
+        transition: all 0.4s ease;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        position: relative;
+        overflow: hidden;
+    }
+
+        .glass-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 40px -10px rgba(0,0,0,0.6);
+            border-color: var(--primary-color);
+        }
+
+        .glass-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(178, 249, 78, 0.05) 0%, transparent 60%);
+            pointer-events: none;
+            opacity: 0;
+            transition: 0.4s;
+        }
+
+        .glass-card:hover::before {
+            opacity: 1;
+        }
+
+    .img-wrapper {
+        height: 220px;
+        overflow: hidden;
+        border-radius: 15px;
+        margin-bottom: 20px;
+        background: rgba(0,0,0,0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid var(--card-border);
+    }
+
+        .img-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s ease;
+        }
+
+    .glass-card:hover .img-wrapper img {
+        transform: scale(1.05);
+    }
+
+    .card-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: #fff;
+        margin-bottom: 15px;
+    }
+
+    /* --- BUTTONS --- */
+    .btn-neon {
+        background: var(--primary-color);
+        color: #000;
+        border: none;
+        padding: 12px;
+        width: 100%;
+        border-radius: 50px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-size: 0.9rem;
+        transition: 0.3s;
+        box-shadow: 0 0 15px var(--primary-glow-pg);
+        text-decoration: none;
+        display: inline-block;
+    }
+
+        .btn-neon:hover {
+            background: #fff;
+            transform: translateY(-2px);
+            box-shadow: 0 0 25px var(--primary-glow-pg);
+            color: black;
+        }
+
+    /* --- ANIMATIONS & MOBILE --- */
+    @@keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .msg-dropdown-mobile-center.show {
+            position: fixed !important;
+            top: 50% !important;
+            left: 50% !important;
+            transform: translate(-50%, -50%) !important;
+            width: 90% !important;
+            max-width: 350px;
+            box-shadow: 0 0 100px rgba(0,0,0,1);
+            border: 1px solid rgba(255,255,255,0.2);
+            z-index: 9999;
+        }
+
+        .glass-nav {
+            padding: 0 15px;
+        }
+    }
+
+    /* --- AI FLOATING WIDGET STYLES --- */
+    .ai-widget-container {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        z-index: 3000;
+        font-family: 'Inter', sans-serif;
+    }
+
+    /* The Floating Card (Trigger) */
+    .ai-trigger-card {
+        background: rgba(10, 10, 10, 0.85); /* Dark background */
+        backdrop-filter: blur(15px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 16px;
+        padding: 12px 16px;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        cursor: pointer;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        animation: floatUp 0.5s ease-out;
+    }
+
+        .ai-trigger-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary-glow);
+            box-shadow: 0 15px 35px rgba(0, 201, 255, 0.2);
+        }
+
+        .ai-trigger-card.hidden {
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(20px) scale(0.9);
+        }
+
+    /* --- VIDEO AVATAR STYLES (NEW) --- */
+    .video-wrapper {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        overflow: hidden;
+        position: relative;
+        border: 2px solid var(--primary-glow);
+        box-shadow: 0 0 15px var(--primary-glow);
+        background: #000;
+    }
+
+        .video-wrapper.small {
+            width: 35px;
+            height: 35px;
+            border: 1px solid var(--primary-glow);
+            box-shadow: none;
+        }
+
+    .ai-video-element {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transform: scale(1.1); /* Slight zoom to remove edges */
+    }
+
+    /* Text & Button inside Card */
+    .trigger-content {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .trigger-label {
+        font-size: 0.8rem;
+        color: #ccc;
+        font-weight: 500;
+    }
+
+    .trigger-btn {
+        background: #fff;
+        color: #000;
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: 0.2s;
+    }
+
+    .ai-trigger-card:hover .trigger-btn {
+        background: var(--primary-glow);
+    }
+
+    /* --- OPEN CHAT WINDOW STYLES --- */
+    .ai-chat-window {
+        width: 350px;
+        height: 500px;
+        background: #050505;
+        border: 1px solid var(--glass-border);
+        border-radius: 20px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        margin-bottom: 10px;
+    }
+
+    .ai-header {
+        background: linear-gradient(90deg, rgba(0,201,255,0.1), rgba(146,254,157,0.1));
+        padding: 15px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .btn-close-custom {
+        background: none;
+        border: none;
+        color: #fff;
+        cursor: pointer;
+        font-size: 1.1rem;
+        opacity: 0.7;
+    }
+
+    .ai-body {
+        flex: 1;
+        padding: 15px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .ai-msg {
+        max-width: 80%;
+        padding: 10px 14px;
+        border-radius: 12px;
+        font-size: 0.9rem;
+    }
+
+        .ai-msg.bot {
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            border-bottom-left-radius: 2px;
+        }
+
+    .ai-footer {
+        padding: 15px;
+        border-top: 1px solid rgba(255,255,255,0.05);
+        display: flex;
+        gap: 10px;
+    }
+
+        .ai-footer input {
+            flex: 1;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 10px;
+            border-radius: 20px;
+            color: white;
+            outline: none;
+        }
+
+        .ai-footer button {
+            background: var(--primary-glow);
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            color: black;
+            cursor: pointer;
+        }
+
+    @@keyframes popIn {
+        from {
+            opacity: 0;
+            transform: translateY(20px) scale(0.9);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+</style>

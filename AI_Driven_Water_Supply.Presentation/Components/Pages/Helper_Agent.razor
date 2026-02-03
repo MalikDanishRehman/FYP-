@@ -1,0 +1,516 @@
+﻿@page "/Helper_Agent"
+@using AI_Driven_Water_Supply.Presentation
+@using Supabase.Postgrest.Models
+@using Supabase.Postgrest.Attributes
+@inject Supabase.Client _supabase
+@inject NavigationManager Nav
+@inject AI_Driven_Water_Supply.Application.Interfaces.IAuthService AuthService
+@inject IJSRuntime JS
+@rendermode InteractiveServer
+
+<style>
+    :root {
+        --primary-glow: #00C9FF;
+        --secondary-glow: #92FE9D;
+        --glass-bg: rgba(20, 20, 20, 0.6);
+        --glass-border: rgba(255, 255, 255, 0.08);
+    }
+
+    body {
+        margin: 0;
+        padding: 0;
+        background-color: #000000;
+        color: white;
+        font-family: 'Inter', sans-serif;
+        overflow: hidden;
+        height: 100vh;
+    }
+
+    /* --- NAVBAR --- */
+    .glass-nav {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 80px;
+        background: black;
+        padding: 0 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        z-index: 1000;
+        box-sizing: border-box;
+    }
+
+    .brand-logo {
+        font-weight: 800;
+        font-size: 1.5rem;
+        background: linear-gradient(90deg, var(--primary-glow) 0%, var(--secondary-glow) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    /* Right Side Icons Container */
+    .nav-icons {
+        display: flex;
+        gap: 15px;
+        align-items: center;
+    }
+
+    /* --- ICON BUTTONS --- */
+    .icon-btn {
+        position: relative;
+        font-size: 1.3rem;
+        color: #888;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        width: 45px;
+        height: 45px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255, 255, 255, 0.03);
+    }
+
+        .icon-btn:hover, .icon-btn.active {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--primary-glow);
+            transform: translateY(-2px);
+        }
+
+    .profile-trigger {
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        cursor: pointer;
+        border: 2px solid transparent;
+        background: linear-gradient(#000, #000) padding-box, linear-gradient(45deg, var(--primary-glow), var(--secondary-glow)) border-box;
+        overflow: hidden;
+        transition: transform 0.3s ease;
+    }
+
+        .profile-trigger:hover {
+            transform: scale(1.05);
+        }
+
+        .profile-trigger img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+    .badge-dot {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        width: 8px;
+        height: 8px;
+        background: #ff4757;
+        border-radius: 50%;
+        box-shadow: 0 0 5px #ff4757;
+    }
+
+    /* --- DROPDOWNS (Desktop Default) --- */
+    .custom-dropdown {
+        position: absolute;
+        top: 65px;
+        right: 0; /* Default Desktop Alignment: Right side */
+        background: #0a0a0a;
+        border: 1px solid var(--glass-border);
+        border-radius: 16px;
+        width: 340px;
+        padding: 8px;
+        display: none;
+        flex-direction: column;
+        gap: 4px;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.9);
+        z-index: 2000;
+        animation: fadeIn 0.2s ease;
+    }
+
+        .custom-dropdown.show {
+            display: flex;
+        }
+
+    /* --- MOBILE SPECIFIC MAGIC (Fixed Syntax Here) --- */
+    /* Note: @@media use kiya hai taaki C# error na de */
+    @@media (max-width: 768px) {
+        .msg-dropdown-mobile-center.show {
+            position: fixed !important; /* Screen ke hisaab se fix */
+            top: 50% !important;
+            left: 50% !important;
+            transform: translate(-50%, -50%) !important; /* Perfect Center */
+            width: 90% !important; /* Mobile width */
+            max-width: 350px;
+            box-shadow: 0 0 100px rgba(0,0,0,1); /* Deep Shadow */
+            border: 1px solid rgba(255,255,255,0.2);
+            z-index: 9999;
+        }
+
+        .glass-nav {
+            padding: 0 15px;
+        }
+    }
+
+    /* Note: @@keyframes use kiya hai taaki C# error na de */
+    @@keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .chat-item {
+        padding: 14px;
+        border-radius: 12px;
+        color: #ccc;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        transition: 0.2s;
+        cursor: pointer;
+        border-bottom: 1px solid rgba(255,255,255,0.02);
+    }
+
+        .chat-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+        }
+
+    .supplier-avatar {
+        width: 42px;
+        height: 42px;
+        background: linear-gradient(135deg, var(--primary-glow), var(--secondary-glow));
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        color: black;
+        flex-shrink: 0;
+    }
+
+    .chat-name {
+        font-weight: 600;
+        font-size: 0.95rem;
+        color: white;
+        display: flex;
+        justify-content: space-between;
+        width: 100%;
+    }
+
+    .chat-msg {
+        font-size: 0.85rem;
+        opacity: 0.6;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 180px;
+    }
+
+    .chat-time {
+        font-size: 0.7rem;
+        color: #666;
+    }
+
+    /* Hero & Video */
+    .hero-container {
+        height: 100vh;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+    }
+
+    #myVideo {
+        margin-top: -150px;
+        width: 600px;
+        max-width: 90%;
+        pointer-events: none;
+        mix-blend-mode: screen;
+        -webkit-mask-image: radial-gradient(circle, rgba(0,0,0,1) 30%, rgba(0,0,0,0) 70%);
+        mask-image: radial-gradient(circle, rgba(0,0,0,1) 30%, rgba(0,0,0,0) 70%);
+    }
+
+    /* Input */
+    .chat-input-wrapper {
+        position: absolute;
+        bottom: 15%;
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        z-index: 10;
+    }
+
+    .chat-input-box {
+        width: 85%;
+        max-width: 600px;
+        background: rgba(20, 20, 20, 0.8);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 20px;
+        padding: 14px 20px;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    }
+
+        .chat-input-box input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: white;
+            outline: none;
+        }
+
+    .send-btn {
+        background: linear-gradient(135deg, var(--primary-glow), var(--secondary-glow));
+        border: none;
+        border-radius: 12px;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: black;
+        cursor: pointer;
+    }
+</style>
+
+<div class="glass-nav">
+    <div class="brand-logo">
+        <i class="fa-solid fa-droplet"></i> HydroAI
+    </div>
+
+    <div class="nav-icons">
+
+        <div style="position: relative;">
+            <div class="icon-btn @(showMsgDropdown ? "active" : "")" @onclick="ToggleMsgDropdown">
+                <i class="fa-regular fa-comment-dots"></i>
+                @if (chatList.Any(c => c.UnreadCount > 0))
+                {
+                    <span class="badge-dot"></span>
+                }
+            </div>
+
+            <div class="custom-dropdown msg-dropdown-mobile-center @(showMsgDropdown ? "show" : "")">
+                <div class="d-flex justify-content-between align-items-center px-3 py-2">
+                    <h6 class="text-white m-0 small fw-bold" style="color: #888 !important;">CHATS</h6>
+                    <small class="text-muted" style="cursor:pointer" @onclick="RefreshChats"><i class="fa-solid fa-rotate-right"></i></small>
+                </div>
+                <div style="height: 1px; background: rgba(255,255,255,0.1); margin: 5px 0;"></div>
+
+                <div style="max-height: 350px; overflow-y: auto;">
+                    @if (isLoading)
+                    {
+                        <div class="p-4 text-center text-muted small"><div class="spinner-border spinner-border-sm text-info"></div> Loading...</div>
+                    }
+                    else if (chatList.Count == 0)
+                    {
+                        <div class="p-4 text-center text-muted small">No active conversations.</div>
+                    }
+                    else
+                    {
+                        @foreach (var chat in chatList)
+                        {
+                            <div class="chat-item" @onclick="() => OpenChat(chat.OrderId)">
+                                <div class="supplier-avatar">@(!string.IsNullOrEmpty(chat.SupplierName) ? chat.SupplierName.Substring(0, 1).ToUpper() : "S")</div>
+                                <div class="chat-info" style="flex:1;">
+                                    <div class="chat-name">
+                                        @chat.SupplierName
+                                        <span class="chat-time">@chat.LastMsgTime</span>
+                                    </div>
+                                    <div class="chat-msg">
+                                        @if (chat.IsLastMsgFromMe)
+                                        {
+                                            <i class="bi bi-check2-all text-info me-1"></i>
+                                        }
+                                        @chat.LastMessage
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div style="position: relative;">
+            <div class="profile-trigger" @onclick="ToggleProfileDropdown">
+                <img src="@ProfileImageUrl" alt="Profile">
+            </div>
+
+            <div class="custom-dropdown @(showProfileDropdown ? "show" : "")" style="width: 220px;">
+                <div class="px-3 py-2 text-center">
+                    <span class="text-white fw-bold d-block">@MyName</span>
+                    <span class="text-muted small">Consumer</span>
+                </div>
+                <div style="height: 1px; background: rgba(255,255,255,0.1); margin: 5px 0;"></div>
+                <a href="/profilepro" class="chat-item"><i class="fa-solid fa-user-pen me-2"></i> Profile</a>
+                <a href="/Cardpage" class="chat-item"><i class="fa-solid fa-bag-shopping me-2"></i> Orders</a>
+                <a href="/bills" class="chat-item"><i class="fa-solid fa-receipt me-2"></i> Bills</a>
+                <a href="#" class="chat-item" style="color: #ff4757;" @onclick="HandleLogout"><i class="fa-solid fa-power-off me-2"></i> Logout</a>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<div class="hero-container" @onclick="CloseDropdowns">
+    <video id="myVideo" autoplay muted playsinline loop>
+        <source src="/video/blob.mp4" type="video/mp4">
+    </video>
+
+    <div class="chat-input-wrapper">
+        <div class="chat-input-box">
+            <i class="fa-solid fa-sparkles" style="color: var(--primary-glow);"></i>
+            <input type="text" placeholder="Ask HydroAI for water supply..." />
+            <button class="send-btn"><i class="bi bi-send-fill"></i></button>
+        </div>
+    </div>
+</div>
+
+@code {
+    string MyName = "";
+    string ProfileImageUrl = "/images/fallbackimg.jpg";
+    bool showMsgDropdown = false;
+    bool showProfileDropdown = false;
+    bool isLoading = true;
+
+    class ChatViewModel
+    {
+        public long OrderId { get; set; }
+        public string SupplierName { get; set; } = "";
+        public string LastMessage { get; set; } = "";
+        public string LastMsgTime { get; set; } = "";
+        public bool IsLastMsgFromMe { get; set; }
+        public int UnreadCount { get; set; }
+    }
+
+    List<ChatViewModel> chatList = new();
+
+    [Table("profiles")]
+    public class Profile : BaseModel
+    {
+        [Column("id")] public string Id { get; set; } = "";
+        [Column("username")] public string Username { get; set; } = "";
+        [Column("profilepic")] public string ProfilePic { get; set; } = "";
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var user = AuthService.CurrentUser;
+        if (user == null)
+        {
+            await AuthService.TryRefreshSession();
+            user = AuthService.CurrentUser;
+        }
+
+        if (user != null)
+        {
+            string fetchedName = "";
+            try
+            {
+                var response = await _supabase.From<Profile>().Where(x => x.Id == user.Id).Get();
+                var profile = response.Models.FirstOrDefault();
+
+                if (profile != null)
+                {
+                    fetchedName = profile.Username;
+                    if (!string.IsNullOrEmpty(profile.ProfilePic))
+                    {
+                        ProfileImageUrl = _supabase.Storage.From("Avatar").GetPublicUrl(profile.ProfilePic);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Profile Load Error: " + ex.Message);
+            }
+
+            if (string.IsNullOrEmpty(fetchedName) && user.UserMetadata != null)
+                if (user.UserMetadata.TryGetValue("username", out var nameObj)) fetchedName = nameObj?.ToString() ?? "";
+
+            if (string.IsNullOrEmpty(fetchedName) && !string.IsNullOrEmpty(user.Email))
+                fetchedName = user.Email.Split('@')[0];
+
+            MyName = fetchedName;
+            await LoadChats();
+        }
+        else
+        {
+            Nav.NavigateTo("/login");
+        }
+    }
+
+    async Task LoadChats()
+    {
+        if (string.IsNullOrEmpty(MyName)) return;
+        isLoading = true;
+
+        string nameWithoutSpace = MyName.Replace(" ", "");
+
+        chatList.Clear();
+        try
+        {
+            var orderResponse = await _supabase.From<AI_Driven_Water_Supply.Presentation.Order>()
+                                               .Where(x => x.ConsumerName == nameWithoutSpace)
+                                               .Order("created_at", Supabase.Postgrest.Constants.Ordering.Descending)
+                                               .Get();
+            var myOrders = orderResponse.Models;
+
+            foreach (var order in myOrders)
+            {
+                var msgResponse = await _supabase.From<AI_Driven_Water_Supply.Presentation.Message>()
+                                                 .Where(x => x.OrderId == order.Id)
+                                                 .Order("created_at", Supabase.Postgrest.Constants.Ordering.Descending)
+                                                 .Limit(1)
+                                                 .Get();
+
+                var lastMsg = msgResponse.Models.FirstOrDefault();
+                chatList.Add(new ChatViewModel
+                {
+                    OrderId = order.Id,
+                    SupplierName = order.SupplierName,
+                    LastMessage = lastMsg != null ? lastMsg.Content : "Order placed",
+                    LastMsgTime = lastMsg != null ? lastMsg.CreatedAt.ToLocalTime().ToString("hh:mm tt") : order.CreatedAt.ToLocalTime().ToString("hh:mm tt"),
+                    IsLastMsgFromMe = lastMsg != null && lastMsg.SenderName == MyName
+                });
+            }
+        }
+        catch (Exception ex) { Console.WriteLine("Error: " + ex.Message); }
+        finally { isLoading = false; }
+    }
+
+    void ToggleMsgDropdown() { showMsgDropdown = !showMsgDropdown; showProfileDropdown = false; }
+    void ToggleProfileDropdown() { showProfileDropdown = !showProfileDropdown; showMsgDropdown = false; }
+    void CloseDropdowns() { showMsgDropdown = false; showProfileDropdown = false; }
+    void OpenChat(long orderId) { Nav.NavigateTo($"/chat/{orderId}"); }
+    async Task RefreshChats() { await LoadChats(); }
+    async Task HandleLogout() { await AuthService.SignOut(); Nav.NavigateTo("/login"); }
+}
+
+<script>
+    function startVideoLoop() {
+        const video = document.getElementById('myVideo');
+        if(!video) return;
+        video.playbackRate = 1;
+        video.play().catch(e => console.log("Autoplay blocked"));
+    }
+    setTimeout(startVideoLoop, 1000);
+</script>
