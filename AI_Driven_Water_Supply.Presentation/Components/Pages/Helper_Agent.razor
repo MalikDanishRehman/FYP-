@@ -1,11 +1,7 @@
 ﻿@page "/Helper_Agent"
-@using AI_Driven_Water_Supply.Presentation
-@using Supabase.Postgrest.Models
-@using Supabase.Postgrest.Attributes
 @using System.Text.Json
 @using System.Text
 @using System.Timers
-@inject Supabase.Client _supabase
 @inject NavigationManager Nav
 @inject AI_Driven_Water_Supply.Application.Interfaces.IAuthService AuthService
 @inject IJSRuntime JS
@@ -13,12 +9,10 @@
 @rendermode InteractiveServer
 
 <style>
-    /* --- CSS Same as before (Hidden for brevity) --- */
+    /* --- CORE THEME --- */
     :root {
         --primary-glow: #00C9FF;
         --secondary-glow: #92FE9D;
-        --glass-bg: rgba(20, 20, 20, 0.6);
-        --glass-border: rgba(255, 255, 255, 0.08);
     }
 
     body {
@@ -30,10 +24,83 @@
         overflow: hidden;
         height: 100vh;
     }
-    /* ... Copy baki ki CSS apni purani file se ... */
-    /* ... Sirf .msg-bubble animation same rakhna ... */
 
-    /* Navbar Styles etc... */
+    /* --- YE HAIN WO CARDS KI SETTINGS JO PYTHON BHEJ RAHA HAI --- */
+    .supplier-card {
+        background: rgba(30, 35, 45, 0.8);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 16px;
+        overflow: hidden;
+        transition: transform 0.3s ease;
+        margin-bottom: 15px;
+        max-width: 300px; /* Card size limit */
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+        .supplier-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 0 15px rgba(0, 201, 255, 0.3);
+        }
+
+    .card-img-wrapper {
+        height: 140px;
+        width: 100%;
+        position: relative;
+    }
+
+        .card-img-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+    .rating-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: rgba(0,0,0,0.7);
+        padding: 4px 8px;
+        border-radius: 8px;
+        backdrop-filter: blur(4px);
+        font-size: 0.8rem;
+    }
+
+    .card-body-custom {
+        padding: 15px;
+        text-align: center;
+    }
+
+        .card-body-custom h5 {
+            margin: 0 0 5px 0;
+            color: white;
+            font-weight: bold;
+        }
+
+        .card-body-custom p {
+            color: #aaa;
+            font-size: 0.85rem;
+            margin-bottom: 12px;
+        }
+
+    .select-btn {
+        display: block;
+        width: 100%;
+        padding: 10px 0;
+        background: linear-gradient(90deg, var(--primary-glow), var(--secondary-glow));
+        color: black;
+        font-weight: bold;
+        text-decoration: none;
+        border-radius: 8px;
+        transition: opacity 0.2s;
+    }
+
+        .select-btn:hover {
+            opacity: 0.9;
+            color: black;
+        }
+
+    /* --- REST OF YOUR CSS --- */
     .glass-nav {
         position: fixed;
         top: 0;
@@ -46,7 +113,6 @@
         justify-content: space-between;
         align-items: center;
         z-index: 1000;
-        box-sizing: border-box;
     }
 
     .brand-logo {
@@ -55,9 +121,6 @@
         background: linear-gradient(90deg, var(--primary-glow) 0%, var(--secondary-glow) 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-        display: flex;
-        align-items: center;
-        gap: 10px;
     }
 
     .nav-icons {
@@ -70,31 +133,21 @@
         font-size: 1.3rem;
         color: #888;
         cursor: pointer;
-        transition: all 0.3s ease;
         width: 45px;
         height: 45px;
-        border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        background: rgba(255, 255, 255, 0.03);
     }
-
-        .icon-btn:hover, .icon-btn.active {
-            background: rgba(255, 255, 255, 0.1);
-            color: var(--primary-glow);
-            transform: translateY(-2px);
-        }
 
     .profile-trigger {
         width: 42px;
         height: 42px;
         border-radius: 50%;
         cursor: pointer;
+        overflow: hidden;
         border: 2px solid transparent;
         background: linear-gradient(#000, #000) padding-box, linear-gradient(45deg, var(--primary-glow), var(--secondary-glow)) border-box;
-        overflow: hidden;
-        transition: transform 0.3s ease;
     }
 
         .profile-trigger img {
@@ -108,16 +161,13 @@
         top: 65px;
         right: 0;
         background: #0a0a0a;
-        border: 1px solid var(--glass-border);
+        border: 1px solid rgba(255,255,255,0.1);
         border-radius: 16px;
-        width: 340px;
-        padding: 8px;
+        width: 220px;
         display: none;
         flex-direction: column;
-        gap: 4px;
-        box-shadow: 0 20px 50px rgba(0,0,0,0.9);
+        padding: 10px;
         z-index: 2000;
-        animation: fadeIn 0.2s ease;
     }
 
         .custom-dropdown.show {
@@ -125,22 +175,18 @@
         }
 
     .chat-item {
-        padding: 14px;
-        border-radius: 12px;
+        padding: 10px;
         color: #ccc;
-        display: flex;
-        align-items: center;
-        gap: 15px;
-        cursor: pointer;
-        border-bottom: 1px solid rgba(255,255,255,0.02);
+        text-decoration: none;
+        display: block;
     }
 
         .chat-item:hover {
-            background: rgba(255, 255, 255, 0.05);
+            background: rgba(255,255,255,0.1);
             color: white;
+            border-radius: 8px;
         }
 
-    /* Layout */
     .hero-container {
         height: 100vh;
         width: 100%;
@@ -155,26 +201,20 @@
         margin-top: -150px;
         width: 600px;
         max-width: 90%;
-        pointer-events: none;
         mix-blend-mode: screen;
-        -webkit-mask-image: radial-gradient(circle, rgba(0,0,0,1) 30%, rgba(0,0,0,0) 70%);
-        mask-image: radial-gradient(circle, rgba(0,0,0,1) 30%, rgba(0,0,0,0) 70%);
-        transition: all 1.5s cubic-bezier(0.19, 1, 0.22, 1);
-        opacity: 1;
-        transform: scale(1);
-        filter: blur(0px);
+        transition: all 1.5s ease;
     }
 
     .video-hidden {
         opacity: 0 !important;
-        transform: scale(1.2) !important;
-        filter: blur(20px) !important;
+        filter: blur(20px);
+        transform: scale(1.2);
     }
 
     .chat-scroll-area {
         position: absolute;
         top: 90px;
-        bottom: 25%;
+        bottom: 20%;
         width: 100%;
         max-width: 800px;
         overflow-y: auto;
@@ -182,11 +222,10 @@
         display: flex;
         flex-direction: column;
         gap: 20px;
-        scrollbar-width: none;
         opacity: 0;
         visibility: hidden;
         transition: opacity 1s ease 0.5s;
-        z-index: 20;
+        scrollbar-width: none;
     }
 
         .chat-scroll-area.active {
@@ -195,22 +234,18 @@
         }
 
     .msg-bubble {
-        max-width: 80%;
+        max-width: 85%;
         padding: 16px 22px;
         border-radius: 20px;
         font-size: 1rem;
         line-height: 1.6;
-        position: relative;
         animation: slideUp 0.4s ease forwards;
-        opacity: 0;
-        transform: translateY(20px);
     }
 
     .msg-user {
         align-self: flex-end;
         background: rgba(0, 201, 255, 0.15);
         border: 1px solid rgba(0, 201, 255, 0.2);
-        color: white;
         border-bottom-right-radius: 4px;
     }
 
@@ -219,12 +254,8 @@
         background: transparent;
         color: #e0e0e0;
         padding-left: 0;
+        width: 100%;
     }
-
-        .msg-ai strong {
-            color: var(--secondary-glow);
-            font-weight: 600;
-        }
 
     .chat-input-wrapper {
         position: absolute;
@@ -245,16 +276,9 @@
         border-radius: 24px;
         padding: 16px 24px;
         display: flex;
-        align-items: center;
         gap: 15px;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-        transition: all 0.3s ease;
+        align-items: center;
     }
-
-        .chat-input-box:focus-within {
-            border-color: var(--primary-glow);
-            box-shadow: 0 0 20px rgba(0, 201, 255, 0.2);
-        }
 
         .chat-input-box input {
             flex: 1;
@@ -274,35 +298,17 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        color: black;
         cursor: pointer;
-        transition: transform 0.2s;
     }
-
-        .send-btn:active {
-            transform: scale(0.9);
-        }
-
-        .send-btn:disabled {
-            opacity: 0.5;
-            cursor: default;
-        }
 
     @@keyframes slideUp {
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
+        to
+
+    {
+        opacity: 1;
+        transform: translateY(0);
     }
 
-    @@keyframes fadeIn {
-        from {
-            opacity: 0;
-        }
-
-        to {
-            opacity: 1;
-        }
     }
 </style>
 
@@ -310,27 +316,17 @@
     <div class="brand-logo"><i class="fa-solid fa-droplet"></i> HydroAI</div>
     <div class="nav-icons">
         <div style="position: relative;">
-            <div class="icon-btn @(showMsgDropdown ? "active" : "")" @onclick="ToggleMsgDropdown">
-                <i class="fa-regular fa-comment-dots"></i>
-                @if (chatList.Any(c => c.UnreadCount > 0))
-                {
-                    <span class="badge-dot"></span>
-                }
-            </div>
-            <div class="custom-dropdown msg-dropdown-mobile-center @(showMsgDropdown ? "show" : "")">
-                <div class="p-2 text-muted text-center small">Existing Chats Hidden for Demo</div>
-            </div>
-        </div>
-        <div style="position: relative;">
             <div class="profile-trigger" @onclick="ToggleProfileDropdown">
                 <img src="@ProfileImageUrl" alt="Profile">
             </div>
-            <div class="custom-dropdown @(showProfileDropdown ? "show" : "")" style="width: 220px;">
+            <div class="custom-dropdown @(showProfileDropdown ? "show" : "")">
                 <div class="px-3 py-2 text-center">
                     <span class="text-white fw-bold d-block">@MyName</span>
                     <span class="text-muted small">Consumer</span>
                 </div>
-                <a href="#" class="chat-item" style="color: #ff4757;" @onclick="HandleLogout"><i class="fa-solid fa-power-off me-2"></i> Logout</a>
+                <a href="#" class="chat-item" style="color: #ff4757;" @onclick="HandleLogout">
+                    <i class="fa-solid fa-power-off me-2"></i> Logout
+                </a>
             </div>
         </div>
     </div>
@@ -348,9 +344,9 @@
             <div class="msg-bubble @(msg.IsUser ? "msg-user" : "msg-ai")">
                 @if (!msg.IsUser)
                 {
-                    <div style="display:flex; align-items:center; gap:10px; margin-bottom:5px;">
-                        <i class="fa-solid fa-sparkles" style="color:var(--primary-glow);"></i>
-                        <strong>HydroAI</strong>
+                    <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+                        <i class="fa-solid fa-robot" style="color:var(--primary-glow);"></i>
+                        <strong style="color: var(--secondary-glow)">HydroAI</strong>
                     </div>
                 }
                 @((MarkupString)msg.Text)
@@ -361,8 +357,8 @@
         {
             <div class="msg-bubble msg-ai">
                 <div style="display:flex; align-items:center; gap:10px;">
-                    <i class="fa-solid fa-circle-notch fa-spin text-info"></i>
-                    <span class="text-muted">@loadingText</span>
+                    <span class="spinner-border spinner-border-sm text-info"></span>
+                    <span class="text-muted" style="font-style: italic;">@loadingText</span>
                 </div>
             </div>
         }
@@ -371,16 +367,18 @@
     <div class="chat-input-wrapper">
         <div class="chat-input-box">
             <i class="fa-solid fa-sparkles" style="color: var(--primary-glow);"></i>
-            <input type="text" @bind="userInput" @bind:event="oninput" @onkeyup="HandleKeyPress" placeholder="Ask HydroAI for water supply..." disabled="@isThinking" />
+            <input type="text" @bind="userInput" @bind:event="oninput" @onkeyup="HandleKeyPress"
+                   placeholder="Ask 'Show suppliers' or 'Paani chahiye'..." disabled="@isThinking" />
+
             <button class="send-btn" @onclick="SendMessage" disabled="@(string.IsNullOrWhiteSpace(userInput) || isThinking)">
                 @if (isThinking)
                 {
-                    <i class="fa-solid fa-stop"></i>
+                    <i class="fa-solid fa-hourglass-half fa-spin"></i>
                 }
                 else
                 {
 
-                    <i class="bi bi-send-fill"></i>
+                    <i class="fa-solid fa-paper-plane"></i>
                 }
             </button>
         </div>
@@ -388,39 +386,54 @@
 </div>
 
 @code {
-    string MyName = "";
+    string MyName = "User";
     string ProfileImageUrl = "/images/fallbackimg.jpg";
-    bool showMsgDropdown = false;
     bool showProfileDropdown = false;
-    bool isLoading = true;
-
     bool hasChatStarted = false;
     bool isThinking = false;
     string userInput = "";
-    string loadingText = "Soch raha hoon..."; // Default text
+    string loadingText = "Processing...";
     Timer? _timer;
 
     public class ChatMessage { public string Text { get; set; } = ""; public bool IsUser { get; set; } }
     List<ChatMessage> CurrentConversation = new();
 
-    // Data Classes
-    class ChatViewModel { public long OrderId { get; set; } public string SupplierName { get; set; } = ""; public string LastMessage { get; set; } = ""; public string LastMsgTime { get; set; } = ""; public bool IsLastMsgFromMe { get; set; } public int UnreadCount { get; set; } }
-    List<ChatViewModel> chatList = new();
-    [Table("profiles")] public class Profile : BaseModel { [Column("id")] public string Id { get; set; } = ""; [Column("username")] public string Username { get; set; } = ""; [Column("profilepic")] public string ProfilePic { get; set; } = ""; }
+    // --- ON INITIALIZED (FIXED ERROR) ---
+    protected override async Task OnInitializedAsync()
+    {
+        var user = AuthService.CurrentUser;
+        if (user == null) { await AuthService.TryRefreshSession(); user = AuthService.CurrentUser; }
+
+        if (user != null)
+        {
+            // Safe Access for Full Name
+            if (user.UserMetadata != null && user.UserMetadata.TryGetValue("full_name", out var nameObj))
+            {
+                MyName = nameObj?.ToString() ?? "User";
+            }
+            else
+            {
+                MyName = !string.IsNullOrEmpty(user.Email) ? user.Email.Split('@')[0] : "User";
+            }
+        }
+        else
+        {
+            Nav.NavigateTo("/login");
+        }
+    }
 
     private async Task SendMessage()
     {
         if (string.IsNullOrWhiteSpace(userInput)) return;
+
         hasChatStarted = true;
         string msgText = userInput;
         userInput = "";
 
         CurrentConversation.Add(new ChatMessage { Text = msgText, IsUser = true });
 
-        // --- START LOADER LOGIC ---
         isThinking = true;
-        loadingText = "Analyzing Request...";
-        StartLoadingTimer(); // Text change timer
+        StartLoadingTimer();
         await ScrollToBottom();
 
         try
@@ -428,25 +441,37 @@
             var payload = new { message = msgText };
             var jsonContent = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
 
-            // Python Call
+            // --- CONNECTING TO YOUR PYTHON BACKEND ---
             var response = await Http.PostAsync("http://127.0.0.1:8000/chat", jsonContent);
 
             if (response.IsSuccessStatusCode)
             {
                 var responseString = await response.Content.ReadAsStringAsync();
                 using var doc = JsonDocument.Parse(responseString);
-                string botReply = doc.RootElement.GetProperty("response").GetString();
-                botReply = botReply.Replace("\n", "<br>").Replace("**", "");
-                CurrentConversation.Add(new ChatMessage { Text = botReply, IsUser = false });
+
+                // Extracting response
+                if (doc.RootElement.TryGetProperty("response", out var respElement))
+                {
+                    string botReply = respElement.GetString() ?? "";
+
+                    // Python sends <div... HTML. We don't want to replace newlines in HTML mode usually,
+                    // but for text responses, we do.
+                    if (!botReply.Trim().StartsWith("<div"))
+                    {
+                        botReply = botReply.Replace("\n", "<br>");
+                    }
+
+                    CurrentConversation.Add(new ChatMessage { Text = botReply, IsUser = false });
+                }
             }
             else
             {
-                CurrentConversation.Add(new ChatMessage { Text = "⚠️ Error: Server response failed.", IsUser = false });
+                CurrentConversation.Add(new ChatMessage { Text = "⚠️ Backend Error. Check Python Console.", IsUser = false });
             }
         }
         catch (Exception ex)
         {
-            CurrentConversation.Add(new ChatMessage { Text = $"⚠️ Is backend running? Error: {ex.Message}", IsUser = false });
+            CurrentConversation.Add(new ChatMessage { Text = $"⚠️ Connection Failed: {ex.Message}. Make sure uvicorn is running on port 8000.", IsUser = false });
         }
         finally
         {
@@ -456,52 +481,26 @@
         }
     }
 
-    // --- Loading Text Animation Logic ---
     private void StartLoadingTimer()
     {
-        _timer = new Timer(4000); // Har 4 second baad check karega
-        int tick = 0;
+        _timer = new Timer(2000);
         _timer.Elapsed += (s, e) =>
         {
-            tick++;
-            if (tick == 1) loadingText = "Searching Database...";
-            else if (tick == 2) loadingText = "Connecting to Satellite... (High Traffic)";
-            else if (tick == 3) loadingText = "Still trying... please wait...";
-
+            if (loadingText == "Processing...") loadingText = "Fetching Data...";
+            else loadingText = "Processing...";
             InvokeAsync(StateHasChanged);
         };
         _timer.Start();
     }
 
-    private void StopLoadingTimer()
-    {
-        if (_timer != null)
-        {
-            _timer.Stop();
-            _timer.Dispose();
-        }
-    }
-
-    private async Task HandleKeyPress(KeyboardEventArgs e) { if (e.Key == "Enter" && !string.IsNullOrWhiteSpace(userInput)) await SendMessage(); }
-
+    private void StopLoadingTimer() { _timer?.Stop(); _timer?.Dispose(); }
+    private async Task HandleKeyPress(KeyboardEventArgs e) { if (e.Key == "Enter") await SendMessage(); }
     private async Task ScrollToBottom() { await Task.Delay(100); await JS.InvokeVoidAsync("scrollToBottom", "chatContainer"); }
-
-    protected override async Task OnInitializedAsync()
-    {
-        var user = AuthService.CurrentUser;
-        if (user == null) { await AuthService.TryRefreshSession(); user = AuthService.CurrentUser; }
-        if (user != null) { MyName = "User"; await LoadChats(); } else { Nav.NavigateTo("/login"); }
-    }
-
-    async Task LoadChats() { /* Logic */ }
-    void ToggleMsgDropdown() { showMsgDropdown = !showMsgDropdown; showProfileDropdown = false; }
-    void ToggleProfileDropdown() { showProfileDropdown = !showProfileDropdown; showMsgDropdown = false; }
-    void CloseDropdowns() { showMsgDropdown = false; showProfileDropdown = false; }
+    void ToggleProfileDropdown() { showProfileDropdown = !showProfileDropdown; }
+    void CloseDropdowns() { showProfileDropdown = false; }
     async Task HandleLogout() { await AuthService.SignOut(); Nav.NavigateTo("/login"); }
 }
 
 <script>
-    function startVideoLoop() { const video = document.getElementById('myVideo'); if(!video) return; video.playbackRate = 1; video.play().catch(e => console.log("Autoplay blocked")); }
-    setTimeout(startVideoLoop, 1000);
-    window.scrollToBottom = (elementId) => { var el = document.getElementById(elementId); if (el) { el.scrollTop = el.scrollHeight; } }
+    window.scrollToBottom = (id) => { var el = document.getElementById(id); if (el) el.scrollTop = el.scrollHeight; }
 </script>

@@ -22,8 +22,9 @@ if (string.IsNullOrEmpty(supabaseUrl) || string.IsNullOrEmpty(supabaseKey))
 
 builder.Services.AddControllers();          
 builder.Services.AddHttpContextAccessor();  
-builder.Services.AddHttpClient();           
+builder.Services.AddHttpClient();
 
+builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("http://127.0.0.1:8000/") });
 var options = new SupabaseOptions
 {
     AutoRefreshToken = true,
