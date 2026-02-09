@@ -3,30 +3,74 @@
 @rendermode InteractiveServer
 
 <div class="selection-container">
-    <div class="text-center mb-5">
+    <div class="text-center mb-5 fade-in">
         <h1 class="brand-title">💧 HydroAI</h1>
-        <p class="text-muted">Choose how you want to join us</p>
+        @if (!showServices)
+        {
+            <p class="text-muted">Choose how you want to join us</p>
+        }
+        else
+        {
+            <p class="text-muted">What type of water supply do you provide?</p>
+        }
     </div>
 
-    <div class="cards-wrapper">
-        <div class="role-card consumer" @onclick='() => SelectRole("Consumer")'>
-            <div class="icon-circle">
-                <i class="bi bi-cart-check-fill"></i>
+    @if (!showServices)
+    {
+        <div class="cards-wrapper fade-in">
+            <div class="role-card consumer" @onclick='() => SelectRole("Consumer")'>
+                <div class="icon-circle">
+                    <i class="bi bi-cart-check-fill"></i>
+                </div>
+                <h3>I want to Buy Water</h3>
+                <p>Order water tankers or bottles for your home.</p>
+                <div class="arrow-icon"><i class="bi bi-arrow-right"></i></div>
             </div>
-            <h3>I want to Buy Water</h3>
-            <p>Order water tankers or bottles for your home.</p>
-            <div class="arrow-icon"><i class="bi bi-arrow-right"></i></div>
+
+            <div class="role-card provider" @onclick='() => ShowServiceSelection()'>
+                <div class="icon-circle">
+                    <i class="bi bi-truck"></i>
+                </div>
+                <h3>I want to Sell Water</h3>
+                <p>Manage orders, delivery & grow your business.</p>
+                <div class="arrow-icon"><i class="bi bi-arrow-right"></i></div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="service-wrapper fade-in">
+
+            <div class="service-card @(selectedServices.Contains("Bottles") ? "active" : "")"
+                 @onclick='() => ToggleService("Bottles")'>
+                <i class="bi bi-droplet-half icon-main"></i>
+                <h4>1 Litre Bottles</h4>
+                <div class="check-icon"><i class="bi bi-check-circle-fill"></i></div>
+            </div>
+
+            <div class="service-card @(selectedServices.Contains("Plant") ? "active" : "")"
+                 @onclick='() => ToggleService("Plant")'>
+                <i class="bi bi-shop icon-main"></i>
+                <h4>Plant Supply</h4>
+                <div class="check-icon"><i class="bi bi-check-circle-fill"></i></div>
+            </div>
+
+            <div class="service-card @(selectedServices.Contains("Tanker") ? "active" : "")"
+                 @onclick='() => ToggleService("Tanker")'>
+                <i class="bi bi-truck-front-fill icon-main"></i>
+                <h4>Water Tankers</h4>
+                <div class="check-icon"><i class="bi bi-check-circle-fill"></i></div>
+            </div>
+
         </div>
 
-        <div class="role-card provider" @onclick='() => SelectRole("Provider")'>
-            <div class="icon-circle">
-                <i class="bi bi-truck"></i>
-            </div>
-            <h3>I want to Sell Water</h3>
-            <p>Manage orders, delivery & grow your business.</p>
-            <div class="arrow-icon"><i class="bi bi-arrow-right"></i></div>
+        <div class="mt-5 d-flex gap-3">
+            <button class="btn btn-outline-light px-4 py-2 rounded-pill" @onclick="GoBack">Back</button>
+            <button class="btn btn-gradient px-5 py-2 rounded-pill" @onclick="FinalizeProviderSignup" disabled="@(selectedServices.Count == 0)">
+                Continue <i class="bi bi-arrow-right ms-2"></i>
+            </button>
         </div>
-    </div>
+    }
 
     <div class="mt-5 text-center">
         <a href="/login" class="text-decoration-none text-muted small hover-link">Already have an account? <span class="text-info">Login</span></a>
@@ -34,6 +78,7 @@
 </div>
 
 <style>
+    /* --- OLD STYLES (Keep them as is) --- */
     body {
         background-color: #050505;
         color: white;
@@ -138,12 +183,150 @@
     .hover-link:hover span {
         text-decoration: underline;
     }
+
+    /* --- NEW STYLES FOR SERVICE SELECTION --- */
+    .service-wrapper {
+        display: flex;
+        gap: 20px;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .service-card {
+        background: rgba(255, 255, 255, 0.05);
+        border: 2px solid transparent;
+        border-radius: 15px;
+        width: 180px;
+        padding: 25px 10px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s;
+        position: relative;
+    }
+
+        .service-card:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Selected State */
+        .service-card.active {
+            border-color: #92FE9D;
+            background: rgba(146, 254, 157, 0.1);
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(146, 254, 157, 0.2);
+        }
+
+    .icon-main {
+        font-size: 2.5rem;
+        color: #ccc;
+        margin-bottom: 10px;
+        display: block;
+    }
+
+    .service-card.active .icon-main {
+        color: #92FE9D;
+    }
+
+    .service-card h4 {
+        font-size: 1rem;
+        color: white;
+        margin-top: 10px;
+    }
+
+    .check-icon {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        color: #92FE9D;
+        opacity: 0;
+        transform: scale(0);
+        transition: 0.3s;
+    }
+
+    .service-card.active .check-icon {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    /* Button Style */
+    .btn-gradient {
+        background: linear-gradient(90deg, #00C9FF 0%, #92FE9D 100%);
+        border: none;
+        color: black;
+        font-weight: 700;
+        transition: 0.3s;
+    }
+
+        .btn-gradient:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 201, 255, 0.4);
+        }
+
+        .btn-gradient:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+    /* Animation */
+    .fade-in {
+        animation: fadeIn 0.5s ease-in-out;
+    }
+
+    @@keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
 </style>
 
 @code {
+    private bool showServices = false;
+    private List<string> selectedServices = new List<string>();
+
+    // 1. Consumer select kare to seedha signup page
     void SelectRole(string role)
     {
-        // URL ke zariye Role pass kar rahe hain
         Nav.NavigateTo($"/signup?role={role}");
+    }
+
+    // 2. Provider select kare to Service Selection dikhao
+    void ShowServiceSelection()
+    {
+        showServices = true;
+    }
+
+    // 3. Service select/deselect karne ka logic (Multiple allow kar rahe hain)
+    void ToggleService(string serviceName)
+    {
+        if (selectedServices.Contains(serviceName))
+        {
+            selectedServices.Remove(serviceName);
+        }
+        else
+        {
+            selectedServices.Add(serviceName);
+        }
+    }
+
+    void GoBack()
+    {
+        showServices = false;
+        selectedServices.Clear();
+    }
+
+    // 4. Sab select hone ke baad signup page par bhejo with Data
+    void FinalizeProviderSignup()
+    {
+        // Join services with comma (e.g., "Tanker,Bottles")
+        string servicesParam = string.Join(",", selectedServices);
+
+        // URL banega: /signup?role=Provider&services=Tanker,Plant
+        Nav.NavigateTo($"/signup?role=Provider&services={servicesParam}");
     }
 }
