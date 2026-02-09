@@ -6,9 +6,8 @@
 @using Microsoft.AspNetCore.WebUtilities
 @inject Supabase.Client _supabase
 @inject NavigationManager NavigationManager
+
 @rendermode InteractiveServer
-
-
 
 <div class="auth-wrapper">
     <EditForm Model="@signupModel" OnValidSubmit="HandleSignup" FormName="SignupForm">
@@ -16,7 +15,8 @@
 
         <div class="auth-card">
             <h2 class="mb-2 fw-bold" style="font-size: 2rem;">Sign Up</h2>
-            <div class="role-badge">Joining as: @signupModel.Role</div>
+
+            <div class="role-badge">Joining as: <span class="text-info">@signupModel.Role</span></div>
 
             @if (!string.IsNullOrEmpty(message))
             {
@@ -55,29 +55,37 @@
         </div>
     </EditForm>
 </div>
-@code {
-    [SupplyParameterFromForm] private SignupModel signupModel { get; set; } = new();
 
-    // ⚠️ FIX: Ye variables wapis laye hain taake HTML crash na ho
+@code {
+    [SupplyParameterFromForm]
+    private SignupModel signupModel { get; set; } = new();
+
     private string message = "";
     private bool isSuccess = false;
     private bool isLoading = false;
 
-    // ⚠️ FIX: Maine yahan se [Inject] ToastService hata diya hai.
-    // Ensure karein ke file ke sabse upar "@inject ToastService ToastService" likha ho.
+    // 🔥 New Variable to store services from URL
+    private string servicesParam = null;
 
+    // --- DATABASE MODEL ---
     [Table("profiles")]
     public class UserProfile : BaseModel
     {
         [Column("id")] public string Id { get; set; } = string.Empty;
         [Column("username")] public string Username { get; set; } = string.Empty;
         [Column("role")] public string Role { get; set; } = string.Empty;
+
+        // ✅ Ye Naya Column add kiya hai (DB se match karega)
+        [Column("services")] public string Services { get; set; }
     }
 
     protected override void OnInitialized()
     {
         var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
-        if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("role", out var r))
+        var query = QueryHelpers.ParseQuery(uri.Query);
+
+        // 1. Role Pakdo
+        if (query.TryGetValue("role", out var r))
         {
             signupModel.Role = r;
         }
@@ -85,33 +93,48 @@
         {
             signupModel.Role = "Consumer";
         }
+
+        // 2. Services Pakdo (Agar Provider hai to)
+        if (query.TryGetValue("services", out var s))
+        {
+            servicesParam = s; // e.g., "Tanker,Plant"
+        }
     }
 
     private async Task HandleSignup()
     {
         isLoading = true;
-        message = ""; // Reset message
+        message = "";
 
         try
         {
             string autoUsername = signupModel.Email.Split('@')[0];
 
+            // 1. Create User in Supabase Auth
             var options = new Supabase.Gotrue.SignUpOptions { Data = new Dictionary<string, object> { { "username", autoUsername } } };
             var session = await _supabase.Auth.SignUp(signupModel.Email, signupModel.Password, options);
 
             if (session != null && session.User != null)
             {
+                // 2. Prepare Data for Profiles Table
                 var newProfile = new UserProfile
                 {
                     Id = session.User.Id,
                     Username = autoUsername,
-                    Role = signupModel.Role
+                    Role = signupModel.Role,
+
+                    // ✅ Logic: Agar Provider hai to services save karo, warna null
+                    Services = (signupModel.Role == "Provider") ? servicesParam : null
                 };
+
+                // 3. Insert into Profiles Table
                 await _supabase.From<UserProfile>().Insert(newProfile);
 
                 isSuccess = true;
                 message = "Account created! Redirecting...";
-                ToastService.ShowToast("Account Created", "Welcome! Redirecting...", "success");
+
+                // ToastService agar tumhare project me hai to uncomment karo
+                // ToastService.ShowToast("Account Created", "Welcome! Redirecting...", "success");
 
                 await Task.Delay(1500);
                 NavigationManager.NavigateTo("/login");
@@ -119,15 +142,18 @@
             else
             {
                 isSuccess = false;
-                ToastService.ShowToast("Signup Failed", message, "error");
+                message = "Signup failed. Please try again.";
             }
         }
         catch (Exception ex)
         {
             isSuccess = false;
-            ToastService.ShowToast("Error", "Something went wrong.", "error");
+            message = $"Error: {ex.Message}";
         }
-        finally { isLoading = false; }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
     public class SignupModel
