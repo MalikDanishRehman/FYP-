@@ -25,7 +25,7 @@
         height: 100vh;
     }
 
-    /* --- YE HAIN WO CARDS KI SETTINGS JO PYTHON BHEJ RAHA HAI --- */
+    /* --- SUPPLIER CARDS --- */
     .supplier-card {
         background: rgba(30, 35, 45, 0.8);
         border: 1px solid rgba(255, 255, 255, 0.1);
@@ -33,7 +33,7 @@
         overflow: hidden;
         transition: transform 0.3s ease;
         margin-bottom: 15px;
-        max-width: 300px; /* Card size limit */
+        max-width: 300px;
         margin-left: auto;
         margin-right: auto;
     }
@@ -100,7 +100,7 @@
             color: black;
         }
 
-    /* --- REST OF YOUR CSS --- */
+    /* --- NAV & LAYOUT --- */
     .glass-nav {
         position: fixed;
         top: 0;
@@ -127,17 +127,6 @@
         display: flex;
         gap: 15px;
         align-items: center;
-    }
-
-    .icon-btn {
-        font-size: 1.3rem;
-        color: #888;
-        cursor: pointer;
-        width: 45px;
-        height: 45px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
     }
 
     .profile-trigger {
@@ -211,6 +200,7 @@
         transform: scale(1.2);
     }
 
+    /* --- CHAT AREA --- */
     .chat-scroll-area {
         position: absolute;
         top: 90px;
@@ -240,6 +230,7 @@
         font-size: 1rem;
         line-height: 1.6;
         animation: slideUp 0.4s ease forwards;
+        position: relative;
     }
 
     .msg-user {
@@ -257,14 +248,47 @@
         width: 100%;
     }
 
+    /* --- INPUT AREA & ATTACHMENTS --- */
     .chat-input-wrapper {
         position: absolute;
         bottom: 15%;
         width: 100%;
         display: flex;
-        justify-content: center;
+        flex-direction: column; /* Changed to column to stack preview */
+        align-items: center;
         z-index: 100;
         transition: bottom 0.8s ease;
+    }
+
+    /* Image Preview Styling */
+    .image-preview-box {
+        background: rgba(20, 20, 20, 0.9);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        padding: 8px;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        width: 85%;
+        max-width: 600px;
+        animation: fadeIn 0.3s ease;
+    }
+
+    .preview-thumb {
+        width: 60px;
+        height: 60px;
+        object-fit: cover;
+        border-radius: 8px;
+        border: 1px solid var(--primary-glow);
+    }
+
+    .remove-img-btn {
+        background: transparent;
+        border: none;
+        color: #ff4757;
+        cursor: pointer;
+        font-size: 1.2rem;
     }
 
     .chat-input-box {
@@ -289,6 +313,20 @@
             font-size: 1rem;
         }
 
+    /* Attachment Button Style */
+    .attach-btn {
+        color: #888;
+        cursor: pointer;
+        transition: color 0.3s;
+        font-size: 1.2rem;
+        display: flex;
+        align-items: center;
+    }
+
+        .attach-btn:hover {
+            color: var(--secondary-glow);
+        }
+
     .send-btn {
         background: linear-gradient(135deg, var(--primary-glow), var(--secondary-glow));
         border: none;
@@ -301,10 +339,34 @@
         cursor: pointer;
     }
 
+    /* Styles for images inside chat bubbles */
+    .chat-image-display {
+        max-width: 100%;
+        max-height: 200px;
+        border-radius: 12px;
+        margin-bottom: 8px;
+        display: block;
+        border: 1px solid rgba(255,255,255,0.2);
+    }
+
     @@keyframes slideUp {
         to
 
     {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    }
+    @@keyframes fadeIn {
+        from
+
+    {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
         opacity: 1;
         transform: translateY(0);
     }
@@ -349,6 +411,12 @@
                         <strong style="color: var(--secondary-glow)">HydroAI</strong>
                     </div>
                 }
+
+                @if (!string.IsNullOrEmpty(msg.ImageUrl))
+                {
+                    <img src="@msg.ImageUrl" class="chat-image-display" alt="Attached Image" />
+                }
+
                 @((MarkupString)msg.Text)
             </div>
         }
@@ -365,19 +433,38 @@
     </div>
 
     <div class="chat-input-wrapper">
-        <div class="chat-input-box">
-            <i class="fa-solid fa-sparkles" style="color: var(--primary-glow);"></i>
-            <input type="text" @bind="userInput" @bind:event="oninput" @onkeyup="HandleKeyPress"
-                   placeholder="Ask 'Show suppliers' or 'Paani chahiye'..." disabled="@isThinking" />
+        @if (!string.IsNullOrEmpty(selectedImagePreview))
+        {
+            <div class="image-preview-box">
+                <img src="@selectedImagePreview" class="preview-thumb" />
+                <div style="flex:1; color:#ccc; font-size:0.9rem;">
+                    Image Attached
+                </div>
+                <button class="remove-img-btn" @onclick="ClearImageAttachment">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+        }
 
-            <button class="send-btn" @onclick="SendMessage" disabled="@(string.IsNullOrWhiteSpace(userInput) || isThinking)">
+        <div class="chat-input-box">
+            <InputFile OnChange="@HandleFileSelection" id="fileInput" style="display:none;" accept="image/*" />
+
+            <label for="fileInput" class="attach-btn" title="Attach Image">
+                <i class="fa-solid fa-paperclip"></i>
+            </label>
+
+            <i class="fa-solid fa-sparkles" style="color: var(--primary-glow); margin-left: 10px;"></i>
+
+            <input type="text" @bind="userInput" @bind:event="oninput" @onkeyup="HandleKeyPress"
+                   placeholder="Ask 'Show suppliers' or attach image..." disabled="@isThinking" />
+
+            <button class="send-btn" @onclick="SendMessage" disabled="@((string.IsNullOrWhiteSpace(userInput) && string.IsNullOrEmpty(selectedImageBase64)) || isThinking)">
                 @if (isThinking)
                 {
                     <i class="fa-solid fa-hourglass-half fa-spin"></i>
                 }
                 else
                 {
-
                     <i class="fa-solid fa-paper-plane"></i>
                 }
             </button>
@@ -395,10 +482,20 @@
     string loadingText = "Processing...";
     Timer? _timer;
 
-    public class ChatMessage { public string Text { get; set; } = ""; public bool IsUser { get; set; } }
+    // --- IMAGE HANDLING VARIABLES ---
+    string? selectedImageBase64 = null;
+    string? selectedImagePreview = null;
+    const long MaxFileSize = 5 * 1024 * 1024; // 5MB
+
+    public class ChatMessage
+    {
+        public string Text { get; set; } = "";
+        public bool IsUser { get; set; }
+        public string? ImageUrl { get; set; } // Added to store image URL in chat history
+    }
+
     List<ChatMessage> CurrentConversation = new();
 
-    // --- ON INITIALIZED (FIXED ERROR) ---
     protected override async Task OnInitializedAsync()
     {
         var user = AuthService.CurrentUser;
@@ -406,7 +503,6 @@
 
         if (user != null)
         {
-            // Safe Access for Full Name
             if (user.UserMetadata != null && user.UserMetadata.TryGetValue("full_name", out var nameObj))
             {
                 MyName = nameObj?.ToString() ?? "User";
@@ -422,15 +518,59 @@
         }
     }
 
+    // --- HANDLE FILE SELECTION ---
+    private async Task HandleFileSelection(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            var file = e.File;
+            if (file != null)
+            {
+                // Resize image to max 800x800 to reduce payload size
+                var resizedImage = await file.RequestImageFileAsync(file.ContentType, 800, 800);
+
+                var buffer = new byte[resizedImage.Size];
+                await resizedImage.OpenReadStream(MaxFileSize).ReadAsync(buffer);
+
+                string base64 = Convert.ToBase64String(buffer);
+                string format = file.ContentType;
+
+                // Set Preview and Payload data
+                selectedImagePreview = $"data:{format};base64,{base64}";
+                selectedImageBase64 = selectedImagePreview; // Full data URI
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Image Error: {ex.Message}");
+        }
+    }
+
+    private void ClearImageAttachment()
+    {
+        selectedImageBase64 = null;
+        selectedImagePreview = null;
+    }
+
     private async Task SendMessage()
     {
-        if (string.IsNullOrWhiteSpace(userInput)) return;
+        if (string.IsNullOrWhiteSpace(userInput) && string.IsNullOrEmpty(selectedImageBase64)) return;
 
         hasChatStarted = true;
         string msgText = userInput;
-        userInput = "";
+        string? imgData = selectedImageBase64;
 
-        CurrentConversation.Add(new ChatMessage { Text = msgText, IsUser = true });
+        // Add User Message to Chat
+        CurrentConversation.Add(new ChatMessage
+        {
+            Text = msgText,
+            IsUser = true,
+            ImageUrl = imgData // Show image in user's chat bubble too
+        });
+
+        // Reset Inputs immediately
+        userInput = "";
+        ClearImageAttachment();
 
         isThinking = true;
         StartLoadingTimer();
@@ -438,10 +578,15 @@
 
         try
         {
-            var payload = new { message = msgText };
+            // --- UPDATED PAYLOAD WITH IMAGE ---
+            var payload = new
+            {
+                message = msgText,
+                image = imgData // Sending Base64 image to Python
+            };
+
             var jsonContent = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
 
-            // --- CONNECTING TO YOUR PYTHON BACKEND ---
             var response = await Http.PostAsync("http://127.0.0.1:8000/chat", jsonContent);
 
             if (response.IsSuccessStatusCode)
@@ -449,13 +594,10 @@
                 var responseString = await response.Content.ReadAsStringAsync();
                 using var doc = JsonDocument.Parse(responseString);
 
-                // Extracting response
                 if (doc.RootElement.TryGetProperty("response", out var respElement))
                 {
                     string botReply = respElement.GetString() ?? "";
 
-                    // Python sends <div... HTML. We don't want to replace newlines in HTML mode usually,
-                    // but for text responses, we do.
                     if (!botReply.Trim().StartsWith("<div"))
                     {
                         botReply = botReply.Replace("\n", "<br>");
@@ -471,7 +613,7 @@
         }
         catch (Exception ex)
         {
-            CurrentConversation.Add(new ChatMessage { Text = $"⚠️ Connection Failed: {ex.Message}. Make sure uvicorn is running on port 8000.", IsUser = false });
+            CurrentConversation.Add(new ChatMessage { Text = $"⚠️ Connection Failed: {ex.Message}", IsUser = false });
         }
         finally
         {

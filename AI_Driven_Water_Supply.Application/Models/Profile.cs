@@ -17,5 +17,8 @@ namespace AI_Driven_Water_Supply.Application.Models
 
         [Supabase.Postgrest.Attributes.Column("role")]
         public string Role { get; set; }
+
+        [Supabase.Postgrest.Attributes.Column("services")]
+        public string Services { get; set; }
     }
 }
