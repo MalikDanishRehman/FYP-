@@ -16,15 +16,13 @@ namespace AI_Driven_Water_Supply.Presentation.Components.Pages
         [Inject] public Supabase.Client _supabase { get; set; } = default!;
         [Inject] public NavigationManager Nav { get; set; } = default!;
 
-        // ⚠️ FIX: Agar "Ambiguity" error aye, to yahan se ye line hata dein 
-        // aur Login.razor ke top par "@inject ToastService ToastService" likh dein.
-        // Filhal main yahan se hata raha hun taake wo @inject use kare.
-       
+        // ✅ FIX: Property ka naam '_toastService' rakha hai taake Class name se conflict na ho
+        [Inject] public ToastService _toastService { get; set; } = default!;
+
         // Form Binding
         [SupplyParameterFromForm]
         protected LoginModel loginModel { get; set; } = new();
 
-        // ⚠️ FIX: Ye variables wapis add kiye hain taake HTML error na de
         protected string errorMessage = "";
         protected bool isLoading = false;
 
@@ -52,39 +50,52 @@ namespace AI_Driven_Water_Supply.Presentation.Components.Pages
                     if (user != null)
                     {
                         var response = await _supabase.From<UserProfile>()
-                                                    .Where(x => x.Id == user.Id)
-                                                    .Get();
+                                                      .Where(x => x.Id == user.Id)
+                                                      .Get();
 
                         var profile = response.Models.FirstOrDefault();
 
                         if (profile != null)
                         {
-                            ToastService.ShowToast("Welcome Back", "Login successful.", "success");
+                            // ✅ Updated call using _toastService
+                            _toastService.ShowToast("Welcome Back", "Login successful.", "success");
 
                             if (profile.Role == "Consumer")
+                            {
                                 Nav.NavigateTo("/Consumer", forceLoad: true);
-                            else
+                            }
+                            else if (profile.Role == "admin")
+                            {
+                                Nav.NavigateTo("/AdminPage", forceLoad: true);
+                            }
+                            else if (profile.Role == "Provider")
+                            {
                                 Nav.NavigateTo("/ProviderDashboard", forceLoad: true);
+                            }
+                            else
+                            {
+                                // Fallback for unknown role
+                                Nav.NavigateTo("/", forceLoad: true);
+                            }
                         }
                         else
                         {
-                            ToastService.ShowToast("Profile Missing", "Please complete your profile.", "info");
+                            _toastService.ShowToast("Profile Missing", "Please complete your profile.", "info");
                             Nav.NavigateTo("/get-started");
                         }
                     }
                 }
                 else
                 {
-                    // Error message variable bhi set karein aur Toast bhi dikhayein
                     errorMessage = "Invalid email or password.";
-                    ToastService.ShowToast("Login Failed", errorMessage, "error");
+                    _toastService.ShowToast("Login Failed", errorMessage, "error");
                 }
             }
             catch (Exception ex)
             {
                 errorMessage = "Login Error: " + ex.Message;
                 Console.WriteLine(errorMessage);
-                ToastService.ShowToast("System Error", "Unable to log in.", "error");
+                _toastService.ShowToast("System Error", "Unable to log in.", "error");
             }
             finally
             {
