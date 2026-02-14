@@ -1,0 +1,322 @@
+﻿@page "/UserManagement"
+@using AI_Driven_Water_Supply.Application.Interfaces
+@using AI_Driven_Water_Supply.Application.Models
+@using Supabase.Postgrest.Models
+@inject Supabase.Client _supabase
+@inject IAuthService AuthService
+@inject NavigationManager Nav
+@rendermode InteractiveServer
+
+
+<style>
+    /* --- Base Layout (Consistent with Admin Panel) --- */
+    .admin-wrapper {
+        display: flex;
+        min-height: 100vh;
+        gap: 20px;
+        font-family: 'Poppins', sans-serif;
+        background-color: #050505; /* Deep dark background */
+        color: white;
+    }
+
+    /* --- Sidebar Styling --- */
+    .admin-sidebar {
+        width: 260px;
+        background: rgba(20, 25, 40, 0.7);
+        backdrop-filter: blur(12px);
+        border-right: 1px solid rgba(255, 255, 255, 0.08);
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        flex-shrink: 0;
+        height: 100vh;
+        position: sticky;
+        top: 0;
+    }
+
+    .sidebar-menu { list-style: none; padding: 0; margin: 0; }
+    .sidebar-item { margin-bottom: 10px; }
+
+    .sidebar-link {
+        display: flex; align-items: center; padding: 12px 15px;
+        color: #aaa; text-decoration: none; border-radius: 10px;
+        transition: all 0.3s ease; font-size: 0.95rem;
+    }
+
+    .sidebar-link i { width: 25px; font-size: 1.1rem; }
+
+    .sidebar-link:hover {
+        background: rgba(255, 255, 255, 0.05); color: white; transform: translateX(5px);
+    }
+
+    .sidebar-link.active {
+        background: #BFFF27; color: black; font-weight: 700;
+        box-shadow: 0 0 15px rgba(191, 255, 39, 0.3);
+    }
+
+    /* --- Main Content Area --- */
+    .admin-content {
+        flex-grow: 1;
+        padding: 20px;
+        width: 100%;
+    }
+
+    /* Header & Search */
+    .page-header {
+        display: flex; justify-content: space-between; align-items: center;
+        margin-bottom: 25px;
+    }
+
+    .search-box {
+        background: rgba(23, 26, 43, 0.8);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 10px 15px;
+        border-radius: 30px;
+        display: flex; align-items: center; width: 300px;
+    }
+
+    .search-box input {
+        background: transparent; border: none; color: white;
+        outline: none; width: 100%; margin-left: 10px;
+    }
+
+    /* --- Stats Row (Mini Cards) --- */
+    .mini-stats-row {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 15px;
+        margin-bottom: 25px;
+    }
+
+    .mini-card {
+        background: rgba(23, 26, 43, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        padding: 15px 20px;
+        border-radius: 12px;
+        display: flex; justify-content: space-between; align-items: center;
+    }
+
+    .mini-card h3 { margin: 0; font-size: 1.5rem; color: white; }
+    .mini-card p { margin: 0; color: #888; font-size: 0.85rem; }
+    .mini-icon { 
+        width: 40px; height: 40px; background: rgba(255,255,255,0.05); 
+        border-radius: 8px; display: flex; align-items: center; justify-content: center;
+        color: #BFFF27; font-size: 1.2rem;
+    }
+
+    /* --- Table Styling --- */
+    .table-container {
+        background: rgba(23, 26, 43, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 16px; padding: 20px;
+        overflow-x: auto;
+    }
+
+    .custom-table { width: 100%; border-collapse: collapse; color: #ddd; }
+
+    .custom-table th {
+        text-align: left; padding: 15px; color: #BFFF27;
+        border-bottom: 1px solid rgba(255,255,255,0.1); font-weight: 600;
+        font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;
+    }
+
+    .custom-table td {
+        padding: 15px; border-bottom: 1px solid rgba(255,255,255,0.05); vertical-align: middle;
+    }
+
+    /* User Avatar in Table */
+    .user-profile { display: flex; align-items: center; gap: 12px; }
+    .user-avatar {
+        width: 35px; height: 35px; border-radius: 50%;
+        background: linear-gradient(135deg, #BFFF27, #2ecc71);
+        color: black; font-weight: bold; display: flex;
+        align-items: center; justify-content: center; font-size: 0.9rem;
+    }
+
+    /* Role & Status Badges */
+    .badge { padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; }
+    
+    .role-admin { background: rgba(155, 89, 182, 0.2); color: #9b59b6; border: 1px solid #9b59b6; }
+    .role-customer { background: rgba(52, 152, 219, 0.2); color: #3498db; border: 1px solid #3498db; }
+
+    .status-active { color: #2ecc71; }
+    .status-banned { color: #e74c3c; }
+
+    /* Action Buttons */
+    .btn-icon {
+        background: transparent; border: 1px solid rgba(255,255,255,0.1);
+        color: #aaa; padding: 6px 10px; border-radius: 6px; cursor: pointer;
+        transition: 0.2s; margin-right: 5px;
+    }
+    .btn-icon:hover { background: white; color: black; }
+    .btn-icon.delete:hover { background: #e74c3c; border-color: #e74c3c; color: white; }
+
+</style>
+
+<div class="admin-wrapper">
+
+    <nav class="admin-sidebar">
+        <div style="margin-bottom: 30px; padding: 0 15px;">
+            <small class="text-muted text-uppercase" style="letter-spacing: 1px;">Menu</small>
+        </div>
+
+        <ul class="sidebar-menu">
+            <li class="sidebar-item">
+                <a href="/admin-dashboard" class="sidebar-link">
+                    <i class="fa-solid fa-chart-line"></i> Dashboard
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a href="/vendor-management" class="sidebar-link">
+                    <i class="fa-solid fa-store"></i> Vendor Management
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a href="/user-management" class="sidebar-link active">
+                    <i class="fa-solid fa-users"></i> Users List
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a href="#" class="sidebar-link">
+                    <i class="fa-solid fa-gavel"></i> Disputes
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a href="#" class="sidebar-link">
+                    <i class="fa-solid fa-gear"></i> Settings
+                </a>
+            </li>
+        </ul>
+    </nav>
+
+    <main class="admin-content">
+
+        <div class="page-header">
+            <div>
+                <h2 style="color:white; font-weight:700; margin:0;">User Management</h2>
+                <small style="color:#888;">Manage all registered customers and admins</small>
+            </div>
+            
+            <div style="display:flex; gap:15px;">
+                <div class="search-box">
+                    <i class="fa-solid fa-search" style="color:#888;"></i>
+                    <input type="text" placeholder="Search by name or email..." @bind="searchTerm" @bind:event="oninput">
+                </div>
+                <button class="btn" style="background:#BFFF27; color:black; font-weight:bold; border:none; padding:0 20px; border-radius:30px;">
+                    <i class="fa-solid fa-plus"></i> Add User
+                </button>
+            </div>
+        </div>
+
+        <div class="mini-stats-row">
+            <div class="mini-card">
+                <div>
+                    <p>Total Users</p>
+                    <h3>@dummyUsers.Count</h3>
+                </div>
+                <div class="mini-icon"><i class="fa-solid fa-users"></i></div>
+            </div>
+            <div class="mini-card">
+                <div>
+                    <p>Active Now</p>
+                    <h3>@dummyUsers.Count(u => u.Status == "Active")</h3>
+                </div>
+                <div class="mini-icon" style="color:#2ecc71;"><i class="fa-solid fa-circle-check"></i></div>
+            </div>
+            <div class="mini-card">
+                <div>
+                    <p>Banned/Inactive</p>
+                    <h3>@dummyUsers.Count(u => u.Status == "Banned")</h3>
+                </div>
+                <div class="mini-icon" style="color:#e74c3c;"><i class="fa-solid fa-ban"></i></div>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table class="custom-table">
+                <thead>
+                    <tr>
+                        <th>User</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th>Joined Date</th>
+                        <th style="text-align:center;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var user in FilteredUsers)
+                    {
+                        <tr>
+                            <td>
+                                <div class="user-profile">
+                                    <div class="user-avatar">
+                                        @user.Name.Substring(0, 1).ToUpper()
+                                    </div>
+                                    <span style="font-weight:600;">@user.Name</span>
+                                </div>
+                            </td>
+                            <td style="color:#aaa;">@user.Email</td>
+                            <td>
+                                <span class="badge @(user.Role == "Admin" ? "role-admin" : "role-customer")">
+                                    @user.Role
+                                </span>
+                            </td>
+                            <td>
+                                @if(user.Status == "Active")
+                                {
+                                    <span class="status-active"><i class="fa-solid fa-circle" style="font-size:8px;"></i> Active</span>
+                                }
+                                else
+                                {
+                                    <span class="status-banned"><i class="fa-solid fa-circle" style="font-size:8px;"></i> Banned</span>
+                                }
+                            </td>
+                            <td style="color:#888;">@user.JoinDate</td>
+                            <td style="text-align:center;">
+                                <button class="btn-icon" title="Edit"><i class="fa-solid fa-pen"></i></button>
+                                <button class="btn-icon delete" title="Delete"><i class="fa-solid fa-trash"></i></button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+    </main>
+
+</div>
+
+@code {
+    // Search Logic
+    private string searchTerm = "";
+
+    // Dummy Data Model
+    public class UserViewModel
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = "";
+        public string Email { get; set; } = "";
+        public string Role { get; set; } = "Customer"; // Admin or Customer
+        public string Status { get; set; } = "Active"; // Active or Banned
+        public string JoinDate { get; set; } = "";
+    }
+
+    // Hardcoded List
+    private List<UserViewModel> dummyUsers = new List<UserViewModel>
+    {
+        new UserViewModel { Id = 1, Name = "Ali Khan", Email = "ali.khan@gmail.com", Role = "Customer", Status = "Active", JoinDate = "10 Feb 2024" },
+        new UserViewModel { Id = 2, Name = "Admin User", Email = "admin@system.com", Role = "Admin", Status = "Active", JoinDate = "01 Jan 2024" },
+        new UserViewModel { Id = 3, Name = "Sara Ahmed", Email = "sara123@hotmail.com", Role = "Customer", Status = "Banned", JoinDate = "15 Mar 2024" },
+        new UserViewModel { Id = 4, Name = "Bilal Raza", Email = "bilal.raza@yahoo.com", Role = "Customer", Status = "Active", JoinDate = "22 Mar 2024" },
+        new UserViewModel { Id = 5, Name = "Zain Malik", Email = "zain.malik@gmail.com", Role = "Customer", Status = "Active", JoinDate = "05 Apr 2024" },
+    };
+
+    // Filter Logic
+    private IEnumerable<UserViewModel> FilteredUsers =>
+        string.IsNullOrWhiteSpace(searchTerm)
+            ? dummyUsers
+            : dummyUsers.Where(u => u.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) || 
+                                    u.Email.Contains(searchTerm, StringComparison.OrdinalIgnoreCase));
+}
+

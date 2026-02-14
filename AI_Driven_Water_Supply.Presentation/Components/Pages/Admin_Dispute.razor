@@ -1,0 +1,348 @@
+﻿@page "/AdminDispute"
+@using AI_Driven_Water_Supply.Application.Interfaces
+@using AI_Driven_Water_Supply.Application.Models
+@using Supabase.Postgrest.Models
+@inject Supabase.Client _supabase
+@inject IAuthService AuthService
+@inject NavigationManager Nav
+@rendermode InteractiveServer
+
+
+<style>
+    /* --- Base Layout --- */
+    .admin-wrapper {
+        display: flex;
+        min-height: 100vh;
+        gap: 20px;
+        font-family: 'Poppins', sans-serif;
+        background-color: #050505;
+        color: white;
+    }
+
+    /* --- Sidebar (Same as others) --- */
+    .admin-sidebar {
+        width: 260px;
+        background: rgba(20, 25, 40, 0.7);
+        backdrop-filter: blur(12px);
+        border-right: 1px solid rgba(255, 255, 255, 0.08);
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        flex-shrink: 0;
+        height: 100vh;
+        position: sticky;
+        top: 0;
+    }
+
+    .sidebar-menu { list-style: none; padding: 0; margin: 0; }
+    .sidebar-item { margin-bottom: 10px; }
+
+    .sidebar-link {
+        display: flex; align-items: center; padding: 12px 15px;
+        color: #aaa; text-decoration: none; border-radius: 10px;
+        transition: all 0.3s ease; font-size: 0.95rem;
+    }
+
+    .sidebar-link i { width: 25px; font-size: 1.1rem; }
+
+    .sidebar-link:hover {
+        background: rgba(255, 255, 255, 0.05); color: white; transform: translateX(5px);
+    }
+
+    .sidebar-link.active {
+        background: #BFFF27; color: black; font-weight: 700;
+        box-shadow: 0 0 15px rgba(191, 255, 39, 0.3);
+    }
+
+    /* --- Main Content --- */
+    .admin-content { flex-grow: 1; padding: 20px; width: 100%; }
+
+    /* Header & Tabs */
+    .page-header {
+        display: flex; justify-content: space-between; align-items: center;
+        margin-bottom: 25px;
+    }
+
+    .filter-tabs {
+        display: flex; background: rgba(255,255,255,0.05);
+        padding: 5px; border-radius: 30px;
+    }
+
+    .tab-btn {
+        padding: 8px 20px; border: none; background: transparent;
+        color: #aaa; cursor: pointer; border-radius: 25px; font-weight: 500;
+        transition: 0.3s;
+    }
+
+    .tab-btn.active {
+        background: #BFFF27; color: black; font-weight: 700;
+    }
+
+    /* Table Styling */
+    .table-container {
+        background: rgba(23, 26, 43, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 16px; padding: 20px;
+        overflow-x: auto;
+    }
+
+    .custom-table { width: 100%; border-collapse: collapse; color: #ddd; }
+
+    .custom-table th {
+        text-align: left; padding: 15px; color: #BFFF27;
+        border-bottom: 1px solid rgba(255,255,255,0.1); font-weight: 600;
+        font-size: 0.85rem; text-transform: uppercase;
+    }
+
+    .custom-table td {
+        padding: 15px; border-bottom: 1px solid rgba(255,255,255,0.05);
+        vertical-align: middle; font-size: 0.95rem;
+    }
+
+    /* Badges */
+    .priority-badge { padding: 4px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; text-transform: uppercase; }
+    .p-high { background: rgba(231, 76, 60, 0.2); color: #e74c3c; border: 1px solid #e74c3c; }
+    .p-med { background: rgba(241, 196, 15, 0.2); color: #f1c40f; border: 1px solid #f1c40f; }
+    .p-low { background: rgba(46, 204, 113, 0.2); color: #2ecc71; border: 1px solid #2ecc71; }
+
+    .status-badge { padding: 5px 12px; border-radius: 20px; font-size: 0.8rem; }
+    .s-pending { background: rgba(255, 165, 2, 0.2); color: #ffa502; }
+    .s-resolved { background: rgba(46, 204, 113, 0.2); color: #2ecc71; }
+
+    /* Action Button */
+    .btn-resolve {
+        background: transparent; border: 1px solid #BFFF27;
+        color: #BFFF27; padding: 6px 15px; border-radius: 20px;
+        cursor: pointer; transition: 0.2s; font-size: 0.85rem;
+    }
+    .btn-resolve:hover { background: #BFFF27; color: black; }
+
+    /* --- Modal Styling --- */
+    .modal-overlay {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.8); z-index: 100;
+        display: flex; align-items: center; justify-content: center;
+        backdrop-filter: blur(5px);
+    }
+    
+    .modal-content {
+        background: #141622; width: 500px; padding: 25px;
+        border-radius: 16px; border: 1px solid rgba(255,255,255,0.1);
+        color: white; position: relative;
+    }
+
+    .modal-field { margin-bottom: 15px; }
+    .modal-field label { display: block; color: #888; font-size: 0.8rem; margin-bottom: 5px; }
+    .modal-field div { font-size: 1rem; }
+
+    .close-btn {
+        position: absolute; top: 15px; right: 20px; font-size: 1.5rem;
+        color: #888; cursor: pointer; border: none; background: none;
+    }
+
+</style>
+
+<div class="admin-wrapper">
+
+    <nav class="admin-sidebar">
+        <div style="margin-bottom: 30px; padding: 0 15px;">
+            <small class="text-muted text-uppercase" style="letter-spacing: 1px;">Menu</small>
+        </div>
+
+        <ul class="sidebar-menu">
+            <li class="sidebar-item">
+                <a href="/admin-dashboard" class="sidebar-link">
+                    <i class="fa-solid fa-chart-line"></i> Dashboard
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a href="/vendor-management" class="sidebar-link">
+                    <i class="fa-solid fa-store"></i> Vendor Management
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a href="/user-management" class="sidebar-link">
+                    <i class="fa-solid fa-users"></i> Users List
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a href="/dispute-management" class="sidebar-link active">
+                    <i class="fa-solid fa-gavel"></i> Disputes
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a href="#" class="sidebar-link">
+                    <i class="fa-solid fa-gear"></i> Settings
+                </a>
+            </li>
+        </ul>
+    </nav>
+
+    <main class="admin-content">
+
+        <div class="page-header">
+            <h2 style="color:white; font-weight:700; margin:0;">Dispute Center</h2>
+            
+            <div class="filter-tabs">
+                <button class="tab-btn @(activeTab == "All" ? "active" : "")" @onclick='() => activeTab = "All"'>All Tickets</button>
+                <button class="tab-btn @(activeTab == "Pending" ? "active" : "")" @onclick='() => activeTab = "Pending"'>Pending</button>
+                <button class="tab-btn @(activeTab == "Resolved" ? "active" : "")" @onclick='() => activeTab = "Resolved"'>Resolved</button>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table class="custom-table">
+                <thead>
+                    <tr>
+                        <th>Ticket ID</th>
+                        <th>Complainant</th>
+                        <th>Issue Type</th>
+                        <th>Priority</th>
+                        <th>Date</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var ticket in FilteredTickets)
+                    {
+                        <tr>
+                            <td style="color:#888;">#@ticket.TicketId</td>
+                            <td>
+                                <div>@ticket.UserName</div>
+                                <small style="color:#888; font-size:0.75rem;">vs @ticket.VendorName</small>
+                            </td>
+                            <td>@ticket.IssueType</td>
+                            <td>
+                                <span class="priority-badge @GetPriorityClass(ticket.Priority)">
+                                    @ticket.Priority
+                                </span>
+                            </td>
+                            <td>@ticket.Date</td>
+                            <td>
+                                <span class="status-badge @(ticket.Status == "Pending" ? "s-pending" : "s-resolved")">
+                                    @ticket.Status
+                                </span>
+                            </td>
+                            <td>
+                                <button class="btn-resolve" @onclick="() => OpenTicket(ticket)">
+                                    @(ticket.Status == "Pending" ? "Resolve" : "View")
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+    </main>
+
+</div>
+
+@if (showModal && selectedTicket != null)
+{
+    <div class="modal-overlay" @onclick="CloseModal">
+        <div class="modal-content" @onclick:stopPropagation="true">
+            <button class="close-btn" @onclick="CloseModal">&times;</button>
+            
+            <h3 style="margin-top:0; color:#BFFF27;">Ticket #@selectedTicket.TicketId</h3>
+            <hr style="border-color:rgba(255,255,255,0.1); margin-bottom:20px;">
+
+            <div class="modal-field">
+                <label>Issue Type</label>
+                <div>@selectedTicket.IssueType <span style="font-size:0.8rem; color:#e74c3c;">(@selectedTicket.Priority Priority)</span></div>
+            </div>
+
+            <div class="modal-field">
+                <label>Description</label>
+                <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:8px; font-size:0.9rem; color:#ddd;">
+                    "@selectedTicket.Description"
+                </div>
+            </div>
+
+            <div class="modal-field">
+                <label>Involved Parties</label>
+                <div>Customer: @selectedTicket.UserName <br> Vendor: @selectedTicket.VendorName</div>
+            </div>
+
+            @if(selectedTicket.Status == "Pending")
+            {
+                <div style="margin-top:25px;">
+                    <label>Admin Action</label>
+                    <textarea class="form-control" style="width:100%; background:#0b0d17; border:1px solid #333; color:white; border-radius:8px; padding:10px;" rows="3" placeholder="Enter resolution remarks..."></textarea>
+                    
+                    <button class="btn" style="width:100%; background:#BFFF27; color:black; font-weight:bold; border:none; padding:12px; margin-top:10px; border-radius:8px;">
+                        Mark as Resolved
+                    </button>
+                </div>
+            }
+            else
+            {
+                <div style="margin-top:20px; padding:10px; background:rgba(46, 204, 113, 0.1); border:1px solid #2ecc71; border-radius:8px; color:#2ecc71; text-align:center;">
+                    <i class="fa-solid fa-check-circle"></i> This ticket has been resolved.
+                </div>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    // --- State Variables ---
+    private string activeTab = "All";
+    private bool showModal = false;
+    private DisputeTicket selectedTicket;
+
+    // --- Data Model ---
+    public class DisputeTicket
+    {
+        public string TicketId { get; set; }
+        public string UserName { get; set; }
+        public string VendorName { get; set; }
+        public string IssueType { get; set; } // e.g., "Late Delivery", "Quality Issue"
+        public string Description { get; set; }
+        public string Priority { get; set; } // High, Med, Low
+        public string Date { get; set; }
+        public string Status { get; set; } // Pending, Resolved
+    }
+
+    // --- Hardcoded Data ---
+    private List<DisputeTicket> tickets = new List<DisputeTicket>
+    {
+        new DisputeTicket { TicketId = "9012", UserName = "Ahmed Ali", VendorName = "Aqua Pure", IssueType = "Water Quality", Description = "Water smells weird and tastes salty.", Priority = "High", Date = "10 Feb", Status = "Pending" },
+        new DisputeTicket { TicketId = "9013", UserName = "Sara Khan", VendorName = "Blue Drop", IssueType = "Late Delivery", Description = "Order was delayed by 4 hours without notice.", Priority = "Med", Date = "09 Feb", Status = "Pending" },
+        new DisputeTicket { TicketId = "8840", UserName = "Bilal", VendorName = "Clean Sip", IssueType = "Rude Behavior", Description = "Delivery guy was very rude.", Priority = "Low", Date = "05 Feb", Status = "Resolved" },
+    };
+
+    // --- Logic ---
+    private IEnumerable<DisputeTicket> FilteredTickets
+    {
+        get
+        {
+            if (activeTab == "All") return tickets;
+            return tickets.Where(t => t.Status == activeTab);
+        }
+    }
+
+    private string GetPriorityClass(string priority)
+    {
+        return priority switch
+        {
+            "High" => "p-high",
+            "Med" => "p-med",
+            _ => "p-low"
+        };
+    }
+
+    private void OpenTicket(DisputeTicket ticket)
+    {
+        selectedTicket = ticket;
+        showModal = true;
+    }
+
+    private void CloseModal()
+    {
+        showModal = false;
+    }
+}
+
+

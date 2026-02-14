@@ -1,0 +1,292 @@
+﻿@page "/AdminSetting"
+@using AI_Driven_Water_Supply.Application.Interfaces
+@using AI_Driven_Water_Supply.Application.Models
+@using Supabase.Postgrest.Models
+@inject Supabase.Client _supabase
+@inject IAuthService AuthService
+@inject NavigationManager Nav
+@rendermode InteractiveServer
+
+
+
+<style>
+    /* --- Base Layout --- */
+    .admin-wrapper {
+        display: flex;
+        min-height: 100vh;
+        gap: 20px;
+        font-family: 'Poppins', sans-serif;
+        background-color: #050505;
+        color: white;
+    }
+
+    /* --- Sidebar (Standard) --- */
+    .admin-sidebar {
+        width: 260px;
+        background: rgba(20, 25, 40, 0.7);
+        backdrop-filter: blur(12px);
+        border-right: 1px solid rgba(255, 255, 255, 0.08);
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        flex-shrink: 0;
+        height: 100vh;
+        position: sticky;
+        top: 0;
+    }
+
+    .sidebar-menu { list-style: none; padding: 0; margin: 0; }
+    .sidebar-item { margin-bottom: 10px; }
+
+    .sidebar-link {
+        display: flex; align-items: center; padding: 12px 15px;
+        color: #aaa; text-decoration: none; border-radius: 10px;
+        transition: all 0.3s ease; font-size: 0.95rem;
+    }
+
+    .sidebar-link i { width: 25px; font-size: 1.1rem; }
+
+    .sidebar-link:hover {
+        background: rgba(255, 255, 255, 0.05); color: white; transform: translateX(5px);
+    }
+
+    .sidebar-link.active {
+        background: #BFFF27; color: black; font-weight: 700;
+        box-shadow: 0 0 15px rgba(191, 255, 39, 0.3);
+    }
+
+    /* --- Main Content --- */
+    .admin-content { flex-grow: 1; padding: 20px; width: 100%; max-width: 1200px; }
+
+    .page-header { margin-bottom: 30px; }
+    .page-header h2 { font-weight: 700; color: white; margin: 0; }
+    .page-header p { color: #888; font-size: 0.9rem; margin: 5px 0 0; }
+
+    /* Settings Grid */
+    .settings-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+        gap: 25px;
+    }
+
+    /* Card Styling */
+    .setting-card {
+        background: rgba(23, 26, 43, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 16px;
+        padding: 25px;
+    }
+
+    .card-title {
+        color: #BFFF27; font-size: 1.1rem; font-weight: 600;
+        margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.1);
+        padding-bottom: 10px; display: flex; align-items: center; gap: 10px;
+    }
+
+    /* Form Elements */
+    .form-group { margin-bottom: 15px; }
+    .form-group label { display: block; color: #aaa; font-size: 0.85rem; margin-bottom: 8px; }
+
+    .form-control-dark {
+        width: 100%; background: #0b0d17; border: 1px solid rgba(255,255,255,0.1);
+        color: white; padding: 12px; border-radius: 8px; outline: none; transition: 0.3s;
+    }
+
+    .form-control-dark:focus { border-color: #BFFF27; box-shadow: 0 0 8px rgba(191, 255, 39, 0.2); }
+
+    /* Custom Toggle Switch */
+    .switch-container {
+        display: flex; justify-content: space-between; align-items: center;
+        margin-bottom: 20px; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .switch {
+        position: relative; display: inline-block; width: 46px; height: 24px;
+    }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+        position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+        background-color: #333; transition: .4s; border-radius: 34px;
+    }
+    .slider:before {
+        position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px;
+        background-color: white; transition: .4s; border-radius: 50%;
+    }
+    input:checked + .slider { background-color: #BFFF27; }
+    input:checked + .slider:before { transform: translateX(22px); background-color: black; }
+
+    /* Buttons */
+    .btn-save {
+        background: #BFFF27; color: black; font-weight: 700; border: none;
+        padding: 12px 30px; border-radius: 8px; cursor: pointer; width: 100%;
+        margin-top: 10px; transition: 0.3s;
+    }
+    .btn-save:hover { background: #d4ff70; transform: translateY(-2px); }
+
+</style>
+
+<div class="admin-wrapper">
+
+    <nav class="admin-sidebar">
+        <div style="margin-bottom: 30px; padding: 0 15px;">
+            <small class="text-muted text-uppercase" style="letter-spacing: 1px;">Menu</small>
+        </div>
+        <ul class="sidebar-menu">
+            <li class="sidebar-item">
+                <a href="/admin-dashboard" class="sidebar-link">
+                    <i class="fa-solid fa-chart-line"></i> Dashboard
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a href="/vendor-management" class="sidebar-link">
+                    <i class="fa-solid fa-store"></i> Vendor Management
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a href="/user-management" class="sidebar-link">
+                    <i class="fa-solid fa-users"></i> Users List
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a href="/dispute-management" class="sidebar-link">
+                    <i class="fa-solid fa-gavel"></i> Disputes
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a href="/admin-settings" class="sidebar-link active">
+                    <i class="fa-solid fa-gear"></i> Settings
+                </a>
+            </li>
+        </ul>
+    </nav>
+
+    <main class="admin-content">
+        
+        <div class="page-header">
+            <h2>Platform Settings</h2>
+            <p>Configure system variables, security, and preferences.</p>
+        </div>
+
+        <div class="settings-grid">
+
+            <div class="setting-card">
+                <div class="card-title"><i class="fa-solid fa-coins"></i> Financials</div>
+                
+                <div class="form-group">
+                    <label>Platform Commission (%)</label>
+                    <input type="number" class="form-control-dark" @bind="commissionRate" placeholder="e.g. 5" />
+                </div>
+
+                <div class="form-group">
+                    <label>Base Delivery Fee (PKR)</label>
+                    <input type="number" class="form-control-dark" @bind="deliveryFee" placeholder="e.g. 150" />
+                </div>
+
+                <div class="form-group">
+                    <label>Tax / VAT (%)</label>
+                    <input type="number" class="form-control-dark" @bind="taxRate" placeholder="e.g. 2" />
+                </div>
+
+                <button class="btn-save" @onclick="SaveChanges">
+                    <i class="fa-solid fa-floppy-disk"></i> Update Financials
+                </button>
+            </div>
+
+            <div class="setting-card">
+                <div class="card-title"><i class="fa-solid fa-lock"></i> Security</div>
+                
+                <div class="form-group">
+                    <label>Current Password</label>
+                    <input type="password" class="form-control-dark" placeholder="•••••••" />
+                </div>
+
+                <div class="form-group">
+                    <label>New Password</label>
+                    <input type="password" class="form-control-dark" placeholder="New Password" />
+                </div>
+
+                <div class="form-group">
+                    <label>Confirm New Password</label>
+                    <input type="password" class="form-control-dark" placeholder="Confirm Password" />
+                </div>
+
+                <button class="btn-save" style="background: rgba(255,255,255,0.1); color:white; border:1px solid rgba(255,255,255,0.2);">
+                    Change Password
+                </button>
+            </div>
+
+            <div class="setting-card">
+                <div class="card-title"><i class="fa-solid fa-sliders"></i> System Controls</div>
+                
+                <div class="switch-container">
+                    <div>
+                        <div style="font-weight:600; font-size:0.95rem;">Maintenance Mode</div>
+                        <small style="color:#888;">Stop all new orders temporarily.</small>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" @bind="isMaintenanceMode">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div class="switch-container">
+                    <div>
+                        <div style="font-weight:600; font-size:0.95rem;">Allow Vendor Signup</div>
+                        <small style="color:#888;">New suppliers can register.</small>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" @bind="allowNewVendors">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div class="switch-container" style="border:none;">
+                    <div>
+                        <div style="font-weight:600; font-size:0.95rem;">Email Notifications</div>
+                        <small style="color:#888;">Receive alerts for every dispute.</small>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" @bind="emailAlerts">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+            </div>
+
+        </div>
+
+    </main>
+</div>
+
+@if (showToast)
+{
+    <div style="position:fixed; bottom:30px; right:30px; background:#BFFF27; color:black; padding:15px 25px; border-radius:8px; font-weight:bold; box-shadow:0 5px 20px rgba(0,0,0,0.5); animation: fadein 0.5s;">
+        <i class="fa-solid fa-check-circle"></i> Settings Saved Successfully!
+    </div>
+}
+
+@code {
+    // --- Data Variables ---
+    private double commissionRate = 10;
+    private double deliveryFee = 150;
+    private double taxRate = 2;
+    
+    private bool isMaintenanceMode = false;
+    private bool allowNewVendors = true;
+    private bool emailAlerts = true;
+
+    private bool showToast = false;
+
+    // --- Logic ---
+    private async Task SaveChanges()
+    {
+        // Yahan Database Update ka logic ayega (Supabase)
+        
+        // Show success message
+        showToast = true;
+        await Task.Delay(3000); // 3 sec baad toast gayab
+        showToast = false;
+    }
+}
+
+
