@@ -440,14 +440,14 @@
                 <div style="flex:1; color:#ccc; font-size:0.9rem;">
                     Image Attached
                 </div>
-                <button class="remove-img-btn" @onclick="ClearImageAttachment">
+                <button type="button" class="remove-img-btn" @onclick="ClearImageAttachment">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
         }
 
         <div class="chat-input-box">
-            <InputFile OnChange="@HandleFileSelection" id="fileInput" style="display:none;" accept="image/*" />
+            <InputFile OnChange="@HandleFileSelection" id="fileInput" style="display:none;" accept="image/*" @key="@inputFileId" />
 
             <label for="fileInput" class="attach-btn" title="Attach Image">
                 <i class="fa-solid fa-paperclip"></i>
@@ -485,13 +485,15 @@
     // --- IMAGE HANDLING VARIABLES ---
     string? selectedImageBase64 = null;
     string? selectedImagePreview = null;
+    // FIX: Unique ID taake input reset ho sake
+    string inputFileId = Guid.NewGuid().ToString();
     const long MaxFileSize = 5 * 1024 * 1024; // 5MB
 
     public class ChatMessage
     {
         public string Text { get; set; } = "";
         public bool IsUser { get; set; }
-        public string? ImageUrl { get; set; } // Added to store image URL in chat history
+        public string? ImageUrl { get; set; }
     }
 
     List<ChatMessage> CurrentConversation = new();
@@ -518,7 +520,7 @@
         }
     }
 
-    // --- HANDLE FILE SELECTION ---
+    // --- ✅ FIX: Sahi tareeqe se File Read karna ---
     private async Task HandleFileSelection(InputFileChangeEventArgs e)
     {
         try
@@ -526,18 +528,22 @@
             var file = e.File;
             if (file != null)
             {
-                // Resize image to max 800x800 to reduce payload size
+                // Resize image to max 800x800
                 var resizedImage = await file.RequestImageFileAsync(file.ContentType, 800, 800);
 
-                var buffer = new byte[resizedImage.Size];
-                await resizedImage.OpenReadStream(MaxFileSize).ReadAsync(buffer);
+                // FIX: MemoryStream use kiya taake data corrupt na ho
+                using (var ms = new System.IO.MemoryStream())
+                {
+                    await resizedImage.OpenReadStream(MaxFileSize).CopyToAsync(ms);
+                    var buffer = ms.ToArray();
 
-                string base64 = Convert.ToBase64String(buffer);
-                string format = file.ContentType;
+                    string base64 = Convert.ToBase64String(buffer);
+                    string format = file.ContentType;
 
-                // Set Preview and Payload data
-                selectedImagePreview = $"data:{format};base64,{base64}";
-                selectedImageBase64 = selectedImagePreview; // Full data URI
+                    // Set Preview and Payload data
+                    selectedImagePreview = $"data:{format};base64,{base64}";
+                    selectedImageBase64 = selectedImagePreview;
+                }
             }
         }
         catch (Exception ex)
@@ -546,10 +552,14 @@
         }
     }
 
+    // --- ✅ FIX: Image Remove aur Input Reset ---
     private void ClearImageAttachment()
     {
         selectedImageBase64 = null;
         selectedImagePreview = null;
+
+        // InputFile ko reset karne ke liye nayi ID generate ki
+        inputFileId = Guid.NewGuid().ToString();
     }
 
     private async Task SendMessage()
@@ -565,12 +575,12 @@
         {
             Text = msgText,
             IsUser = true,
-            ImageUrl = imgData // Show image in user's chat bubble too
+            ImageUrl = imgData
         });
 
         // Reset Inputs immediately
         userInput = "";
-        ClearImageAttachment();
+        ClearImageAttachment(); // Ye ab input field bhi reset karega
 
         isThinking = true;
         StartLoadingTimer();
@@ -578,11 +588,10 @@
 
         try
         {
-            // --- UPDATED PAYLOAD WITH IMAGE ---
             var payload = new
             {
                 message = msgText,
-                image = imgData // Sending Base64 image to Python
+                image = imgData
             };
 
             var jsonContent = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
