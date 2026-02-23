@@ -163,7 +163,6 @@
         </div>
     </div>
 </div>
-
 @code {
     [Parameter] public string? type { get; set; }
     private bool isLoading = true;
@@ -178,9 +177,8 @@
         [Column("role")] public string Role { get; set; } = "";
         [Column("rating")] public double Rating { get; set; }
         [Column("profilepic")] public string ProfilePic { get; set; } = "";
-        // NOTE: Agar DB me lat/long hain to yahan add kar lena
-        // [Column("latitude")] public double Latitude { get; set; }
-        // [Column("longitude")] public double Longitude { get; set; }
+        // ✅ NEW: Services column DB se uthane ke liye
+        [Column("services")] public string? Services { get; set; }
     }
 
     public class SupplierViewModel
@@ -188,8 +186,8 @@
         public string Name { get; set; } = "";
         public double Rating { get; set; }
         public string ImageUrl { get; set; } = "";
-        public double Lat { get; set; } // Added for Map
-        public double Lng { get; set; } // Added for Map
+        public double Lat { get; set; }
+        public double Lng { get; set; }
     }
 
     protected override async Task OnInitializedAsync()
@@ -197,51 +195,68 @@
         try
         {
             isLoading = true;
-            // 1. Fetch Providers
+
+            // 1. Fetch Providers (Role = "Provider" wale saare le aao)
             var response = await _supabase.From<SupplierProfile>()
                                           .Where(x => x.Role == "Provider")
                                           .Get();
 
             filteredSuppliers.Clear();
-
-            // Random Generator for Dummy Locations (Remove this if you have real DB coords)
             var rnd = new Random();
 
             foreach (var item in response.Models)
             {
-                string finalImageUrl = string.IsNullOrEmpty(item.ProfilePic)
-                    ? "/images/fallbackimg.jpg"
-                    : _supabase.Storage.From("Avatar").GetPublicUrl(item.ProfilePic);
+                // ✅ LOGIC: Check karein agar supplier ki 'Services' mein current '{type}' maujood hai
+                bool hasService = false;
 
-                filteredSuppliers.Add(new SupplierViewModel
+                if (!string.IsNullOrEmpty(item.Services) && !string.IsNullOrEmpty(type))
+                {
+                    // "Bottles,Plant,Tanker" ko list me split karein aur exact type match karein
+                    var providerServices = item.Services.Split(',').Select(s => s.Trim()).ToList();
+
+                    if (providerServices.Contains(type, StringComparer.OrdinalIgnoreCase))
+                    {
+                        hasService = true;
+                    }
+                }
+
+                // Agar service match hoti hai, tabhi usko UI ke list mein add karein
+                if (hasService)
+                {
+                    string finalImageUrl = string.IsNullOrEmpty(item.ProfilePic)
+                        ? "/images/fallbackimg.jpg"
+                        : _supabase.Storage.From("Avatar").GetPublicUrl(item.ProfilePic);
+
+                    filteredSuppliers.Add(new SupplierViewModel
                     {
                         Name = item.Username,
                         Rating = item.Rating,
                         ImageUrl = finalImageUrl,
-                    // Karachi Coordinates ke aas paas random variations generate kar raha hu
-                    // Taake map par alag alag jagah dikhein
                         Lat = 24.8607 + (rnd.NextDouble() * 0.1 - 0.05),
                         Lng = 67.0011 + (rnd.NextDouble() * 0.1 - 0.05)
                     });
+                }
             }
         }
         catch (Exception ex)
         {
             Console.WriteLine(ex.Message);
-
-            // 🔴 Secure Error Message
-            ToastService.ShowToast("Connection Error", "Unable to retrieve secure supplier list.", "error");
+            // Secure Error Message
+            // ToastService.ShowToast("Connection Error", "Unable to retrieve secure supplier list.", "error");
+        }
+        finally
+        {
+            // ✅ FIX: Data load hone ke baad loading spinner band karna zaroori hai
+            isLoading = false;
         }
     }
 
-    // Map Load karne ke liye ye function zaroori hai
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender || (filteredSuppliers.Count > 0 && !mapInitialized))
         {
             if (filteredSuppliers.Count > 0)
             {
-                // JavaScript function call kar rahe hain map draw karne ke liye
                 await JSRuntime.InvokeVoidAsync("initMap", filteredSuppliers);
                 mapInitialized = true;
             }
@@ -252,7 +267,6 @@
 
     private void GoToDetails(string name) => Nav.NavigateTo($"/supplier/{name}");
 }
-
 <script>
     window.initMap = (suppliers) => {
         // Check if map container exists
