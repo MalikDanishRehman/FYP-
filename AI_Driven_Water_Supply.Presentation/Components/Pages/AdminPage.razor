@@ -2,296 +2,418 @@
 @using AI_Driven_Water_Supply.Application.Interfaces
 @using AI_Driven_Water_Supply.Application.Models
 @using Supabase.Postgrest.Models
-@inject Supabase.Client _supabase 
+@using Supabase.Postgrest.Attributes
+@inject Supabase.Client _supabase
 @inject IAuthService AuthService
 @inject NavigationManager Nav
 @rendermode InteractiveServer
-
-
-
+@layout AdminSidebar
 
 <style>
-    /* Admin Layout Wrapper */
-    .admin-wrapper {
-        display: flex;
-        min-height: 80vh; /* Adjust based on your header/footer */
-        gap: 20px;
+    /* Welcome Header */
+    .welcome-section {
+        margin-bottom: 40px;
     }
 
-    /* --- Sidebar Styling --- */
-    .admin-sidebar {
-        width: 260px;
-        background: rgba(20, 25, 40, 0.7); /* Thora dark glass effect */
-        backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 16px;
-        padding: 20px;
-        display: flex;
-        flex-direction: column;
-        flex-shrink: 0; /* Sidebar shrink na ho */
-    }
-
-    .sidebar-menu {
-        list-style: none;
-        padding: 0;
+    .welcome-title {
+        font-size: 3rem;
+        font-weight: 800;
         margin: 0;
-    }
-
-    .sidebar-item {
-        margin-bottom: 10px;
-    }
-
-    .sidebar-link {
-        display: flex;
-        align-items: center;
-        padding: 12px 15px;
-        color: #aaa;
-        text-decoration: none;
-        border-radius: 10px;
-        transition: all 0.3s ease;
-        font-size: 0.95rem;
-    }
-
-        .sidebar-link i {
-            width: 25px;
-            font-size: 1.1rem;
-        }
-
-        /* Hover & Active State */
-        .sidebar-link:hover {
-            background: rgba(255, 255, 255, 0.05);
-            color: white;
-            transform: translateX(5px);
-        }
-
-        .sidebar-link.active {
-            background: #BFFF27;
-            color: black; /* Black text on Neon */
-            font-weight: 700;
-            box-shadow: 0 0 15px rgba(191, 255, 39, 0.3);
-        }
-
-    /* --- Main Content Area --- */
-    .admin-content {
-        flex-grow: 1;
-        width: 100%;
-    }
-
-    /* Stats Cards Grid */
-    .stats-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-        gap: 20px;
-        margin-bottom: 30px;
-    }
-
-    .stat-card {
-        background: rgba(23, 26, 43, 0.6);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 16px;
-        padding: 20px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        transition: 0.3s;
-    }
-
-        .stat-card:hover {
-            border-color: #BFFF27;
-            transform: translateY(-5px);
-        }
-
-    .stat-info h3 {
-        margin: 0;
-        font-size: 1.8rem;
+        line-height: 1.2;
         color: white;
+    }
+
+    .highlight {
+        color: #BFFF27;
+    }
+
+    .sub-text {
+        color: #888;
+        margin-top: 10px;
+        font-size: 1.1rem;
+    }
+
+    /* Action Buttons Row */
+    .action-row {
+        display: flex;
+        justify-content: flex-end;
+        gap: 15px;
+        margin-top: -40px;
+        margin-bottom: 40px;
+    }
+
+    .btn-action {
+        padding: 10px 20px;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        background: rgba(255, 255, 255, 0.05);
+        color: white;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: 0.3s;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        justify-content: center;
+    }
+
+        .btn-action:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+        }
+
+    .btn-primary-custom {
+        background: #BFFF27;
+        color: black;
+        border: none;
         font-weight: 700;
     }
 
-    .stat-info p {
-        margin: 0;
+        .btn-primary-custom:hover {
+            background: #a8e615;
+            box-shadow: 0 0 15px rgba(191, 255, 39, 0.4);
+            color: black;
+            transform: translateY(-2px);
+        }
+
+    /* Stats Cards - Matched with Provider Stat Cards */
+    .stats-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 20px;
+    }
+
+    .stat-box {
+        background: #1e1e1e; /* Provider theme color */
+        border: 1px solid rgba(255,255,255,0.05);
+        padding: 25px;
+        border-radius: 15px;
+        position: relative;
+        overflow: hidden;
+        transition: 0.3s;
+    }
+
+        .stat-box:hover {
+            border-color: rgba(255,255,255,0.15);
+        }
+
+    .stat-label {
         color: #888;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-weight: 600;
+        margin-bottom: 10px;
+        display: block;
+    }
+
+    .stat-value {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: white;
+        margin: 0;
+    }
+
+    .stat-sub {
+        color: #BFFF27;
         font-size: 0.9rem;
+        margin-top: 5px;
+        display: inline-block;
+        background: rgba(191,255,39,0.1);
+        padding: 2px 8px;
+        border-radius: 4px;
     }
 
     .stat-icon {
-        width: 50px;
-        height: 50px;
-        background: rgba(191, 255, 39, 0.1);
-        color: #BFFF27;
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        position: absolute;
+        right: 20px;
+        top: 20px;
         font-size: 1.5rem;
+        color: rgba(255,255,255,0.05); /* Lighter grey icon background */
     }
 
-    /* Recent Orders Table */
-    .table-container {
-        background: rgba(23, 26, 43, 0.6);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 16px;
-        padding: 20px;
+    /* Table Styling - Matched with Provider Dashboard */
+    .table-section {
+        margin-top: 40px;
+        background: #1e1e1e; /* Provider theme color */
+        padding: 25px;
+        border-radius: 15px;
+        border: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .filter-bar {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+    }
+
+    .filter-input {
+        background: rgba(0, 0, 0, 0.3); /* Provider search/input theme */
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        padding: 10px 15px;
+        color: white;
+        border-radius: 8px;
+        flex: 1;
+        min-width: 150px;
+        transition: 0.3s;
+    }
+
+        .filter-input:focus {
+            outline: none;
+            border-color: #BFFF27;
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+    /* Responsive Table Container */
+    .table-responsive {
+        width: 100%;
         overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
     }
 
-    .custom-table {
+    .table-dark {
         width: 100%;
         border-collapse: collapse;
-        color: #ddd;
+        margin-top: 15px;
+        min-width: 600px;
     }
 
-        .custom-table th {
+        .table-dark th {
             text-align: left;
-            padding: 15px;
-            color: #BFFF27;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-            font-weight: 600;
-        }
-
-        .custom-table td {
+            color: #888;
+            font-size: 0.8rem;
             padding: 15px;
             border-bottom: 1px solid rgba(255,255,255,0.05);
+            text-transform: uppercase;
+            white-space: nowrap;
         }
 
-    .status-badge {
-        padding: 5px 10px;
-        border-radius: 20px;
-        font-size: 0.8rem;
-        background: rgba(255,255,255,0.1);
+        .table-dark td {
+            padding: 15px;
+            border-bottom: 1px solid rgba(255,255,255,0.02);
+            color: #ddd;
+            font-size: 0.95rem;
+            white-space: nowrap;
+        }
+
+    .status-dot {
+        height: 8px;
+        width: 8px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 6px;
     }
 
-        .status-badge.completed {
-            background: rgba(46, 204, 113, 0.2);
-            color: #2ecc71;
-        }
+    .st-completed {
+        background-color: #BFFF27;
+        box-shadow: 0 0 5px #BFFF27;
+    }
 
-        .status-badge.pending {
-            background: rgba(255, 165, 2, 0.2);
-            color: #ffa502;
-        }
+    .st-pending {
+        background-color: #ff9f43;
+    }
 
+    /* === RESPONSIVE DESIGN === */
+    @@media (max-width: 768px) {
+        .welcome-title
+
+    {
+        font-size: 2rem;
+    }
+
+    .action-row {
+        margin-top: 20px;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .filter-bar {
+        flex-direction: column;
+    }
+
+    .filter-input {
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .table-section {
+        padding: 15px;
+    }
+
+    }
 </style>
 
-
-<div class="admin-wrapper">
-    <nav class="admin-sidebar">
-        <div style="margin-bottom: 30px; padding: 0 15px;">
-            <small class="text-muted text-uppercase" style="letter-spacing: 1px;">Menu</small>
-        </div>
-
-        <ul class="sidebar-menu">
-            <li class="sidebar-item">
-                <NavLink class="sidebar-link" href="AdminPage" Match="NavLinkMatch.All">
-                    <i class="fa-solid fa-chart-line"></i> Dashboard
-                </NavLink>
-            </li>
-
-            <li class="sidebar-item">
-                <NavLink class="sidebar-link" href="VendorManagement">
-                    <i class="fa-solid fa-store"></i> Vendor Management
-                </NavLink>
-            </li>
-
-            <li class="sidebar-item">
-                <NavLink class="sidebar-link" href="UserManagement">
-                    <i class="fa-solid fa-users"></i> Users List
-                </NavLink>
-            </li>
-
-            <li class="sidebar-item">
-                <NavLink class="sidebar-link" href="AdminDispute">
-                    <i class="fa-solid fa-gavel"></i> Disputes
-                </NavLink>
-            </li>
-
-            <li class="sidebar-item">
-                <NavLink class="sidebar-link" href="AdminSetting">
-                    <i class="fa-solid fa-shield-halved"></i> Security
-                </NavLink>
-            </li>
-        </ul>
-    </nav>
-
-    <main class="admin-content">
-
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-info">
-                    <p>Total Revenue</p>
-                    <h3>Rs 1.2M</h3>
-                </div>
-                <div class="stat-icon"><i class="fa-solid fa-wallet"></i></div>
-            </div>
-
-            <div class="stat-card">
-                <div class="stat-info">
-                    <p>Active Vendors</p>
-                    <h3>45</h3>
-                </div>
-                <div class="stat-icon"><i class="fa-solid fa-shop"></i></div>
-            </div>
-
-            <div class="stat-card">
-                <div class="stat-info">
-                    <p>Total Users</p>
-                    <h3>1,250</h3>
-                </div>
-                <div class="stat-icon"><i class="fa-solid fa-users"></i></div>
-            </div>
-
-            <div class="stat-card">
-                <div class="stat-info">
-                    <p>Pending Orders</p>
-                    <h3>12</h3>
-                </div>
-                <div class="stat-icon"><i class="fa-solid fa-clock"></i></div>
-            </div>
-        </div>
-
-        <div class="table-container">
-            <h4 style="color:white; margin-bottom: 20px;">Recent Orders</h4>
-            <table class="custom-table">
-                <thead>
-                    <tr>
-                        <th>Order ID</th>
-                        <th>Customer</th>
-                        <th>Vendor</th>
-                        <th>Amount</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>#ORD-001</td>
-                        <td>Ali Khan</td>
-                        <td>Aqua Pure</td>
-                        <td>Rs 500</td>
-                        <td><span class="status-badge completed">Delivered</span></td>
-                    </tr>
-                    <tr>
-                        <td>#ORD-002</td>
-                        <td>Sara Ahmed</td>
-                        <td>Blue Water</td>
-                        <td>Rs 1200</td>
-                        <td><span class="status-badge pending">Pending</span></td>
-                    </tr>
-                    <tr>
-                        <td>#ORD-003</td>
-                        <td>Bilal</td>
-                        <td>Aqua Pure</td>
-                        <td>Rs 300</td>
-                        <td><span class="status-badge completed">Delivered</span></td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-
-    </main>
-
+<div class="welcome-section">
+    <h1 class="welcome-title">Welcome back,<br> <span class="highlight">@UserName</span></h1>
+    <p class="sub-text">Your AI-powered water supply monitoring dashboard</p>
 </div>
 
+<div class="action-row">
+    <button class="btn-action"><i class="fa-regular fa-envelope"></i> Email Config</button>
+    <button class="btn-action btn-primary-custom"><i class="fa-solid fa-crown"></i> Manage Subscriptions</button>
+    <button class="btn-action"><i class="fa-solid fa-rotate"></i> Refresh</button>
+</div>
 
+<div class="stats-container">
+    <div class="stat-box">
+        <span class="stat-label">Total Revenue</span>
+        <h2 class="stat-value">Rs 1.2M</h2>
+        <span class="stat-sub"><i class="fa-solid fa-arrow-trend-up"></i> +12% this month</span>
+        <i class="fa-solid fa-wallet stat-icon"></i>
+    </div>
 
+    <div class="stat-box">
+        <span class="stat-label">Active Vendors</span>
+        <h2 class="stat-value">45</h2>
+        <span class="stat-sub" style="color:#2ecc71; background:rgba(46,204,113,0.1)">Online</span>
+        <i class="fa-solid fa-store stat-icon"></i>
+    </div>
 
+    <div class="stat-box">
+        <span class="stat-label">Success Rate</span>
+        <h2 class="stat-value">98.5%</h2>
+        <span class="stat-sub"><i class="fa-solid fa-check"></i> Processing</span>
+        <i class="fa-solid fa-chart-line stat-icon"></i>
+    </div>
 
+    <div class="stat-box">
+        <span class="stat-label">Issues Reported</span>
+        <h2 class="stat-value">3</h2>
+        <span class="stat-sub" style="color:#ff4d4d; background:rgba(255,77,77,0.1)">Action Required</span>
+        <i class="fa-solid fa-triangle-exclamation stat-icon"></i>
+    </div>
+</div>
+
+<div class="table-section">
+    <h4 style="margin: 0 0 20px 0; color: white;">Recent Transactions</h4>
+
+    <div class="filter-bar">
+        <input type="text" class="filter-input" placeholder="All Status">
+        <input type="text" class="filter-input" placeholder="Pick a date">
+        <input type="text" class="filter-input" placeholder="Search Order ID">
+        <button class="btn-action">Clear Filters</button>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table-dark">
+            <thead>
+                <tr>
+                    <th>Order ID</th>
+                    <th>Customer</th>
+                    <th>Vendor</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>#ORD-8821</td>
+                    <td>Ali Khan</td>
+                    <td>Aqua Pure</td>
+                    <td>Rs 500</td>
+                    <td><span class="status-dot st-completed"></span>Delivered</td>
+                </tr>
+                <tr>
+                    <td>#ORD-8822</td>
+                    <td>Sara Ahmed</td>
+                    <td>Blue Water</td>
+                    <td>Rs 1200</td>
+                    <td><span class="status-dot st-pending"></span>Pending</td>
+                </tr>
+                <tr>
+                    <td>#ORD-8823</td>
+                    <td>Bilal</td>
+                    <td>Aqua Pure</td>
+                    <td>Rs 300</td>
+                    <td><span class="status-dot st-completed"></span>Delivered</td>
+                </tr>
+                <tr>
+                    <td>#ORD-8824</td>
+                    <td>Kashan</td>
+                    <td>Aqua Pure</td>
+                    <td>Rs 300</td>
+                    <td><span class="status-dot st-pending"></span>Pending</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@code {
+    private string UserName = "Loading...";
+    private string ProfileImageUrl = "/images/fallbackimg.jpg";
+    private bool isSidebarOpen = false;
+    private bool isLoading = true;
+    private int totalRevenue = 0;
+    private List<Message> chatList = new List<Message>();
+
+    // Chart Variable
+    private string activeTab = "Week";
+
+    [Table("profiles")]
+    public class Profile : BaseModel
+    {
+        [Column("id")] public string Id { get; set; } = "";
+        [Column("username")] public string Username { get; set; } = "";
+        [Column("profilepic")] public string ProfilePic { get; set; } = "";
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var user = AuthService.CurrentUser;
+        if (user == null) { await AuthService.TryRefreshSession(); user = AuthService.CurrentUser; }
+
+        if (user != null)
+        {
+            await SetDynamicData(user);
+            StateHasChanged();
+            await LoadMessages();
+            isLoading = false;
+            StateHasChanged();
+        }
+        else
+        {
+            Nav.NavigateTo("/login");
+        }
+    }
+
+    private async Task SetDynamicData(Supabase.Gotrue.User user)
+    {
+        string fetchedName = "";
+        try
+        {
+            var response = await _supabase.From<Profile>().Where(x => x.Id == user.Id).Get();
+            var profile = response.Models.FirstOrDefault();
+            if (profile != null)
+            {
+                fetchedName = profile.Username;
+                if (!string.IsNullOrEmpty(profile.ProfilePic))
+                {
+                    ProfileImageUrl = _supabase.Storage.From("Avatar").GetPublicUrl(profile.ProfilePic);
+                }
+            }
+        }
+        catch { }
+
+        if (string.IsNullOrEmpty(fetchedName) && user.UserMetadata != null)
+            if (user.UserMetadata.TryGetValue("username", out var nameObj)) fetchedName = nameObj?.ToString();
+
+        if (string.IsNullOrEmpty(fetchedName) && !string.IsNullOrEmpty(user.Email))
+            fetchedName = user.Email.Split('@')[0];
+
+        UserName = string.IsNullOrEmpty(fetchedName) ? "Provider" : fetchedName;
+    }
+
+    private async Task LoadMessages()
+    {
+        try
+        {
+            if (UserName == "Loading..." || UserName == "Provider") return;
+            var response = await _supabase.From<Message>().Where(x => x.ReceiverName == UserName).Order("created_at", Supabase.Postgrest.Constants.Ordering.Descending).Get();
+            chatList = response.Models.GroupBy(m => m.OrderId).Select(g => g.First()).ToList();
+            totalRevenue = chatList.Count * 1200;
+        }
+        catch { }
+    }
+}
