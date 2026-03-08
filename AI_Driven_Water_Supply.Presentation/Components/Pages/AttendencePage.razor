@@ -307,7 +307,7 @@
 
         if (user != null)
         {
-            await LoadWorkers(user.Id);
+            await LoadWorkers(user!.Id);
         }
         else
         {
@@ -372,11 +372,11 @@
         var user = AuthService.CurrentUser;
         if (user != null)
         {
-            newWorker.SupplierId = user.Id;
+            newWorker.SupplierId = user!.Id;
             await _supabase.From<Worker>().Insert(newWorker);
             showAddModal = false;
             newWorker = new Worker(); // Reset
-            await LoadWorkers(user.Id);
+            await LoadWorkers(user!.Id);
         }
     }
 
@@ -407,6 +407,6 @@
         await _supabase.From<Worker>().Delete(selectedWorker);
         showDetailModal = false;
         var user = AuthService.CurrentUser;
-        if (user != null) await LoadWorkers(user.Id);
+        if (user != null) await LoadWorkers(user!.Id);
     }
 }

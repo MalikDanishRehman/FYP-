@@ -539,19 +539,19 @@
     // --- State Variables ---
     private string activeTab = "All";
     private bool showModal = false;
-    private DisputeTicket selectedTicket;
+    private DisputeTicket selectedTicket = null!;
 
     // --- Data Model ---
     public class DisputeTicket
     {
-        public string TicketId { get; set; }
-        public string UserName { get; set; }
-        public string VendorName { get; set; }
-        public string IssueType { get; set; }
-        public string Description { get; set; }
-        public string Priority { get; set; }
-        public string Date { get; set; }
-        public string Status { get; set; }
+        public string TicketId { get; set; } = null!;
+        public string UserName { get; set; } = null!;
+        public string VendorName { get; set; } = null!;
+        public string IssueType { get; set; } = null!;
+        public string Description { get; set; } = null!;
+        public string Priority { get; set; } = null!;
+        public string Date { get; set; } = null!;
+        public string Status { get; set; } = null!;
     }
 
     // --- Hardcoded Data ---

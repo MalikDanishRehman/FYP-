@@ -267,7 +267,7 @@
 @code {
     [Parameter] public long OrderId { get; set; }
 
-    [Inject] public Supabase.Client SupabaseClient { get; set; }
+    [Inject] public Supabase.Client SupabaseClient { get; set; } = null!;
 
     private string MyName = "";
     private string SupplierName = "";

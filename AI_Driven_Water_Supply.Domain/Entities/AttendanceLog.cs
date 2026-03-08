@@ -17,6 +17,6 @@ namespace AI_Driven_Water_Supply.Domain.Entities
         public DateTime Date { get; set; }
 
         [Column("status")]
-        public string Status { get; set; }
+        public string Status { get; set; } = null!;
     }
 }

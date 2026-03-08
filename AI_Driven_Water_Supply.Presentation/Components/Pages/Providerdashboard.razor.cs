@@ -58,7 +58,7 @@ namespace AI_Driven_Water_Supply.Presentation.Components.Pages
             catch { }
 
             if (string.IsNullOrEmpty(fetchedName) && user.UserMetadata != null)
-                if (user.UserMetadata.TryGetValue("username", out var nameObj)) fetchedName = nameObj?.ToString();
+                if (user.UserMetadata.TryGetValue("username", out var nameObj)) fetchedName = nameObj?.ToString() ?? "";
 
             if (string.IsNullOrEmpty(fetchedName) && !string.IsNullOrEmpty(user.Email))
                 fetchedName = user.Email.Split('@')[0];

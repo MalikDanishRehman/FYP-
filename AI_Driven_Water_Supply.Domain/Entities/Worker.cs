@@ -10,13 +10,13 @@ namespace AI_Driven_Water_Supply.Domain.Entities
         public long Id { get; set; }
 
         [Column("supplier_id")]
-        public string SupplierId { get; set; }
+        public string SupplierId { get; set; } = null!;
 
         [Column("name")]
-        public string Name { get; set; }
+        public string Name { get; set; } = null!;
 
         [Column("role")]
-        public string Role { get; set; }
+        public string Role { get; set; } = null!;
 
         [Column("base_salary")]
         public decimal BaseSalary { get; set; }

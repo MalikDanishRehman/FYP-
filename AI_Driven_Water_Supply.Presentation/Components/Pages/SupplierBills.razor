@@ -193,7 +193,7 @@
             {
                 // User ka naam fetch kar rahe hain taaki usi ke bills dikhein
                 MyName = user.UserMetadata.ContainsKey("full_name")
-                          ? user.UserMetadata["full_name"].ToString()
+                          ? (user.UserMetadata["full_name"]?.ToString() ?? "Supplier")
                           : "M.Akmal"; // Fallback
             }
             await LoadBills();

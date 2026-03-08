@@ -138,7 +138,7 @@ namespace AI_Driven_Water_Supply.Infrastructure.Services
                 {
                     Id = user.Id,
                     Role = role,
-                    Username = username
+                    Username = username ?? "User"
                 };
 
                 await _client.From<Profile>().Upsert(profile);

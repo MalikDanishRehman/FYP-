@@ -1,4 +1,4 @@
-﻿@page "/provider-reviews"
+@page "/provider-reviews"
 @using Supabase.Postgrest.Attributes
 @using Supabase.Postgrest.Models
 @using AI_Driven_Water_Supply.Application.Interfaces
@@ -119,7 +119,7 @@
     public class ReviewModel : BaseModel
     {
         // 👇 Yahan pehle 'int' tha, ab 'string' kar diya hai
-        [Column("id")] public string Id { get; set; }
+        [Column("id")] public string Id { get; set; } = null!;
 
         [Column("provider_id")] public string ProviderId { get; set; } = "";
         [Column("comment")] public string Comment { get; set; } = "";
@@ -131,7 +131,7 @@
     [Table("profiles")]
     public class ProfileModel : BaseModel
     {
-        [Column("id")] public string Id { get; set; }
+        [Column("id")] public string Id { get; set; } = null!;
         [Column("rating")] public double Rating { get; set; }
     }
 
