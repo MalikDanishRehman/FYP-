@@ -1,5 +1,5 @@
-﻿using AI_Driven_Water_Supply.Application.Interfaces;
-using AI_Driven_Water_Supply.Application.Models;
+using AI_Driven_Water_Supply.Application.Interfaces;
+using AI_Driven_Water_Supply.Domain.Entities;
 using Supabase.Gotrue;
 using Microsoft.AspNetCore.Http;
 using Microsoft.JSInterop;

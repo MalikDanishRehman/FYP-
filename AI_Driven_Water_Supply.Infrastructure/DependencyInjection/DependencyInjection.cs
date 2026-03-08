@@ -1,4 +1,4 @@
-﻿using AI_Driven_Water_Supply.Application.Interfaces;
+using AI_Driven_Water_Supply.Application.Interfaces;
 using AI_Driven_Water_Supply.Infrastructure.Services;
 using DotNetEnv;
 using Microsoft.Extensions.Configuration;
@@ -32,6 +32,7 @@ namespace AI_Driven_Water_Supply.Infrastructure.DependencyInjection
             // Register in DI
             services.AddSingleton(client);
             services.AddScoped<IAuthService, AuthService>();
+            services.AddScoped<IToastService, ToastService>();
 
             return services;
         }

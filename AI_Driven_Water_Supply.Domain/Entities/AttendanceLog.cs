@@ -1,9 +1,8 @@
-﻿using Supabase.Postgrest.Attributes;
-using Supabase.Postgrest.Models;
 using System;
+using Supabase.Postgrest.Attributes;
+using Supabase.Postgrest.Models;
 
-
-namespace AI_Driven_Water_Supply.Application.Models
+namespace AI_Driven_Water_Supply.Domain.Entities
 {
     [Table("attendance")]
     public class AttendanceLog : BaseModel
