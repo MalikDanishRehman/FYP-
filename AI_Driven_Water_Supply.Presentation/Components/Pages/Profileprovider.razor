@@ -1,16 +1,15 @@
-﻿@page "/profilepro"
+@page "/profilepro"
 @using AI_Driven_Water_Supply.Application.Interfaces
 @using Supabase.Postgrest.Attributes
 @using Supabase.Postgrest.Models
 @using System.ComponentModel.DataAnnotations
 @using Microsoft.AspNetCore.Components.Forms
-@using AI_Driven_Water_Supply.Presentation.Services
 
 @inject Supabase.Client _supabase
 @inject IAuthService AuthService
 @inject NavigationManager Nav
 @inject IJSRuntime JS
-@inject ToastService ToastService
+@inject IToastService ToastService
 @rendermode InteractiveServer
 
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
@@ -242,16 +241,6 @@
 </style>
 
 @code {
-    [Table("profiles")]
-    public class Profile : BaseModel
-    {
-        [Column("id")] public string Id { get; set; } = "";
-        [Column("username")] public string Username { get; set; } = "";
-        [Column("role")] public string Role { get; set; } = "";
-        [Column("profilepic")] public string ProfilePic { get; set; } = "";
-        [Column("location")] public string Location { get; set; } = "";
-    }
-
     private Profile userProfile = new Profile();
     private string DisplayUrl = "";
     private bool isLoading = true;
@@ -296,6 +285,15 @@
     public void UpdateLocationFromMap(string address)
     {
         userProfile.Location = address;
+        StateHasChanged();
+    }
+
+    [JSInvokable]
+    public void UpdateLocationWithCoords(string address, double lat, double lng)
+    {
+        userProfile.Location = address;
+        userProfile.Latitude = lat;
+        userProfile.Longitude = lng;
         StateHasChanged();
     }
 
@@ -402,6 +400,8 @@
                         .Where(x => x.Id == userProfile.Id)
                         .Set(x => x.Username, userProfile.Username)
                         .Set(x => x.Location, userProfile.Location)
+                        .Set(x => x.Latitude, userProfile.Latitude)
+                        .Set(x => x.Longitude, userProfile.Longitude)
                         .Update();
 
             ToastService.ShowToast("Success", "Profile & Location Saved!", "success");

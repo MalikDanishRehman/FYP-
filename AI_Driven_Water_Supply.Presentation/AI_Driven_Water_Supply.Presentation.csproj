@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\AI_Driven_Water_Supply.Application\AI_Driven_Water_Supply.Application.csproj" />
+    <ProjectReference Include="..\AI_Driven_Water_Supply.Domain\AI_Driven_Water_Supply.Domain.csproj" />
     <ProjectReference Include="..\AI_Driven_Water_Supply.Infrastructure\AI_Driven_Water_Supply.Infrastructure.csproj" />
   </ItemGroup>
 

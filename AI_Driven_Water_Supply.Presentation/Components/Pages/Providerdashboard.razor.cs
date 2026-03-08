@@ -1,15 +1,13 @@
-﻿using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components;
 using AI_Driven_Water_Supply.Application.Interfaces;
-using AI_Driven_Water_Supply.Presentation;
+using AI_Driven_Water_Supply.Domain.Entities;
 using Microsoft.JSInterop;
-using Supabase.Postgrest.Attributes;
-using Supabase.Postgrest.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace AI_Driven_Water_Supply.Presentation.Components.Pages // ⚠️ Check Namespace
+namespace AI_Driven_Water_Supply.Presentation.Components.Pages
 {
     public partial class ProviderDashboard : ComponentBase
     {
@@ -23,14 +21,6 @@ namespace AI_Driven_Water_Supply.Presentation.Components.Pages // ⚠️ Check N
         protected bool isLoading = true;
         protected int totalRevenue = 0;
         protected List<Message> chatList = new List<Message>();
-
-        // Local Profile Model (Agar Application layer me hai to wahan se import karein)
-        [Table("profiles")]
-        public class Profile : BaseModel
-        {
-            [Column("id")] public string Id { get; set; }
-            [Column("username")] public string Username { get; set; }
-        }
 
         protected override async Task OnInitializedAsync()
         {

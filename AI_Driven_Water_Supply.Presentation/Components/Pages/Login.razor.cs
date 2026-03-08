@@ -1,10 +1,9 @@
-﻿using AI_Driven_Water_Supply.Application.Interfaces;
-using AI_Driven_Water_Supply.Presentation.Services;
+using AI_Driven_Water_Supply.Application.Interfaces;
+using AI_Driven_Water_Supply.Application.DTOs;
 using Microsoft.AspNetCore.Components;
 using Supabase.Postgrest.Attributes;
 using Supabase.Postgrest.Models;
 using System;
-using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -15,11 +14,8 @@ namespace AI_Driven_Water_Supply.Presentation.Components.Pages
         [Inject] public IAuthService AuthService { get; set; } = default!;
         [Inject] public Supabase.Client _supabase { get; set; } = default!;
         [Inject] public NavigationManager Nav { get; set; } = default!;
+        [Inject] public IToastService _toastService { get; set; } = default!;
 
-        // ✅ FIX: Property ka naam '_toastService' rakha hai taake Class name se conflict na ho
-        [Inject] public ToastService _toastService { get; set; } = default!;
-
-        // Form Binding
         [SupplyParameterFromForm]
         protected LoginModel loginModel { get; set; } = new();
 
@@ -101,16 +97,6 @@ namespace AI_Driven_Water_Supply.Presentation.Components.Pages
             {
                 isLoading = false;
             }
-        }
-
-        public class LoginModel
-        {
-            [Required(ErrorMessage = "Email is required")]
-            [EmailAddress(ErrorMessage = "Invalid email address")]
-            public string Email { get; set; } = "";
-
-            [Required(ErrorMessage = "Password is required")]
-            public string Password { get; set; } = "";
         }
     }
 }

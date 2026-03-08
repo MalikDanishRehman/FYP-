@@ -1,4 +1,4 @@
-﻿// File Path: wwwroot/js/map.js
+// File Path: wwwroot/js/map.js
 
 window.mapFunctions = {
     initPickMap: function (elementId, dotnetHelper, initialAddress) {
@@ -53,6 +53,7 @@ window.mapFunctions = {
                 .then(data => {
                     if (dotnetHelper) {
                         dotnetHelper.invokeMethodAsync('UpdateLocationFromMap', data.display_name);
+                        dotnetHelper.invokeMethodAsync('UpdateLocationWithCoords', data.display_name, lat, lng);
                     }
                 });
         }
@@ -72,6 +73,7 @@ window.mapFunctions = {
 
                         if (dotnetHelper) {
                             dotnetHelper.invokeMethodAsync('UpdateLocationFromMap', data[0].display_name);
+                            dotnetHelper.invokeMethodAsync('UpdateLocationWithCoords', data[0].display_name, parseFloat(newLat), parseFloat(newLon));
                         }
                     } else {
                         alert("Address not found!");

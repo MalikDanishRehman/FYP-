@@ -1,4 +1,4 @@
-﻿@page "/supplier/{name}"
+@page "/supplier/{name}"
 @using Supabase.Postgrest.Attributes
 @using Supabase.Postgrest.Models
 @using System.ComponentModel.DataAnnotations
@@ -7,7 +7,7 @@
 @inject NavigationManager Nav
 @inject IAuthService AuthService
 @rendermode InteractiveServer
-@inject AI_Driven_Water_Supply.Presentation.Services.ToastService ToastService
+@inject IToastService ToastService
 <style>
     :root {
         --primary-gradient: linear-gradient(135deg, #00c6ff 0%, #0072ff 100%);
@@ -521,7 +521,7 @@
 
         try
         {
-            var newOrder = new AI_Driven_Water_Supply.Presentation.Order
+            var newOrder = new AI_Driven_Water_Supply.Domain.Entities.Order
             {
                 ConsumerName = orderFormModel.ConsumerName,
                 Address = orderFormModel.Address,
@@ -535,13 +535,13 @@
             };
 
             // 2. Database Insert
-            var response = await _supabase.From<AI_Driven_Water_Supply.Presentation.Order>().Insert(newOrder);
+            var response = await _supabase.From<AI_Driven_Water_Supply.Domain.Entities.Order>().Insert(newOrder);
             var insertedOrder = response.Models.FirstOrDefault();
 
             if (insertedOrder != null)
             {
                 // 3. Message Logic
-                var autoMsg = new AI_Driven_Water_Supply.Presentation.Message
+                var autoMsg = new AI_Driven_Water_Supply.Domain.Entities.Message
                 {
                     OrderId = insertedOrder.Id,
                     SenderName = orderFormModel.ConsumerName,
@@ -549,7 +549,7 @@
                     Content = $"New Order! {quantity}x Bottles. Address: {orderFormModel.Address}",
                     CreatedAt = DateTime.UtcNow
                 };
-                await _supabase.From<AI_Driven_Water_Supply.Presentation.Message>().Insert(autoMsg);
+                await _supabase.From<AI_Driven_Water_Supply.Domain.Entities.Message>().Insert(autoMsg);
 
                 // 4. Close Modal & Redirect
                 showModal = false;

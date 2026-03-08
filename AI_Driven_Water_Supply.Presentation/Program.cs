@@ -1,4 +1,4 @@
-﻿using AI_Driven_Water_Supply.Infrastructure.DependencyInjection;
+using AI_Driven_Water_Supply.Infrastructure.DependencyInjection;
 using AI_Driven_Water_Supply.Presentation.Components;
 using Supabase;
 using DotNetEnv; 
@@ -39,9 +39,7 @@ builder.Services.AddScoped<Supabase.Client>(provider =>
 });
 
 builder.Services.AddScoped<AI_Driven_Water_Supply.Application.Interfaces.IAuthService, AI_Driven_Water_Supply.Infrastructure.Services.AuthService>();
-
-
-builder.Services.AddScoped<AI_Driven_Water_Supply.Presentation.Services.ToastService>();
+builder.Services.AddScoped<AI_Driven_Water_Supply.Application.Interfaces.IToastService, AI_Driven_Water_Supply.Infrastructure.Services.ToastService>();
 
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
