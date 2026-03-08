@@ -1,6 +1,7 @@
-﻿@page "/order/{type}"
+@page "/order/{type}"
 @using Supabase.Postgrest.Attributes
 @using Supabase.Postgrest.Models
+@using System.Text.Json.Serialization
 @inject Supabase.Client _supabase
 @inject NavigationManager Nav
 @inject IJSRuntime JSRuntime
@@ -200,7 +201,9 @@
 
     public class LocationCoords
     {
+        [JsonPropertyName("lat")]
         public double Lat { get; set; }
+        [JsonPropertyName("lng")]
         public double Lng { get; set; }
     }
 
