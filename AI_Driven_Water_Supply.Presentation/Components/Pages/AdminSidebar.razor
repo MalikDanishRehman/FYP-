@@ -1,0 +1,258 @@
+﻿
+
+@inherits LayoutComponentBase
+@inject NavigationManager Nav
+
+<style>
+    /* --- Global & Layout Styles --- */
+    body, html {
+        margin: 0;
+        padding: 0;
+        background-color: #060713;
+        font-family: 'Inter', sans-serif;
+        color: #fff;
+    }
+
+    .layout-wrapper {
+        display: flex;
+        height: 100vh;
+        overflow: hidden;
+        position: relative;
+    }
+
+    /* --- SIDEBAR --- */
+    .sidebar {
+        width: 260px;
+        background: #090a18;
+        border-right: 1px solid #1a1c2e;
+        display: flex;
+        flex-direction: column;
+        transition: all 0.3s ease-in-out;
+        flex-shrink: 0;
+        z-index: 1000; /* Sidebar ko hamesha upar rakhne ke liye */
+    }
+
+        /* Sidebar Closed State */
+        .sidebar.closed {
+            width: 0;
+            overflow: hidden;
+            padding: 0;
+            border: none;
+        }
+
+    .brand-logo {
+        padding: 20px;
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: white;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .brand-dot {
+        height: 12px;
+        width: 12px;
+        background: #BFFF27;
+        border-radius: 50%;
+        display: inline-block;
+    }
+
+    .menu-list {
+        list-style: none;
+        padding: 0 10px;
+        margin-top: 20px;
+    }
+
+    .menu-item {
+        margin-bottom: 5px;
+    }
+
+    .menu-link {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 15px;
+        border-radius: 8px;
+        text-decoration: none;
+        color: #8b92b2;
+        font-size: 0.95rem;
+        transition: 0.3s;
+    }
+
+        .menu-link:hover {
+            background: #101226;
+            color: white;
+        }
+
+        .menu-link.active {
+            background: rgba(191, 255, 39, 0.1);
+            color: #BFFF27;
+            font-weight: 600;
+        }
+
+    /* --- MAIN CONTENT AREA --- */
+    .main-content {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        overflow-y: auto;
+        position: relative;
+    }
+
+    /* --- TOP HEADER --- */
+    .top-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px 30px;
+        background: rgba(6, 7, 19, 0.8);
+        backdrop-filter: blur(10px);
+        border-bottom: 1px solid #1a1c2e;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+    }
+
+    .hamburger-btn {
+        background: transparent;
+        border: none;
+        color: white;
+        font-size: 1.4rem;
+        cursor: pointer;
+        transition: 0.2s;
+    }
+
+        .hamburger-btn:hover {
+            color: #BFFF27;
+        }
+
+    .header-right {
+        display: flex;
+        gap: 20px;
+        align-items: center;
+        font-size: 0.9rem;
+        color: #8b92b2;
+    }
+
+    .header-link {
+        cursor: pointer;
+        transition: 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+        .header-link:hover {
+            color: white;
+        }
+
+    /* Content Body Container */
+    .content-body {
+        padding: 30px;
+    }
+
+    /* === RESPONSIVE DESIGN (Layout) === */
+    @@media (max-width: 768px) {
+        .sidebar
+
+    {
+        position: absolute;
+        height: 100%;
+        left: 0;
+        top: 0;
+    }
+
+    .top-header {
+        padding: 15px 20px;
+    }
+
+    .header-right .header-text {
+        display: none; /* Hide text on mobile, show only icons */
+    }
+
+    .header-right {
+        gap: 15px;
+    }
+
+    .content-body {
+        padding: 15px; /* Mobile par padding kam kardi */
+    }
+
+    }
+</style>
+
+<div class="layout-wrapper">
+
+    <aside class="sidebar @(isSidebarOpen ? "" : "closed")">
+        <div style="display: flex; justify-content: space-between; align-items: center; padding-right: 15px;">
+            <div class="brand-logo">
+                <span class="brand-dot"></span> HYDROAI
+            </div>
+            <button class="hamburger-btn d-md-none" style="display: @(isSidebarOpen ? "block" : "none")" @onclick="ToggleSidebar">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <ul class="menu-list">
+            <li class="menu-item">
+                <NavLink class="menu-link" href="/AdminPage" Match="NavLinkMatch.All">
+                    <i class="fa-solid fa-chart-pie"></i> Dashboard
+                </NavLink>
+            </li>
+            <li class="menu-item">
+                <NavLink class="menu-link" href="/VendorManagement">
+                    <i class="fa-solid fa-store"></i> Vendors
+                </NavLink>
+            </li>
+            <li class="menu-item">
+                <NavLink class="menu-link" href="/UserManagement">
+                    <i class="fa-solid fa-users"></i> Users
+                </NavLink>
+            </li>
+            <li class="menu-item">
+                <NavLink class="menu-link" href="/AdminDispute">
+                    <i class="fa-solid fa-gavel"></i> Disputes
+                </NavLink>
+            </li>
+            <li class="menu-item">
+                <NavLink class="menu-link" href="/AdminSetting">
+                    <i class="fa-solid fa-gear"></i> Settings
+                </NavLink>
+            </li>
+        </ul>
+    </aside>
+
+    <main class="main-content">
+        <header class="top-header">
+            <div style="display:flex; align-items:center; gap: 15px;">
+                <button class="hamburger-btn" @onclick="ToggleSidebar">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+                <span style="color: #666; font-weight: bold;">Admin Panel</span>
+            </div>
+
+            <div class="header-right">
+                <span class="header-link" title="Dashboard"><i class="fa-solid fa-table-columns"></i> <span class="header-text">Dashboard</span></span>
+                <span class="header-link" title="Profile"><i class="fa-regular fa-user"></i> <span class="header-text">Profile</span></span>
+                <span class="header-link" style="color: #ff4d4d;" title="Logout"><i class="fa-solid fa-arrow-right-from-bracket"></i> <span class="header-text">Logout</span></span>
+            </div>
+        </header>
+
+        <div class="content-body">
+            @Body
+        </div>
+    </main>
+</div>
+
+@code {
+    private bool isSidebarOpen = true;
+
+    // Isko initialize karne ke liye hum mobile view detect kar sakte hain agar chahein,
+    // par abhi toggle perfectly work karega.
+    private void ToggleSidebar()
+    {
+        isSidebarOpen = !isSidebarOpen;
+    }
+}
