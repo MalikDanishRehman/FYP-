@@ -1,13 +1,12 @@
-﻿using System;
+using System;
 using Supabase.Postgrest.Attributes;
 using Supabase.Postgrest.Models;
 
-namespace AI_Driven_Water_Supply.Presentation
+namespace AI_Driven_Water_Supply.Domain.Entities
 {
     [Table("orders")]
     public class Order : BaseModel
     {
-        // 👇 Change This Line (false zaroori hai)
         [PrimaryKey("id", false)]
         public long Id { get; set; }
 
@@ -16,7 +15,7 @@ namespace AI_Driven_Water_Supply.Presentation
         [Column("phone")] public string Phone { get; set; } = string.Empty;
         [Column("quantity")] public int Quantity { get; set; }
         [Column("item_name")] public string ItemName { get; set; } = string.Empty;
-        [Column("total_price")] public int TotalPrice { get; set; } 
+        [Column("total_price")] public int TotalPrice { get; set; }
         [Column("supplier_name")] public string SupplierName { get; set; } = string.Empty;
         [Column("status")] public string Status { get; set; } = "Pending";
         [Column("created_at")] public DateTime CreatedAt { get; set; }

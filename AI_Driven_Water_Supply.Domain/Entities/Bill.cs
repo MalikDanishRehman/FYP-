@@ -1,8 +1,8 @@
-﻿using System;
+using System;
 using Supabase.Postgrest.Attributes;
 using Supabase.Postgrest.Models;
 
-namespace AI_Driven_Water_Supply.Presentation // Namespace check karlena apna
+namespace AI_Driven_Water_Supply.Domain.Entities
 {
     [Table("bills")]
     public class Bill : BaseModel
@@ -27,5 +27,8 @@ namespace AI_Driven_Water_Supply.Presentation // Namespace check karlena apna
 
         [Column("created_at")]
         public DateTime CreatedAt { get; set; }
+
+        [Column("payment_method")]
+        public string? PaymentMethod { get; set; }
     }
 }
