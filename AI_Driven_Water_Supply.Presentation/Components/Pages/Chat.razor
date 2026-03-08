@@ -1,4 +1,4 @@
-﻿@page "/chat/{OrderId:long}"
+@page "/chat/{OrderId:long}"
 @using AI_Driven_Water_Supply.Presentation
 @using Supabase.Postgrest.Models
 @inject Supabase.Client _supabase
@@ -277,15 +277,7 @@
     private string newMessageInput = "";
     private bool isLoading = true;
     private bool AmISupplier = false;
-    private List<AI_Driven_Water_Supply.Presentation.Message> messages = new();
-
-    // Profile Model
-    [Supabase.Postgrest.Attributes.Table("profiles")]
-    public class Profile : Supabase.Postgrest.Models.BaseModel
-    {
-        [Supabase.Postgrest.Attributes.Column("id")] public string Id { get; set; } = string.Empty;
-        [Supabase.Postgrest.Attributes.Column("username")] public string Username { get; set; } = string.Empty;
-    }
+    private List<Message> messages = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -332,7 +324,7 @@
     {
         try
         {
-            var response = await _supabase.From<AI_Driven_Water_Supply.Presentation.Order>().Where(x => x.Id == OrderId).Get();
+            var response = await _supabase.From<AI_Driven_Water_Supply.Domain.Entities.Order>().Where(x => x.Id == OrderId).Get();
             var order = response.Models.FirstOrDefault();
             if (order != null)
             {
@@ -351,7 +343,7 @@
         isLoading = true;
         try
         {
-            var response = await _supabase.From<AI_Driven_Water_Supply.Presentation.Message>()
+            var response = await _supabase.From<AI_Driven_Water_Supply.Domain.Entities.Message>()
                                             .Where(x => x.OrderId == OrderId)
                                             .Order("created_at", Supabase.Postgrest.Constants.Ordering.Ascending)
                                             .Get();
@@ -367,7 +359,7 @@
         var content = newMessageInput;
         newMessageInput = string.Empty;
 
-        var tempMsg = new AI_Driven_Water_Supply.Presentation.Message
+        var tempMsg = new AI_Driven_Water_Supply.Domain.Entities.Message
         {
             SenderName = MyName,
             Content = content,
@@ -382,7 +374,7 @@
 
     private async Task PostMessage(string sender, string receiver, string content)
     {
-        var newMsg = new AI_Driven_Water_Supply.Presentation.Message
+        var newMsg = new AI_Driven_Water_Supply.Domain.Entities.Message
         {
             OrderId = OrderId,
             SenderName = sender,
@@ -390,14 +382,14 @@
             Content = content,
             CreatedAt = DateTime.UtcNow
         };
-        await _supabase.From<AI_Driven_Water_Supply.Presentation.Message>().Insert(newMsg);
+        await _supabase.From<AI_Driven_Water_Supply.Domain.Entities.Message>().Insert(newMsg);
     }
 
     private async Task UpdateStatus(string newStatus)
     {
         try
         {
-            await _supabase.From<AI_Driven_Water_Supply.Presentation.Order>()
+            await _supabase.From<AI_Driven_Water_Supply.Domain.Entities.Order>()
                            .Where(x => x.Id == OrderId)
                            .Set(x => x.Status, newStatus)
                            .Update();
@@ -406,7 +398,7 @@
 
             if (newStatus == "Accepted")
             {
-                var ordResponse = await _supabase.From<AI_Driven_Water_Supply.Presentation.Order>().Where(x => x.Id == OrderId).Get();
+                var ordResponse = await _supabase.From<Order>().Where(x => x.Id == OrderId).Get();
                 var orderData = ordResponse.Models.FirstOrDefault();
                 if (orderData != null)
                 {

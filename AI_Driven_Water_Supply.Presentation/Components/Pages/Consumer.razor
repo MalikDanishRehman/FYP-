@@ -1,4 +1,4 @@
-﻿@page "/Consumer"
+@page "/Consumer"
 @rendermode InteractiveServer
 @using Supabase.Postgrest.Attributes
 @using Supabase.Postgrest.Models
@@ -195,15 +195,6 @@
 
     List<ChatViewModel> chatList = new();
 
-    // Models for DB Fetching
-    [Table("profiles")]
-    public class Profile : BaseModel
-    {
-        [Column("id")] public string Id { get; set; } = "";
-        [Column("username")] public string Username { get; set; } = "";
-        [Column("profilepic")] public string ProfilePic { get; set; } = "";
-    }
-
     protected override async Task OnInitializedAsync()
     {
         var user = AuthService.CurrentUser;
@@ -250,7 +241,7 @@
         chatList.Clear();
         try
         {
-            var orderResponse = await _supabase.From<AI_Driven_Water_Supply.Presentation.Order>()
+            var orderResponse = await _supabase.From<Order>()
                                                .Where(x => x.ConsumerName == nameWithoutSpace)
                                                .Order("created_at", Supabase.Postgrest.Constants.Ordering.Descending)
                                                .Get();
@@ -258,7 +249,7 @@
 
             foreach (var order in myOrders)
             {
-                var msgResponse = await _supabase.From<AI_Driven_Water_Supply.Presentation.Message>()
+                var msgResponse = await _supabase.From<Message>()
                                                  .Where(x => x.OrderId == order.Id)
                                                  .Order("created_at", Supabase.Postgrest.Constants.Ordering.Descending)
                                                  .Limit(1)

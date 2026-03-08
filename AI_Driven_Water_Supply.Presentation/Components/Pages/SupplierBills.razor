@@ -1,11 +1,10 @@
-﻿@page "/supplier-bills"
-@using AI_Driven_Water_Supply.Presentation
+@page "/supplier-bills"
 @using Supabase.Postgrest.Models
 @using Supabase.Postgrest.Attributes
 @inject Supabase.Client _supabase
 @inject NavigationManager Nav
 @inject AI_Driven_Water_Supply.Application.Interfaces.IAuthService AuthService
-@inject AI_Driven_Water_Supply.Presentation.Services.ToastService ToastService
+@inject IToastService ToastService
 
 <style>
     .custom-modal-overlay {
@@ -168,22 +167,6 @@
 }
 
   @code {
-    // 👇 MODEL 
-    [Table("bills")]
-    public class Bill : BaseModel
-    {
-        [Column("id")] public int Id { get; set; }
-        [Column("order_id")] public int OrderId { get; set; }
-        [Column("consumer_name")] public string ConsumerName { get; set; } = "";
-        [Column("supplier_name")] public string SupplierName { get; set; } = "";
-        
-        [Column("amount")] public float Amount { get; set; } // Float to avoid casting errors
-
-        [Column("status")] public string Status { get; set; } = ""; // "Unpaid" or "Paid"
-        [Column("created_at")] public DateTime CreatedAt { get; set; }
-        [Column("payment_method")] public string? PaymentMethod { get; set; }
-    }
-
     List<Bill> collections = new();
     List<Bill> history = new();
 
@@ -240,8 +223,8 @@
         history = allBills.Where(b => b.Status == "Paid").ToList();
 
         // Totals calculate karna
-        TotalEarnings = history.Sum(x => x.Amount);
-        PendingAmount = collections.Sum(x => x.Amount);
+        TotalEarnings = (float)history.Sum(x => x.Amount);
+        PendingAmount = (float)collections.Sum(x => x.Amount);
 
         StateHasChanged();
     }

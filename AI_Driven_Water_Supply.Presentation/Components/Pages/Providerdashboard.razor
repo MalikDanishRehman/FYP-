@@ -1,4 +1,4 @@
-﻿@page "/ProviderDashboard"
+@page "/ProviderDashboard"
 @using AI_Driven_Water_Supply.Application.Interfaces
 @using Supabase.Gotrue
 @using AI_Driven_Water_Supply.Presentation
@@ -460,14 +460,6 @@
 
     // Chart Variable
     private string activeTab = "Week";
-
-    [Table("profiles")]
-    public class Profile : BaseModel
-    {
-        [Column("id")] public string Id { get; set; } = "";
-        [Column("username")] public string Username { get; set; } = "";
-        [Column("profilepic")] public string ProfilePic { get; set; } = "";
-    }
 
     protected override async Task OnInitializedAsync()
     {
