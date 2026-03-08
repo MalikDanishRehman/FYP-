@@ -400,8 +400,8 @@
                         .Where(x => x.Id == userProfile.Id)
                         .Set(x => x.Username, userProfile.Username)
                         .Set(x => x.Location, userProfile.Location)
-                        .Set(x => x.Latitude, userProfile.Latitude)
-                        .Set(x => x.Longitude, userProfile.Longitude)
+                        .Set(x => x.Latitude, userProfile.Latitude ?? 0.0)
+                        .Set(x => x.Longitude, userProfile.Longitude ?? 0.0)
                         .Update();
 
             ToastService.ShowToast("Success", "Profile & Location Saved!", "success");

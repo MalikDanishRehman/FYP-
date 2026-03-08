@@ -7,30 +7,30 @@ namespace AI_Driven_Water_Supply.Domain.Entities
     public class Profile : BaseModel
     {
         [PrimaryKey("id", false)]
-        public string Id { get; set; }
+        public string Id { get; set; } = null!;
 
         [Column("username")]
-        public string Username { get; set; }
+        public string Username { get; set; } = null!;
 
         [Column("role")]
-        public string Role { get; set; }
+        public string Role { get; set; } = null!;
 
         [Column("rating")]
-        public float8? Rating { get; set; }
+        public double? Rating { get; set; }
 
         [Column("services")]
-        public string Services { get; set; }
+        public string Services { get; set; } = null!;
 
         [Column("location")]
-        public string Location { get; set; }
+        public string Location { get; set; } = null!;
 
         [Column("latitude")]
-        public float8? Latitude { get; set; }
+        public double? Latitude { get; set; }
 
         [Column("longitude")]
-        public float8? Longitude { get; set; }
+        public double? Longitude { get; set; }
 
         [Column("profilepic")]
-        public string ProfilePic { get; set; }
+        public string ProfilePic { get; set; } = null!;
     }
 }

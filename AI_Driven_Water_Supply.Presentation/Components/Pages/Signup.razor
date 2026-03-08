@@ -1,4 +1,4 @@
-﻿@page "/signup"
+@page "/signup"
 @using System.ComponentModel.DataAnnotations
 @using AI_Driven_Water_Supply.Application.Interfaces
 @using Supabase.Postgrest.Attributes
@@ -65,7 +65,7 @@
     private bool isLoading = false;
 
     // 🔥 New Variable to store services from URL
-    private string servicesParam = null;
+    private string? servicesParam = null;
 
     // --- DATABASE MODEL ---
     [Table("profiles")]
@@ -76,7 +76,7 @@
         [Column("role")] public string Role { get; set; } = string.Empty;
 
         // ✅ Ye Naya Column add kiya hai (DB se match karega)
-        [Column("services")] public string Services { get; set; }
+        [Column("services")] public string Services { get; set; } = "";
     }
 
     protected override void OnInitialized()
@@ -87,7 +87,7 @@
         // 1. Role Pakdo
         if (query.TryGetValue("role", out var r))
         {
-            signupModel.Role = r;
+            signupModel.Role = r.ToString() ?? "Consumer";
         }
         else
         {
@@ -97,7 +97,7 @@
         // 2. Services Pakdo (Agar Provider hai to)
         if (query.TryGetValue("services", out var s))
         {
-            servicesParam = s; // e.g., "Tanker,Plant"
+            servicesParam = s.ToString();
         }
     }
 
@@ -123,8 +123,8 @@
                     Username = autoUsername,
                     Role = signupModel.Role,
 
-                    // ✅ Logic: Agar Provider hai to services save karo, warna null
-                    Services = (signupModel.Role == "Provider") ? servicesParam : null
+                    // ✅ Logic: Agar Provider hai to services save karo, warna empty
+                    Services = (signupModel.Role == "Provider") ? (servicesParam ?? "") : ""
                 };
 
                 // 3. Insert into Profiles Table

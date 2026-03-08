@@ -180,7 +180,9 @@
     bool showMsgDropdown = false;
     bool showProfileDropdown = false;
     bool isLoading = true;
+#pragma warning disable CS0414
     bool isBotOpen = false;
+#pragma warning restore CS0414
 
     // View Model for Chats
     class ChatViewModel
@@ -223,7 +225,7 @@
             catch (Exception ex) { Console.WriteLine("Profile Error: " + ex.Message); }
 
             if (string.IsNullOrEmpty(MyName) && user.UserMetadata != null && user.UserMetadata.ContainsKey("username"))
-                MyName = user.UserMetadata["username"].ToString();
+                MyName = user.UserMetadata["username"]?.ToString() ?? "";
 
             if (string.IsNullOrEmpty(MyName) && !string.IsNullOrEmpty(user.Email))
                 MyName = user.Email.Split('@')[0];
