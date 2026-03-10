@@ -1,0 +1,36 @@
+name: .NET Build & Test
+
+# Yeh batata hai ke pipeline kab chalegi
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    # Yeh batata hai ke server konsa use hoga (Ubuntu Linux sabse fast hota hai)
+    runs-on: ubuntu-latest
+
+    steps:
+    # 1. Tumhara code GitHub Actions ke server par lata hai
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    # 2. .NET ka SDK install karta hai (Main yahan .NET 8 use kar raha hoon, agar tumhara version 7 ya 6 hai toh yahan change karlena)
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+
+    # 3. NuGet packages (Dependencies) download karta hai
+    - name: Restore dependencies
+      run: dotnet restore ./AI_Driven_Water_Supply.Presentation.sln
+
+    # 4. Project ko build karta hai (check karta hai ke C# code mein koi error toh nahi)
+    - name: Build project
+      run: dotnet build ./AI_Driven_Water_Supply.Presentation.sln --configuration Release --no-restore
+
+    # 5. Agar tumne koi tests likhe hain, toh yeh unko run karega (optional)
+    - name: Test
+      run: dotnet test ./AI_Driven_Water_Supply.Presentation.sln --configuration Release --no-build --verbosity normal
