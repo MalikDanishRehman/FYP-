@@ -1,4 +1,4 @@
-﻿/* --- DASHBOARD THEME --- */
+/* --- DASHBOARD THEME --- */
 .page-wrapper {
     --bg-dark: #050505;
     --card-glass: rgba(23, 26, 43, 0.7);
@@ -363,4 +363,95 @@
     background-color: #2ecc71; /* Online Green */
     border: 2px solid #050505; /* Black Border to separate */
     border-radius: 50%;
-}}
+}
+
+/* --- INLINE STYLES FROM RAZOR (ai-dashboard-section, chart, time-selector) --- */
+.ai-dashboard-section {
+    height: 60vh;
+    min-height: 400px;
+    max-height: 600px;
+    display: flex;
+    flex-direction: column;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+}
+
+.ai-dashboard-section .ai-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    flex-shrink: 0;
+}
+
+.ai-dashboard-section .ai-title h4 {
+    margin: 0;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.1rem;
+}
+
+.ai-dashboard-section .ai-title p {
+    margin: 0;
+    color: #888;
+    font-size: 0.8rem;
+}
+
+.time-selector {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 4px;
+    border-radius: 12px;
+    display: flex;
+    gap: 5px;
+}
+
+.time-btn {
+    background: transparent;
+    border: none;
+    color: #888;
+    padding: 5px 12px;
+    font-size: 0.8rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.time-btn.active {
+    background: var(--accent-green);
+    color: #000;
+    font-weight: bold;
+}
+
+.chart-wrapper {
+    flex: 1;
+    position: relative;
+    width: 100%;
+    min-height: 0;
+}
+
+.ai-insight {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    color: #ccc;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.insight-badge {
+    background: rgba(255, 189, 74, 0.2);
+    color: #ffbd4a;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: bold;
+}

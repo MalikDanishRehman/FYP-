@@ -1,0 +1,165 @@
+/* --- Page Header & Search --- */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    gap: 15px;
+}
+
+.header-title h2 {
+    font-size: 2rem;
+    font-weight: 800;
+    color: white;
+    margin: 0;
+}
+
+.header-title span { color: #BFFF27; } /* Neon Highlight */
+
+.search-wrapper {
+    position: relative;
+    width: 350px;
+    max-width: 100%;
+}
+
+.search-icon {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #666;
+}
+
+.custom-input {
+    width: 100%;
+    background: #0f0f12;
+    border: 1px solid #1f1f1f;
+    padding: 12px 15px 12px 45px; /* Left padding for icon */
+    border-radius: 8px;
+    color: white;
+    outline: none;
+    transition: 0.3s;
+    box-sizing: border-box;
+}
+
+.custom-input:focus {
+    border-color: #BFFF27;
+    box-shadow: 0 0 10px rgba(191, 255, 39, 0.1);
+}
+
+/* --- Table Card Container --- */
+.table-card {
+    background: #0f0f12;
+    border: 1px solid #1f1f1f;
+    border-radius: 12px;
+    padding: 20px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.vendor-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 700px;
+}
+
+.vendor-table th {
+    text-align: left;
+    color: #666;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    padding: 15px;
+    border-bottom: 1px solid #1f1f1f;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+}
+
+.vendor-table td {
+    padding: 15px;
+    border-bottom: 1px solid #1f1f1f;
+    color: #ddd;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+.vendor-table tr:hover {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+/* --- Vendor Profile Styles --- */
+.vendor-profile {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.avatar-box {
+    width: 45px;
+    height: 45px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    color: white;
+    font-size: 1.1rem;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    flex-shrink: 0;
+}
+
+.vendor-details h4 { margin: 0; font-size: 1rem; color: white; }
+.vendor-details p { margin: 0; font-size: 0.8rem; color: #888; }
+
+/* --- Badges & Ratings --- */
+.rating-box { color: #f1c40f; font-size: 0.9rem; }
+.rating-text { color: #666; font-size: 0.8rem; margin-left: 5px; }
+
+.status-badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    display: inline-block;
+}
+
+.badge-verified { background: rgba(46, 204, 113, 0.15); color: #2ecc71; border: 1px solid rgba(46, 204, 113, 0.3); }
+.badge-pending { background: rgba(255, 165, 2, 0.15); color: #ffa502; border: 1px solid rgba(255, 165, 2, 0.3); }
+.badge-banned { background: rgba(255, 77, 77, 0.15); color: #ff4d4d; border: 1px solid rgba(255, 77, 77, 0.3); }
+
+/* --- Action Buttons --- */
+.action-group { display: flex; gap: 8px; }
+
+.btn-icon {
+    width: 34px; height: 34px;
+    border-radius: 8px;
+    border: 1px solid #333;
+    background: transparent;
+    color: #888;
+    cursor: pointer;
+    transition: 0.2s;
+    display: flex; align-items: center; justify-content: center;
+}
+
+.btn-icon:hover { background: #1f1f1f; color: white; border-color: #666; }
+
+.btn-check:hover { background: rgba(46, 204, 113, 0.2); color: #2ecc71; border-color: #2ecc71; }
+.btn-ban:hover { background: rgba(255, 77, 77, 0.2); color: #ff4d4d; border-color: #ff4d4d; }
+
+@media (max-width: 768px) {
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .header-title h2 {
+        font-size: 1.6rem;
+    }
+
+    .search-wrapper {
+        width: 100%;
+    }
+
+    .table-card {
+        padding: 10px;
+    }
+}

@@ -1,22 +1,19 @@
 using Microsoft.AspNetCore.Components;
 using AI_Driven_Water_Supply.Application.Interfaces;
 using AI_Driven_Water_Supply.Domain.Entities;
-using Microsoft.JSInterop;
-using Supabase.Postgrest.Attributes;
 using Supabase.Postgrest.Models;
-using System;
+using Supabase.Postgrest.Attributes;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
 namespace AI_Driven_Water_Supply.Presentation.Components.Pages
 {
-    public partial class Providerdashboard : ComponentBase
+    public partial class AdminPage
     {
-        [Inject] public IAuthService AuthService { get; set; } = default!;
-        [Inject] public Supabase.Client _supabase { get; set; } = default!;
-        [Inject] public NavigationManager Nav { get; set; } = default!;
-        [Inject] public IJSRuntime JS { get; set; } = default!;
+        [Inject] private Supabase.Client _supabase { get; set; } = default!;
+        [Inject] private IAuthService AuthService { get; set; } = default!;
+        [Inject] private NavigationManager Nav { get; set; } = default!;
 
         private string UserName = "Loading...";
         private string ProfileImageUrl = "/images/fallbackimg.jpg";
@@ -25,6 +22,14 @@ namespace AI_Driven_Water_Supply.Presentation.Components.Pages
         private int totalRevenue = 0;
         private List<Message> chatList = new List<Message>();
         private string activeTab = "Week";
+
+        [Table("profiles")]
+        public class Profile : BaseModel
+        {
+            [Column("id")] public string Id { get; set; } = "";
+            [Column("username")] public string Username { get; set; } = "";
+            [Column("profilepic")] public string ProfilePic { get; set; } = "";
+        }
 
         protected override async Task OnInitializedAsync()
         {
@@ -64,7 +69,7 @@ namespace AI_Driven_Water_Supply.Presentation.Components.Pages
             catch { }
 
             if (string.IsNullOrEmpty(fetchedName) && user.UserMetadata != null)
-                if (user.UserMetadata.TryGetValue("username", out var nameObj)) fetchedName = nameObj?.ToString() ?? "";
+                if (user.UserMetadata.TryGetValue("username", out var nameObj)) fetchedName = nameObj?.ToString();
 
             if (string.IsNullOrEmpty(fetchedName) && !string.IsNullOrEmpty(user.Email))
                 fetchedName = user.Email.Split('@')[0];
@@ -82,23 +87,6 @@ namespace AI_Driven_Water_Supply.Presentation.Components.Pages
                 totalRevenue = chatList.Count * 1200;
             }
             catch { }
-        }
-
-        private void ToggleSidebar() => isSidebarOpen = !isSidebarOpen;
-        private void OpenChat(long orderId) => Nav.NavigateTo($"/chat/{orderId}");
-
-        private async Task SwitchTab(string tab)
-        {
-            activeTab = tab;
-            await JS.InvokeVoidAsync("updatePredictionChart", activeTab);
-        }
-
-        protected override async Task OnAfterRenderAsync(bool firstRender)
-        {
-            if (firstRender)
-            {
-                await JS.InvokeVoidAsync("renderPredictionChart");
-            }
         }
     }
 }

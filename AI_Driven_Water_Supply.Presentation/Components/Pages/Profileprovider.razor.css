@@ -1,0 +1,108 @@
+    
+.page-wrapper {
+    background: #050505;
+    min-height: 100vh;
+    padding: 40px 0;
+    color: white;
+}
+
+.glass-card {
+    background: rgba(30, 30, 40, 0.8);
+    border-radius: 20px;
+    padding: 40px;
+    border: 1px solid #333;
+}
+
+.avatar-wrapper {
+    position: relative;
+    width: 130px;
+    height: 130px;
+    margin: 0 auto;
+}
+
+.profile-img, .profile-placeholder {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid #BFFF27;
+}
+
+.profile-placeholder {
+    background: #222;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+    color: #BFFF27;
+}
+
+.edit-icon-overlay {
+    position: absolute;
+    bottom: 5px;
+    right: 5px;
+    background: #BFFF27;
+    color: black;
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.form-control-custom {
+    background: #111;
+    border: 1px solid #444;
+    color: white;
+    width: 100%;
+    padding: 12px;
+    border-radius: 8px;
+}
+
+.btn-save {
+    background: #BFFF27;
+    color: black;
+    width: 100%;
+    padding: 12px;
+    border-radius: 8px;
+    border: none;
+    font-weight: bold;
+}
+
+.custom-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.8);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.custom-modal {
+    background: #1a1a1a;
+    padding: 30px;
+    border-radius: 15px;
+    width: 300px;
+    text-align: center;
+    border: 1px solid #333;
+}
+
+.upload-box {
+    border: 2px dashed #555;
+    padding: 20px;
+    border-radius: 10px;
+    cursor: pointer;
+    display: block;
+    transition: 0.3s;
+}
+
+    .upload-box:hover {
+        border-color: #BFFF27;
+        background: rgba(191, 255, 39, 0.1);
+    }

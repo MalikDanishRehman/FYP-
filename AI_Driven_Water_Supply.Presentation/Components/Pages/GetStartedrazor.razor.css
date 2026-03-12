@@ -1,0 +1,205 @@
+/* --- OLD STYLES (Keep them as is) --- */
+body {
+    background-color: #050505;
+    color: white;
+    font-family: 'Poppins', sans-serif;
+}
+
+.selection-container {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(circle at center, #1a1a2e 0%, #000000 100%);
+}
+
+.brand-title {
+    font-weight: 800;
+    font-size: 2.5rem;
+    background: linear-gradient(90deg, #00C9FF 0%, #92FE9D 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 10px;
+}
+
+.cards-wrapper {
+    display: flex;
+    gap: 30px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.role-card {
+    background: rgba(30, 30, 30, 0.6);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    width: 300px;
+    padding: 40px 20px;
+    border-radius: 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+    .role-card:hover {
+        transform: translateY(-10px);
+        border-color: #00C9FF;
+        box-shadow: 0 10px 40px rgba(0, 201, 255, 0.2);
+    }
+
+.icon-circle {
+    width: 80px;
+    height: 80px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 50%;
+    margin: 0 auto 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    color: #fff;
+    transition: 0.3s;
+}
+
+.consumer:hover .icon-circle {
+    background: #00C9FF;
+    color: black;
+}
+
+.provider:hover .icon-circle {
+    background: #b2f94e;
+    color: black;
+}
+
+.role-card h3 {
+    font-size: 1.2rem;
+    font-weight: bold;
+    margin-bottom: 10px;
+    color: white;
+}
+
+.role-card p {
+    font-size: 0.9rem;
+    color: #aaa;
+}
+
+.arrow-icon {
+    margin-top: 20px;
+    font-size: 1.5rem;
+    opacity: 0;
+    transform: translateX(-20px);
+    transition: 0.3s;
+    color: #00C9FF;
+}
+
+.role-card:hover .arrow-icon {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.hover-link:hover span {
+    text-decoration: underline;
+}
+
+/* --- NEW STYLES FOR SERVICE SELECTION --- */
+.service-wrapper {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.service-card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid transparent;
+    border-radius: 15px;
+    width: 180px;
+    padding: 25px 10px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
+}
+
+    .service-card:hover {
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    /* Selected State */
+    .service-card.active {
+        border-color: #92FE9D;
+        background: rgba(146, 254, 157, 0.1);
+        transform: scale(1.05);
+        box-shadow: 0 0 20px rgba(146, 254, 157, 0.2);
+    }
+
+.icon-main {
+    font-size: 2.5rem;
+    color: #ccc;
+    margin-bottom: 10px;
+    display: block;
+}
+
+.service-card.active .icon-main {
+    color: #92FE9D;
+}
+
+.service-card h4 {
+    font-size: 1rem;
+    color: white;
+    margin-top: 10px;
+}
+
+.check-icon {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    color: #92FE9D;
+    opacity: 0;
+    transform: scale(0);
+    transition: 0.3s;
+}
+
+.service-card.active .check-icon {
+    opacity: 1;
+    transform: scale(1);
+}
+
+/* Button Style */
+.btn-gradient {
+    background: linear-gradient(90deg, #00C9FF 0%, #92FE9D 100%);
+    border: none;
+    color: black;
+    font-weight: 700;
+    transition: 0.3s;
+}
+
+    .btn-gradient:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 201, 255, 0.4);
+    }
+
+    .btn-gradient:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+/* Animation */
+.fade-in {
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

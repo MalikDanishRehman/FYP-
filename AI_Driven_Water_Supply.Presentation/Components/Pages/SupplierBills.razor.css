@@ -1,4 +1,4 @@
-﻿body {
+body {
     margin: 0;
     padding: 0;
     background-color: #050505;
@@ -213,4 +213,69 @@
     .btn-remind:hover {
         background: #FDFC47;
         color: black;
+    }
+
+/* Modal styles from inline */
+.custom-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.8);
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(5px);
+}
+
+.custom-modal {
+    background: #1a1a1a;
+    padding: 25px;
+    border-radius: 16px;
+    width: 90%;
+    max-width: 350px;
+    text-align: center;
+    border: 1px solid #333;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+.btn-mode {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 10px;
+    border-radius: 10px;
+    border: none;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: 0.2s;
+}
+
+.btn-cash {
+    background: #2ecc71;
+    color: black;
+}
+
+.btn-jazz {
+    background: #e74c3c;
+    color: white;
+}
+
+.btn-cancel {
+    background: #333;
+    color: white;
+    margin-top: 10px;
+}
+
+.clickable-card {
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+    .clickable-card:active {
+        transform: scale(0.98);
     }

@@ -1,4 +1,4 @@
-﻿body {
+body {
     margin: 0;
     padding: 0;
     background-color: #050505;
@@ -199,3 +199,132 @@
         opacity: 0.9;
         transform: scale(1.05);
     }
+
+/* --- PAYMENT MODAL STYLES --- */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(5px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    animation: fadeIn 0.2s ease-in-out;
+}
+
+.payment-modal {
+    background: #1e1e1e;
+    width: 90%;
+    max-width: 400px;
+    border-radius: 20px;
+    padding: 25px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    text-align: center;
+    position: relative;
+    animation: slideUp 0.3s ease-out;
+}
+
+.modal-header h4 {
+    color: white;
+    margin-bottom: 5px;
+}
+
+.modal-header p {
+    color: #888;
+    font-size: 0.9rem;
+    margin-bottom: 20px;
+}
+
+.amount-tag {
+    background: rgba(0, 210, 255, 0.1);
+    color: #00d2ff;
+    padding: 5px 12px;
+    border-radius: 8px;
+    font-weight: bold;
+    display: inline-block;
+    margin-bottom: 20px;
+}
+
+.payment-options {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.pay-opt-btn {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px 20px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    color: white;
+    cursor: pointer;
+    transition: 0.2s;
+    text-align: left;
+}
+
+.jazz-btn:hover {
+    background: #b71c1c;
+    border-color: #b71c1c;
+}
+
+.card-btn:hover {
+    background: #1565c0;
+    border-color: #1565c0;
+}
+
+.pay-opt-btn i {
+    font-size: 1.2rem;
+}
+
+.pay-opt-btn span {
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+.btn-close-modal {
+    margin-top: 20px;
+    background: transparent;
+    border: none;
+    color: #888;
+    font-size: 0.9rem;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.bill-card.history-card {
+    opacity: 0.7;
+}
+
+.bill-icon.icon-paid {
+    color: #92FE9D;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
