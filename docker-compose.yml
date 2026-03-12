@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  # 1. Yeh tumhara C# .NET ka server hai
+  web-backend:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    env_file:
+      - ./AI_Driven_Water_Supply.Presentation/.env
+
+  # 2. Yeh tumhara Python FastAPI (AI) ka server hai
+  ai-agent:
+    build:
+      context: ./HydroAI.Backend  # <-- Yahan tumhara Python wala folder aa gaya
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./AI_Driven_Water_Supply.Presentation/.env
