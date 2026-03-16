@@ -4,26 +4,6 @@
 @using System.Timers
 @rendermode InteractiveServer
 
-<div class="glass-nav">
-    <div class="brand-logo"><i class="fa-solid fa-droplet"></i> HydroAI</div>
-    <div class="nav-icons">
-        <div style="position: relative;">
-            <div class="profile-trigger" @onclick="ToggleProfileDropdown">
-                <img src="@ProfileImageUrl" alt="Profile">
-            </div>
-            <div class="custom-dropdown @(showProfileDropdown ? "show" : "")">
-                <div class="px-3 py-2 text-center">
-                    <span class="text-white fw-bold d-block">@MyName</span>
-                    <span class="text-muted small">Consumer</span>
-                </div>
-                <a href="#" class="chat-item" style="color: #ff4757;" @onclick="HandleLogout">
-                    <i class="fa-solid fa-power-off me-2"></i> Logout
-                </a>
-            </div>
-        </div>
-    </div>
-</div>
-
 <div class="hero-container" @onclick="CloseDropdowns">
 
     <video id="myVideo" class="@(hasChatStarted ? "video-hidden" : "")" autoplay muted playsinline loop>

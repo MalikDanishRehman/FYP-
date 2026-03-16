@@ -1,0 +1,520 @@
+/* --- Consumer glass navbar --- */
+.app-navbar-glass {
+    position: sticky;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 80px;
+    background: #000;
+    padding: 0 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 1000;
+    box-sizing: border-box;
+}
+
+.app-navbar-brand-link {
+    font-weight: 800;
+    font-size: 1.5rem;
+    background: linear-gradient(90deg, #00C9FF 0%, #92FE9D 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    color: inherit;
+}
+
+.app-navbar-brand-link:hover {
+    -webkit-text-fill-color: transparent;
+}
+
+.app-navbar-icons {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.app-navbar-icon-btn {
+    position: relative;
+    font-size: 1.3rem;
+    color: #888;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.app-navbar-icon-btn:hover,
+.app-navbar-icon-btn.active {
+    background: rgba(255, 255, 255, 0.1);
+    color: #00C9FF;
+    transform: translateY(-2px);
+}
+
+a.app-navbar-icon-btn {
+    text-decoration: none;
+    color: #888;
+}
+
+a.app-navbar-icon-btn:hover {
+    color: #00C9FF;
+}
+
+.app-navbar-logout-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid rgba(239, 68, 68, 0.4);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.app-navbar-logout-btn:hover {
+    background: rgba(239, 68, 68, 0.25);
+    border-color: #ef4444;
+    color: #fff;
+}
+
+.app-navbar-badge-dot {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 8px;
+    height: 8px;
+    background: #ff4757;
+    border-radius: 50%;
+    box-shadow: 0 0 5px #ff4757;
+}
+
+.app-navbar-dropdown {
+    position: absolute;
+    top: 65px;
+    right: 0;
+    background: #0a0a0a;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    width: 340px;
+    padding: 8px;
+    display: none;
+    flex-direction: column;
+    gap: 4px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.9);
+    z-index: 2000;
+    animation: app-navbar-fadeIn 0.2s ease;
+}
+
+.app-navbar-dropdown.show {
+    display: flex;
+}
+
+.app-navbar-profile-menu {
+    position: absolute;
+    top: 60px;
+    right: 0;
+    background-color: #1a202c;
+    border-radius: 10px;
+    width: 200px;
+    padding: 10px;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+    display: none;
+    flex-direction: column;
+    z-index: 2000;
+    border: 1px solid rgba(255,255,255,0.1);
+    animation: app-navbar-fadeIn 0.2s ease;
+}
+
+.app-navbar-profile-menu.show {
+    display: flex;
+}
+
+.app-navbar-menu-link {
+    color: #e2e8f0;
+    text-decoration: none;
+    padding: 10px 12px;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: background 0.2s;
+}
+
+.app-navbar-menu-link:hover {
+    background-color: rgba(255,255,255,0.1);
+    color: #fff;
+}
+
+.app-navbar-menu-divider {
+    height: 1px;
+    background: rgba(255,255,255,0.1);
+    margin: 5px 0;
+}
+
+.app-navbar-logout-link {
+    color: #ef4444;
+}
+
+.app-navbar-logout-link:hover {
+    background-color: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+}
+
+.app-navbar-profile-trigger {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: block;
+    text-decoration: none;
+    flex-shrink: 0;
+    border: 2px solid transparent;
+    background: linear-gradient(#000, #000) padding-box, linear-gradient(45deg, #00C9FF, #92FE9D) border-box;
+    overflow: hidden;
+    transition: transform 0.3s ease;
+}
+
+.app-navbar-profile-trigger:hover {
+    transform: scale(1.05);
+}
+
+.app-navbar-profile-trigger img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.app-navbar-chat-item {
+    padding: 14px;
+    border-radius: 12px;
+    color: #ccc;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    transition: 0.2s;
+    cursor: pointer;
+    border-bottom: 1px solid rgba(255,255,255,0.02);
+}
+
+.app-navbar-chat-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: white;
+}
+
+.app-navbar-supplier-avatar {
+    width: 42px;
+    height: 42px;
+    background: linear-gradient(135deg, #00C9FF, #92FE9D);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    color: black;
+    flex-shrink: 0;
+}
+
+.app-navbar-chat-name {
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+}
+
+.app-navbar-chat-msg {
+    font-size: 0.85rem;
+    opacity: 0.6;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 180px;
+}
+
+.app-navbar-chat-time {
+    font-size: 0.7rem;
+    color: #666;
+}
+
+@keyframes app-navbar-fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* --- Provider dashboard navbar --- */
+.app-navbar-dashboard {
+    --accent-green: #BFFF27;
+    --border-glass: rgba(255, 255, 255, 0.08);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 30px 0;
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 15px;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    background: transparent;
+}
+
+.app-navbar-dash-left {
+    flex: 1;
+    min-width: 200px;
+}
+
+.app-navbar-dash-right {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+.app-navbar-welcome {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin: 0;
+    letter-spacing: -0.5px;
+    white-space: nowrap;
+    color: #fff;
+}
+
+.app-navbar-welcome span {
+    background: linear-gradient(90deg, #fff, var(--accent-green));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.app-navbar-dash-icon-btn {
+    width: 50px;
+    height: 50px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-glass);
+    color: #fff;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    text-decoration: none;
+    backdrop-filter: blur(10px);
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+.app-navbar-dash-icon-btn:hover {
+    background: var(--accent-green);
+    color: #000;
+    border-color: var(--accent-green);
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(191, 255, 39, 0.3);
+}
+
+.app-navbar-notify-dot {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 10px;
+    height: 10px;
+    background-color: #ff4757;
+    border-radius: 50%;
+    box-shadow: 0 0 8px #ff4757;
+    border: 2px solid #171a2b;
+}
+
+.app-navbar-profile-container {
+    position: relative;
+    width: 48px;
+    height: 48px;
+    cursor: pointer;
+    flex-shrink: 0;
+    display: block;
+}
+
+.app-navbar-profile-img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+}
+
+.app-navbar-profile-container:hover .app-navbar-profile-img {
+    border-color: #BFFF27;
+    box-shadow: 0 0 15px rgba(191, 255, 39, 0.4);
+    transform: scale(1.05);
+}
+
+.app-navbar-status-dot {
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+    width: 12px;
+    height: 12px;
+    background-color: #2ecc71;
+    border: 2px solid #050505;
+    border-radius: 50%;
+}
+
+/* --- Provider sidebar --- */
+.app-navbar-sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 998;
+    opacity: 0;
+    visibility: hidden;
+    transition: 0.4s ease;
+    backdrop-filter: blur(5px);
+}
+
+.app-navbar-sidebar-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.app-navbar-side-panel {
+    position: fixed;
+    top: 0;
+    right: -420px;
+    width: 400px;
+    height: 100vh;
+    background: #0a0c14;
+    z-index: 999;
+    transition: right 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+    padding: 30px;
+    box-shadow: -10px 0 50px rgba(0,0,0,0.8);
+    border-left: 1px solid var(--border-glass);
+    display: flex;
+    flex-direction: column;
+}
+
+.app-navbar-side-panel.open {
+    right: 0;
+}
+
+.app-navbar-chat-header {
+    border-bottom: 1px solid var(--border-glass);
+    padding-bottom: 20px;
+}
+
+.app-navbar-provider-chat-list {
+    overflow-y: auto;
+    flex: 1;
+}
+
+.app-navbar-provider-chat-item {
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    border-radius: 16px;
+    cursor: pointer;
+    transition: 0.2s;
+    border: 1px solid transparent;
+    background: rgba(255,255,255,0.03);
+    margin-bottom: 12px;
+}
+
+.app-navbar-provider-chat-item:hover {
+    background: rgba(255,255,255,0.08);
+    border-color: rgba(255,255,255,0.1);
+    transform: translateX(-5px);
+}
+
+.app-navbar-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: #1f233a;
+    margin-right: 15px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    color: #BFFF27;
+    border: 1px solid rgba(255,255,255,0.1);
+    font-size: 1.2rem;
+}
+
+.app-navbar-online-dot {
+    width: 14px;
+    height: 14px;
+    background: #2ecc71;
+    border-radius: 50%;
+    position: absolute;
+    bottom: 2px;
+    right: 0;
+    border: 3px solid #0a0c14;
+}
+
+.app-navbar-msg-content h6 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #fff;
+}
+
+.app-navbar-msg-content p {
+    margin: 4px 0 0;
+    font-size: 0.85rem;
+    color: #a0a3bd;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 180px;
+}
+
+.app-navbar-msg-time {
+    font-size: 0.75rem;
+    color: #666;
+    margin-left: auto;
+    font-weight: 500;
+}
+
+@media (max-width: 768px) {
+    .app-navbar-dashboard {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 20px;
+    }
+    .app-navbar-dash-right {
+        width: 100%;
+        justify-content: space-between;
+    }
+    .app-navbar-welcome {
+        font-size: 1.5rem;
+    }
+    .app-navbar-side-panel {
+        width: 100%;
+        right: -100%;
+    }
+    .app-navbar-side-panel.open {
+        right: 0;
+    }
+}

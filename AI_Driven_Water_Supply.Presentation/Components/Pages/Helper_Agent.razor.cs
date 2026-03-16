@@ -22,8 +22,6 @@ namespace AI_Driven_Water_Supply.Presentation.Components.Pages
         [Inject] private HttpClient Http { get; set; } = default!;
 
         private string MyName = "User";
-        private string ProfileImageUrl = "/images/fallbackimg.jpg";
-        private bool showProfileDropdown = false;
         private bool hasChatStarted = false;
         private bool isThinking = false;
         private string userInput = "";
@@ -177,8 +175,6 @@ namespace AI_Driven_Water_Supply.Presentation.Components.Pages
         private void StopLoadingTimer() { _timer?.Stop(); _timer?.Dispose(); }
         private async Task HandleKeyPress(KeyboardEventArgs e) { if (e.Key == "Enter") await SendMessage(); }
         private async Task ScrollToBottom() { await Task.Delay(100); await JS.InvokeVoidAsync("scrollToBottom", "chatContainer"); }
-        private void ToggleProfileDropdown() { showProfileDropdown = !showProfileDropdown; }
-        private void CloseDropdowns() { showProfileDropdown = false; }
-        private async Task HandleLogout() { await AuthService.SignOut(); Nav.NavigateTo("/login"); }
+        private void CloseDropdowns() { }
     }
 }

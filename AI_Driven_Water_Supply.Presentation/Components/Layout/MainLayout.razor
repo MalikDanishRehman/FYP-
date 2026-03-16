@@ -1,4 +1,4 @@
-﻿@inherits LayoutComponentBase
+@inherits LayoutComponentBase
 
 <style>
     :root {
@@ -91,18 +91,7 @@
 
 <div class="app-container">
 
-    <nav class="navbar navbar-expand-lg navbar-dark navbar-glass">
-        <div class="container">
-            <a class="navbar-brand d-flex align-items-center gap-2" href="/">
-                <i class="bi bi-droplet-fill" style="color: var(--primary-color);"></i>
-                <span class="brand-text">HydroAI</span>
-            </a>
-
-            <div class="ms-auto d-flex align-items-center">
-                <AuthButton />
-            </div>
-        </div>
-    </nav>
+    <AppNavbar />
 
     <main>
         @Body

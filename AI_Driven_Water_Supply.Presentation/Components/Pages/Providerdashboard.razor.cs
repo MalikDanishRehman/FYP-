@@ -19,9 +19,6 @@ namespace AI_Driven_Water_Supply.Presentation.Components.Pages
         [Inject] public IJSRuntime JS { get; set; } = default!;
 
         private string UserName = "Loading...";
-        private string ProfileImageUrl = "/images/fallbackimg.jpg";
-        private bool isSidebarOpen = false;
-        private bool isLoading = true;
         private int totalRevenue = 0;
         private List<Message> chatList = new List<Message>();
         private string activeTab = "Week";
@@ -34,9 +31,7 @@ namespace AI_Driven_Water_Supply.Presentation.Components.Pages
             if (user != null)
             {
                 await SetDynamicData(user);
-                StateHasChanged();
                 await LoadMessages();
-                isLoading = false;
                 StateHasChanged();
             }
             else
@@ -53,13 +48,7 @@ namespace AI_Driven_Water_Supply.Presentation.Components.Pages
                 var response = await _supabase.From<Profile>().Where(x => x.Id == user.Id).Get();
                 var profile = response.Models.FirstOrDefault();
                 if (profile != null)
-                {
                     fetchedName = profile.Username;
-                    if (!string.IsNullOrEmpty(profile.ProfilePic))
-                    {
-                        ProfileImageUrl = _supabase.Storage.From("Avatar").GetPublicUrl(profile.ProfilePic);
-                    }
-                }
             }
             catch { }
 
@@ -83,9 +72,6 @@ namespace AI_Driven_Water_Supply.Presentation.Components.Pages
             }
             catch { }
         }
-
-        private void ToggleSidebar() => isSidebarOpen = !isSidebarOpen;
-        private void OpenChat(long orderId) => Nav.NavigateTo($"/chat/{orderId}");
 
         private async Task SwitchTab(string tab)
         {

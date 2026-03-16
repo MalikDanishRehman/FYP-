@@ -12,35 +12,8 @@
 <div class="page-wrapper">
     <div class="container">
 
-        <div class="dashboard-nav">
-            <div class="nav-left">
-                <h2 class="welcome-text">Hi, <span>@UserName</span>! 👋</h2>
-            </div>
-            <div class="nav-right">
-                <div class="icon-btn" @onclick="ToggleSidebar" title="Messages">
-                    <i class="fa-regular fa-comment-dots"></i>
-                    @if (chatList.Count > 0)
-                    {
-                        <div class="notify-dot"></div>
-                    }
-                </div>
-                <a href="/provider-reviews" class="icon-btn" title="My Reputation">
-                    <i class="fa-solid fa-star text-warning"></i>
-                </a>
-                <a href="/supplier-bills" class="icon-btn" title="Earnings & Bills">
-                    <i class="fa-solid fa-file-invoice-dollar" style="color: var(--accent-green);"></i>
-                </a>
-                <a href="/attendance" class="icon-btn" title="Staff Attendance">
-                    <i class="fa-solid fa-clipboard-user" style="color: #c767da;"></i>
-                </a>
-                <a href="/profilepro" class="profile-container" title="My Profile">
-                    <img src="@ProfileImageUrl" alt="Profile" class="profile-img">
-                    <div class="status-dot"></div>
-                </a>
-            </div>
-        </div>
-
         <div class="header-section">
+            <h2 class="welcome-text mb-2">Hi, <span>@UserName</span>! 👋</h2>
             <p class="text-muted">Here's your business overview.</p>
             <div class="revenue-card">
                 <span class="revenue-label"><i class="fa-solid fa-chart-line me-2 text-success"></i> Total Estimated Revenue</span>
@@ -81,50 +54,6 @@
                 <div class="stat-value text-warning">0</div>
                 <div class="stat-label">Completed</div>
             </div>
-        </div>
-    </div>
-
-    <div class="sidebar-overlay @(isSidebarOpen ? "active" : "")" @onclick="ToggleSidebar"></div>
-
-    <div class="side-panel @(isSidebarOpen ? "open" : "")">
-        <div class="chat-header mb-3 d-flex justify-content-between align-items-center">
-            <div>
-                <h4 class="fw-bold m-0 text-white">Inbox</h4>
-                <small class="text-muted">You have @chatList.Count active chats</small>
-            </div>
-            <i class="fa-solid fa-xmark fs-4 text-muted" style="cursor: pointer;" @onclick="ToggleSidebar"></i>
-        </div>
-
-        <div class="chat-list" style="overflow-y: auto; flex: 1;">
-            @if (isLoading)
-            {
-                <div class="text-center text-muted mt-5">
-                    <div class="spinner-border text-success spinner-border-sm" role="status"></div>
-                </div>
-            }
-            else if (chatList.Count == 0)
-            {
-                <div class="text-center text-muted mt-5">
-                    <p class="small">No active orders yet.</p>
-                </div>
-            }
-            else
-            {
-                @foreach (var chat in chatList)
-                {
-                    <div class="chat-item" @onclick="() => OpenChat(chat.OrderId)">
-                        <div class="avatar">
-                            @(!string.IsNullOrEmpty(chat.SenderName) ? chat.SenderName.Substring(0, 1).ToUpper() : "U")
-                            <div class="online-dot"></div>
-                        </div>
-                        <div class="msg-content">
-                            <h6>@chat.SenderName</h6>
-                            <p>@chat.Content</p>
-                        </div>
-                        <span class="msg-time">@chat.CreatedAt.ToLocalTime().ToString("hh:mm tt")</span>
-                    </div>
-                }
-            }
         </div>
     </div>
 </div>
