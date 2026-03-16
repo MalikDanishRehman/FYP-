@@ -48,11 +48,11 @@
 
         <div class="stats-grid">
             <div class="stat-card">
-                <div class="stat-value text-primary">@chatList.Count</div>
+                <div class="stat-value text-primary">@activeOrdersCount</div>
                 <div class="stat-label">Active Orders</div>
             </div>
             <div class="stat-card">
-                <div class="stat-value text-warning">0</div>
+                <div class="stat-value text-warning">@completedCount</div>
                 <div class="stat-label">Completed</div>
             </div>
         </div>
@@ -62,74 +62,85 @@
 <script>
     let aiChart;
 
-    function renderPredictionChart() {
+    function renderPredictionChart(data) {
         const ctx = document.getElementById('aiPredictionChart');
         if (!ctx) return;
 
-        const gradPast = ctx.getContext('2d').createLinearGradient(0, 0, 0, 400);
+        const g = ctx.getContext('2d');
+        const gradPast = g.createLinearGradient(0, 0, 0, 400);
         gradPast.addColorStop(0, 'rgba(191, 255, 39, 0.4)'); gradPast.addColorStop(1, 'rgba(191, 255, 39, 0)');
-
-        const gradFuture = ctx.getContext('2d').createLinearGradient(0, 0, 0, 400);
+        const gradFuture = g.createLinearGradient(0, 0, 0, 400);
         gradFuture.addColorStop(0, 'rgba(255, 189, 74, 0.5)'); gradFuture.addColorStop(1, 'rgba(255, 189, 74, 0)');
+
+        let labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+        let pastData = [12, 15, 10, 14, 18, null, null];
+        let futureData = [null, null, null, null, 18, 22, 25];
+        if (data && data.week) {
+            labels = data.week.labels || labels;
+            pastData = data.week.pastData || pastData;
+            futureData = data.week.futureData || futureData;
+        }
 
         const config = {
             type: 'line',
             data: {
-                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                labels: labels,
                 datasets: [
-                    {
-                        label: 'History',
-                        data: [12, 15, 10, 14, 18, null, null],
-                        borderColor: '#BFFF27', backgroundColor: gradPast, fill: true, tension: 0.4, pointRadius: 4
-                    },
-                    {
-                        label: 'Prediction',
-                        data: [null, null, null, null, 18, 22, 25],
-                        borderColor: '#FFBD4A', backgroundColor: gradFuture, fill: true, tension: 0.4, borderDash: [5, 5], pointRadius: 4
-                    }
+                    { label: 'History', data: pastData, borderColor: '#BFFF27', backgroundColor: gradPast, fill: true, tension: 0.4, pointRadius: 4 },
+                    { label: 'Prediction', data: futureData, borderColor: '#FFBD4A', backgroundColor: gradFuture, fill: true, tension: 0.4, borderDash: [5, 5], pointRadius: 4 }
                 ]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: { legend: { display: false } },
-                scales: {
-                    x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#888' } },
-                    y: { display: false }
-                }
+                scales: { x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#888' } }, y: { display: false } }
             }
         };
         aiChart = new Chart(ctx, config);
+        var el = document.getElementById('ai-text');
+        if (el && data && data.week && data.week.note) el.innerText = data.week.note;
     }
 
-    function updatePredictionChart(mode) {
+    function updatePredictionChart(mode, data) {
         if (!aiChart) return;
 
         let labels, pastData, futureData, note;
+        const modeKey = mode === 'Tomorrow' ? 'tomorrow' : mode === 'Month' ? 'month' : 'week';
+        const m = data && data[modeKey];
 
-        if (mode === 'Tomorrow') {
-            labels = ['8 AM', '10 AM', '12 PM', '2 PM', '4 PM', '6 PM', '8 PM'];
-            pastData = [null, null, null, null, null, null, null];
-            futureData = [5, 12, 25, 30, 20, 15, 10];
-            note = "Peak demand expected at 2:00 PM due to temperature rise.";
-        }
-        else if (mode === 'Week') {
-            labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-            pastData = [12, 15, 10, 14, 18, null, null];
-            futureData = [null, null, null, null, 18, 22, 25];
-            note = "Weekend demand surge expected (Upcoming Wedding Season).";
-        }
-        else if (mode === 'Month') {
-            labels = ['Week 1', 'Week 2', 'Week 3', 'Week 4'];
-            pastData = [150, 180, null, null];
-            futureData = [null, 180, 210, 240];
-            note = "Overall 20% growth projected for next month.";
+        if (m && m.labels) {
+            labels = m.labels;
+            pastData = m.pastData || [];
+            futureData = m.futureData || [];
+            note = m.note || '';
+        } else {
+            if (mode === 'Tomorrow') {
+                labels = ['8 AM', '10 AM', '12 PM', '2 PM', '4 PM', '6 PM', '8 PM'];
+                pastData = [null, null, null, null, null, null, null];
+                futureData = [5, 12, 25, 30, 20, 15, 10];
+                note = "Peak demand expected at 2:00 PM due to temperature rise.";
+            } else if (mode === 'Week') {
+                labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+                pastData = [12, 15, 10, 14, 18, null, null];
+                futureData = [null, null, null, null, 18, 22, 25];
+                note = "Weekend demand surge expected (Upcoming Wedding Season).";
+            } else {
+                labels = ['Week 1', 'Week 2', 'Week 3', 'Week 4'];
+                pastData = [150, 180, null, null];
+                futureData = [null, 180, 210, 240];
+                note = "Overall 20% growth projected for next month.";
+            }
         }
 
         aiChart.data.labels = labels;
         aiChart.data.datasets[0].data = pastData;
         aiChart.data.datasets[1].data = futureData;
         aiChart.update();
-        document.getElementById('ai-text').innerText = note;
+        var el = document.getElementById('ai-text');
+        if (el) el.innerText = note;
     }
+
+    window.renderPredictionChart = renderPredictionChart;
+    window.updatePredictionChart = updatePredictionChart;
 </script>
