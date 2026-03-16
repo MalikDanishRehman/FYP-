@@ -95,22 +95,29 @@ else if (IsProvider)
             </a>
         </div>
         <div class="app-navbar-icons">
-            <div class="app-navbar-icon-btn" @onclick="ToggleProviderSidebar" title="Messages">
-                <i class="fa-regular fa-comment-dots"></i>
-                @if (_providerChatList.Count > 0)
-                {
-                    <span class="app-navbar-badge-dot"></span>
-                }
+            <div style="position: relative;">
+                <div class="app-navbar-icon-btn @(_providerSidebarOpen ? "active" : "")" @onclick="ToggleProviderSidebar" title="Messages">
+                    <i class="fa-regular fa-comment-dots"></i>
+                    @if (_providerChatList.Count > 0)
+                    {
+                        <span class="app-navbar-badge-dot"></span>
+                    }
+                </div>
             </div>
-            <a href="/provider-reviews" class="app-navbar-icon-btn" title="My Reputation"><i class="fa-solid fa-star text-warning"></i></a>
-            <a href="/supplier-bills" class="app-navbar-icon-btn" title="Earnings & Bills"><i class="fa-solid fa-file-invoice-dollar"></i></a>
-            <a href="/attendance" class="app-navbar-icon-btn" title="Staff Attendance"><i class="fa-solid fa-clipboard-user"></i></a>
-            <a href="/profilepro" class="app-navbar-profile-trigger" title="My Profile">
-                <img src="@_profileImageUrl" alt="Profile">
-            </a>
-            <button type="button" class="app-navbar-logout-btn" @onclick="HandleLogout" title="Logout">
-                <i class="bi bi-box-arrow-right"></i> Logout
-            </button>
+            <div style="position: relative;">
+                <div class="app-navbar-profile-trigger" @onclick="ToggleProviderProfileDropdown" title="Profile">
+                    <img src="@_profileImageUrl" alt="Profile">
+                </div>
+                <div class="app-navbar-profile-menu @(_showProviderProfileDropdown ? "show" : "")">
+                    <a href="/ProviderDashboard" class="app-navbar-menu-link"><i class="fa-solid fa-chart-line"></i> Dashboard</a>
+                    <a href="/provider-reviews" class="app-navbar-menu-link"><i class="fa-solid fa-star text-warning"></i> My Reputation</a>
+                    <a href="/supplier-bills" class="app-navbar-menu-link"><i class="fa-solid fa-file-invoice-dollar"></i> Earnings & Bills</a>
+                    <a href="/attendance" class="app-navbar-menu-link"><i class="fa-solid fa-clipboard-user"></i> Staff Attendance</a>
+                    <a href="/profilepro" class="app-navbar-menu-link"><i class="bi bi-person"></i> My Profile</a>
+                    <div class="app-navbar-menu-divider"></div>
+                    <a href="#" class="app-navbar-menu-link app-navbar-logout-link" @onclick="HandleLogout"><i class="bi bi-box-arrow-right"></i> Logout</a>
+                </div>
+            </div>
         </div>
     </div>
 

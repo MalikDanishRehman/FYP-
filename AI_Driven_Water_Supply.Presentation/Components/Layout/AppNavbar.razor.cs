@@ -23,8 +23,9 @@ namespace AI_Driven_Water_Supply.Presentation.Components.Layout
         private bool _consumerChatLoading = true;
         private List<ConsumerChatViewModel> _consumerChatList = new();
 
-        // Provider: sidebar
+        // Provider: sidebar + profile dropdown
         private bool _providerSidebarOpen;
+        private bool _showProviderProfileDropdown;
         private bool _providerChatLoading = true;
         private List<Message> _providerChatList = new();
 
@@ -192,6 +193,8 @@ namespace AI_Driven_Water_Supply.Presentation.Components.Layout
         private async Task RefreshConsumerChats() => await LoadConsumerChats();
 
         private void ToggleProviderSidebar() => _providerSidebarOpen = !_providerSidebarOpen;
+
+        private void ToggleProviderProfileDropdown() => _showProviderProfileDropdown = !_showProviderProfileDropdown;
 
         private async Task HandleLogout()
         {
