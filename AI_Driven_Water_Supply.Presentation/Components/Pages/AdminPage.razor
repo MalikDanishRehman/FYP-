@@ -83,21 +83,16 @@
                     <td>Rs 1200</td>
                     <td><span class="status-dot st-pending"></span>Pending</td>
                 </tr>
-                <tr>
-                    <td>#ORD-8823</td>
-                    <td>Bilal</td>
-                    <td>Aqua Pure</td>
-                    <td>Rs 300</td>
-                    <td><span class="status-dot st-completed"></span>Delivered</td>
-                </tr>
-                <tr>
-                    <td>#ORD-8824</td>
-                    <td>Kashan</td>
-                    <td>Aqua Pure</td>
-                    <td>Rs 300</td>
-                    <td><span class="status-dot st-pending"></span>Pending</td>
-                </tr>
             </tbody>
         </table>
     </div>
 </div>
+
+@code {
+    private bool isSidebarOpen = true;
+
+    private void ToggleSidebar()
+    {
+        isSidebarOpen = !isSidebarOpen;
+    }
+}
