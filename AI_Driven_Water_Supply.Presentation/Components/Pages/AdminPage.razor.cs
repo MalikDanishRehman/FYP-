@@ -17,11 +17,8 @@ namespace AI_Driven_Water_Supply.Presentation.Components.Pages
 
         private string UserName = "Loading...";
         private string ProfileImageUrl = "/images/fallbackimg.jpg";
-        private bool isSidebarOpen = false;
-        private bool isLoading = true;
         private int totalRevenue = 0;
         private List<Message> chatList = new List<Message>();
-        private string activeTab = "Week";
 
         [Table("profiles")]
         public class Profile : BaseModel
@@ -41,7 +38,6 @@ namespace AI_Driven_Water_Supply.Presentation.Components.Pages
                 await SetDynamicData(user);
                 StateHasChanged();
                 await LoadMessages();
-                isLoading = false;
                 StateHasChanged();
             }
             else

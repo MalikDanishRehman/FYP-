@@ -1,7 +1,35 @@
 @inherits LayoutComponentBase
 
-<div class="layout-wrapper">
+<style>
+    /* Force Links to NOT be blue */
+    /* a.menu-link {
+        color: #8b92b2 !important;
+        text-decoration: none !important;
+        font-size: 1.3rem !important;
+    }
 
+        a.menu-link:hover {
+            color: #ffffff !important;
+        }
+
+        a.menu-link.active {
+            color: #BFFF27 !important;
+            background-color: rgba(191, 255, 39, 0.1) !important;
+            font-weight: bold !important;
+        }
+
+    li.menu-item {
+        margin-bottom: 15px !important;
+    } */
+
+    /* Force the entire background to be dark */
+    /* body, html, #app, .layout-wrapper, .main-content, .content-body {
+        background-color: #060713 !important;
+        color: white !important;
+    } */
+</style>
+
+<div class="layout-wrapper">
     <aside class="sidebar @(isSidebarOpen ? "" : "closed")">
         <div style="display: flex; justify-content: space-between; align-items: center; padding-right: 15px;">
             <div class="brand-logo">
@@ -53,7 +81,9 @@
             <div class="header-right">
                 <span class="header-link" title="Dashboard"><i class="fa-solid fa-table-columns"></i> <span class="header-text">Dashboard</span></span>
                 <span class="header-link" title="Profile"><i class="fa-regular fa-user"></i> <span class="header-text">Profile</span></span>
-                <span class="header-link" style="color: #ff4d4d;" title="Logout"><i class="fa-solid fa-arrow-right-from-bracket"></i> <span class="header-text">Logout</span></span>
+                <span class="header-link" style="color: #ff4d4d; cursor: pointer;" title="Logout" @onclick="HandleLogout">
+                    <i class="fa-solid fa-arrow-right-from-bracket"></i> <span class="header-text">Logout</span>
+                </span>
             </div>
         </header>
 
