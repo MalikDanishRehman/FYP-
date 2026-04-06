@@ -51,7 +51,16 @@ else if (IsConsumer)
                             @foreach (var chat in _consumerChatList)
                             {
                                 <div class="app-navbar-chat-item" @onclick="() => OpenChat(chat.OrderId)">
-                                    <div class="app-navbar-supplier-avatar">@(!string.IsNullOrEmpty(chat.SupplierName) ? chat.SupplierName.Substring(0, 1).ToUpper() : "S")</div>
+                                    <div class="app-navbar-supplier-avatar">
+                                        @if (!string.IsNullOrEmpty(chat.SupplierAvatarUrl))
+                                        {
+                                            <img src="@chat.SupplierAvatarUrl" alt="" />
+                                        }
+                                        else
+                                        {
+                                            @(!string.IsNullOrEmpty(chat.SupplierName) ? chat.SupplierName.Substring(0, 1).ToUpper() : "S")
+                                        }
+                                    </div>
                                     <div class="app-navbar-chat-info" style="flex:1;">
                                         <div class="app-navbar-chat-name">
                                             @chat.SupplierName
@@ -144,15 +153,39 @@ else if (IsProvider)
                 @foreach (var chat in _providerChatList)
                 {
                     <div class="app-navbar-provider-chat-item" @onclick="() => OpenChat(chat.OrderId)">
-                        <div class="app-navbar-avatar">
-                            @(!string.IsNullOrEmpty(chat.SenderName) ? chat.SenderName.Substring(0, 1).ToUpper() : "U")
+                        <div class="app-navbar-avatar @(string.IsNullOrEmpty(chat.PeerAvatarUrl) ? "" : "app-navbar-avatar-has-img")">
+                            @if (!string.IsNullOrEmpty(chat.PeerAvatarUrl))
+                            {
+                                <img src="@chat.PeerAvatarUrl" alt="" />
+                            }
+                            else
+                            {
+                                @(!string.IsNullOrEmpty(chat.ConsumerDisplayName) ? chat.ConsumerDisplayName.Substring(0, 1).ToUpper() : "U")
+                            }
                             <div class="app-navbar-online-dot"></div>
                         </div>
-                        <div class="app-navbar-msg-content">
-                            <h6>@chat.SenderName</h6>
-                            <p>@chat.Content</p>
+                        <div class="app-navbar-msg-content app-navbar-msg-content--inbox">
+                            <div class="app-navbar-msg-head">
+                                <h6>@chat.ConsumerDisplayName</h6>
+                                <span class="app-navbar-msg-time">@chat.PreviewCreatedAt.ToLocalTime().ToString("hh:mm tt")</span>
+                            </div>
+                            <p>@chat.PreviewContent</p>
                         </div>
-                        <span class="app-navbar-msg-time">@chat.CreatedAt.ToLocalTime().ToString("hh:mm tt")</span>
+                        <div class="app-navbar-inbox-actions" @onclick:stopPropagation="true">
+                            <span class="app-navbar-status-pill app-navbar-status-pill--@(InboxStatusPillModifier(chat.Status))" title="@chat.Status">@chat.Status</span>
+                            @if (!InboxStatusIsReadOnly(chat.Status))
+                            {
+                                <select class="app-navbar-inbox-status-select"
+                                        @onclick:stopPropagation="true"
+                                        @onchange="e => OnProviderInboxStatusChange(chat.OrderId, e)">
+                                    <option value="">Update status</option>
+                                    @foreach (var opt in InboxStatusNextActions(chat.Status))
+                                    {
+                                        <option value="@opt.Value">@opt.Label</option>
+                                    }
+                                </select>
+                            }
+                        </div>
                     </div>
                 }
             }

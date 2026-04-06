@@ -49,6 +49,7 @@ builder.Services.AddScoped<Supabase.Client>(provider =>
 
 builder.Services.AddScoped<AI_Driven_Water_Supply.Application.Interfaces.IAuthService, AI_Driven_Water_Supply.Infrastructure.Services.AuthService>();
 builder.Services.AddScoped<AI_Driven_Water_Supply.Application.Interfaces.IToastService, AI_Driven_Water_Supply.Infrastructure.Services.ToastService>();
+builder.Services.AddScoped<AI_Driven_Water_Supply.Application.Interfaces.IOrderStatusService, AI_Driven_Water_Supply.Infrastructure.Services.OrderStatusService>();
 
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();

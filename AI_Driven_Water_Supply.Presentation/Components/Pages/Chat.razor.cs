@@ -13,6 +13,7 @@ namespace AI_Driven_Water_Supply.Presentation.Components.Pages
         [Inject] public Supabase.Client _supabase { get; set; } = null!;
         [Inject] public NavigationManager Nav { get; set; } = null!;
         [Inject] public AI_Driven_Water_Supply.Application.Interfaces.IAuthService AuthService { get; set; } = null!;
+        [Inject] public AI_Driven_Water_Supply.Application.Interfaces.IOrderStatusService OrderStatusService { get; set; } = null!;
         [Inject] public IJSRuntime JS { get; set; } = null!;
 
         private string MyName = "";
@@ -135,43 +136,13 @@ namespace AI_Driven_Water_Supply.Presentation.Components.Pages
         {
             try
             {
-                await _supabase.From<Order>()
-                               .Where(x => x.Id == OrderId)
-                               .Set(x => x.Status, newStatus)
-                               .Update();
-
-                OrderStatus = newStatus;
-
-                if (newStatus == "Accepted")
+                if (!AmISupplier) return;
+                var ok = await OrderStatusService.TryUpdateOrderStatusAsync(OrderId, newStatus, MyName);
+                if (ok)
                 {
-                    var ordResponse = await _supabase.From<Order>().Where(x => x.Id == OrderId).Get();
-                    var orderData = ordResponse.Models.FirstOrDefault();
-                    if (orderData != null)
-                    {
-                        var newBill = new Bill
-                        {
-                            OrderId = OrderId,
-                            ConsumerName = ConsumerName,
-                            SupplierName = SupplierName,
-                            Amount = (decimal)orderData.TotalPrice,
-                            Status = "Unpaid",
-                            CreatedAt = DateTime.UtcNow
-                        };
-                        await _supabase.From<Bill>().Insert(newBill);
-                    }
+                    OrderStatus = newStatus;
+                    await LoadMessages();
                 }
-
-                string systemMsg = newStatus switch
-                {
-                    "Accepted" => $"✅ Order Accepted by {SupplierName}. Bill Generated.",
-                    "Out for Delivery" => $"🚚 Order is Out for Delivery!",
-                    "Completed" => $"🎉 Order Delivered Successfully.",
-                    "Cancelled" => $"❌ Order was Cancelled.",
-                    _ => $"Status updated to {newStatus}"
-                };
-
-                await PostMessage("System", ConsumerName, systemMsg);
-                await LoadMessages();
             }
             catch (Exception ex)
             {

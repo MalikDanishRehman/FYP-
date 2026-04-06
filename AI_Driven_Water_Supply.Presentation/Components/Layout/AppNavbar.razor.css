@@ -229,6 +229,13 @@ a.app-navbar-icon-btn:hover {
     font-weight: 700;
     color: black;
     flex-shrink: 0;
+    overflow: hidden;
+}
+
+.app-navbar-supplier-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 
 .app-navbar-chat-name {
@@ -401,57 +408,191 @@ a.app-navbar-icon-btn:hover {
 .app-navbar-side-panel {
     position: fixed;
     top: 0;
-    right: -420px;
-    width: 400px;
+    right: 0;
+    width: min(720px, 100vw);
     height: 100vh;
-    background: #0a0c14;
+    max-height: 100dvh;
+    background: linear-gradient(165deg, #0d1018 0%, #0a0c14 45%, #080a10 100%);
     z-index: 999;
-    transition: right 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
-    padding: 30px;
-    box-shadow: -10px 0 50px rgba(0,0,0,0.8);
-    border-left: 1px solid var(--border-glass);
+    box-sizing: border-box;
+    transform: translateX(100%);
+    transition: transform 0.38s cubic-bezier(0.22, 0.8, 0.2, 1);
+    padding: 26px 28px 28px;
+    box-shadow: -20px 0 56px rgba(0, 0, 0, 0.5), -1px 0 0 rgba(255, 255, 255, 0.07);
+    border-left: 1px solid rgba(255, 255, 255, 0.08);
     display: flex;
     flex-direction: column;
 }
 
 .app-navbar-side-panel.open {
-    right: 0;
+    transform: translateX(0);
 }
 
-.app-navbar-chat-header {
-    border-bottom: 1px solid var(--border-glass);
-    padding-bottom: 20px;
+.app-navbar-side-panel .app-navbar-chat-header {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding-bottom: 22px;
+    margin-bottom: 4px;
+}
+
+.app-navbar-side-panel .app-navbar-chat-header h4 {
+    letter-spacing: -0.02em;
+    font-size: 1.35rem;
+}
+
+.app-navbar-side-panel .app-navbar-chat-header small {
+    font-size: 0.8rem;
+    letter-spacing: 0.02em;
+    opacity: 0.85;
 }
 
 .app-navbar-provider-chat-list {
+    overflow-x: hidden;
     overflow-y: auto;
     flex: 1;
+    min-height: 0;
+    padding-right: 4px;
+    box-sizing: border-box;
+    -webkit-overflow-scrolling: touch;
 }
 
 .app-navbar-provider-chat-item {
     display: flex;
     align-items: center;
-    padding: 15px;
-    border-radius: 16px;
+    gap: 14px;
+    padding: 16px 18px;
+    border-radius: 14px;
     cursor: pointer;
-    transition: 0.2s;
-    border: 1px solid transparent;
-    background: rgba(255,255,255,0.03);
-    margin-bottom: 12px;
+    transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    background: rgba(255, 255, 255, 0.025);
+    margin-bottom: 10px;
+    min-width: 0;
+    box-sizing: border-box;
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
 .app-navbar-provider-chat-item:hover {
-    background: rgba(255,255,255,0.08);
-    border-color: rgba(255,255,255,0.1);
-    transform: translateX(-5px);
+    background: rgba(255, 255, 255, 0.055);
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 0 0 1px rgba(191, 255, 39, 0.06);
 }
 
-.app-navbar-avatar {
-    width: 50px;
-    height: 50px;
+/* Right rail: status above action control */
+.app-navbar-inbox-actions {
+    flex: 0 0 auto;
+    width: 158px;
+    min-width: 158px;
+    max-width: 158px;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding-left: 14px;
+    margin-left: 2px;
+    border-left: 1px solid rgba(255, 255, 255, 0.09);
+    align-self: stretch;
+    justify-content: center;
+    box-sizing: border-box;
+}
+
+.app-navbar-status-pill {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    text-align: center;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    padding: 7px 8px;
+    border-radius: 8px;
+    line-height: 1.2;
+    border: 1px solid transparent;
+    white-space: normal;
+    word-break: break-word;
+    min-height: 2.35rem;
+}
+
+.app-navbar-status-pill--pending {
+    color: #1a1508;
+    background: linear-gradient(180deg, #f0d78c 0%, #e8c547 100%);
+    border-color: rgba(232, 197, 71, 0.35);
+}
+
+.app-navbar-status-pill--accepted {
+    color: #062028;
+    background: linear-gradient(180deg, #7dd3fc 0%, #38bdf8 100%);
+    border-color: rgba(56, 189, 248, 0.35);
+}
+
+.app-navbar-status-pill--out {
+    color: #f0f4ff;
+    background: linear-gradient(180deg, #6366f1 0%, #4f46e5 100%);
+    border-color: rgba(99, 102, 241, 0.4);
+}
+
+.app-navbar-status-pill--completed {
+    color: #06140c;
+    background: linear-gradient(180deg, #6ee7b7 0%, #34d399 100%);
+    border-color: rgba(52, 211, 153, 0.35);
+}
+
+.app-navbar-status-pill--cancelled {
+    color: #fff5f5;
+    background: linear-gradient(180deg, #f87171 0%, #ef4444 100%);
+    border-color: rgba(239, 68, 68, 0.35);
+}
+
+.app-navbar-status-pill--default {
+    color: #e2e8f0;
+    background: rgba(148, 163, 184, 0.2);
+    border-color: rgba(148, 163, 184, 0.25);
+}
+
+.app-navbar-inbox-status-select {
+    appearance: none;
+    -webkit-appearance: none;
+    font-size: 0.74rem;
+    font-weight: 500;
+    padding: 9px 30px 9px 11px;
+    line-height: 1.35;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    background: rgba(255, 255, 255, 0.06) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 9px center;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: #e8eaef;
+    border-radius: 9px;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.app-navbar-inbox-status-select:hover {
+    background-color: rgba(255, 255, 255, 0.09);
+    border-color: rgba(255, 255, 255, 0.18);
+}
+
+.app-navbar-inbox-status-select:focus {
+    border-color: rgba(191, 255, 39, 0.45);
+    box-shadow: 0 0 0 2px rgba(191, 255, 39, 0.12);
+    outline: none;
+}
+
+.app-navbar-inbox-status-select option {
+    background: #141820;
+    color: #e8eaef;
+}
+
+.app-navbar-provider-chat-item .app-navbar-avatar {
+    width: 82px;
+    height: 52px;
+    min-width: 82px;
+    max-width: 82px;
+    aspect-ratio: 1 / 1;
+    flex: 0 0 52px;
     border-radius: 50%;
     background: #1f233a;
-    margin-right: 15px;
+    margin-right: 0;
     position: relative;
     display: flex;
     align-items: center;
@@ -460,6 +601,22 @@ a.app-navbar-icon-btn:hover {
     color: #BFFF27;
     border: 1px solid rgba(255,255,255,0.1);
     font-size: 1.2rem;
+    overflow: hidden;
+    box-sizing: border-box;
+}
+
+.app-navbar-provider-chat-item .app-navbar-avatar-has-img {
+    padding: 0;
+    background: #1f233a;
+}
+
+.app-navbar-provider-chat-item .app-navbar-avatar img {
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    object-fit: cover;
+    border-radius: 50%;
+    display: block;
 }
 
 .app-navbar-online-dot {
@@ -480,6 +637,27 @@ a.app-navbar-icon-btn:hover {
     color: #fff;
 }
 
+.app-navbar-msg-content--inbox {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.app-navbar-msg-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+    min-width: 0;
+}
+
+.app-navbar-msg-head h6 {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 .app-navbar-msg-content p {
     margin: 4px 0 0;
     font-size: 0.85rem;
@@ -487,14 +665,19 @@ a.app-navbar-icon-btn:hover {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 180px;
+    max-width: 100%;
+}
+
+.app-navbar-msg-content--inbox p {
+    max-width: 100%;
 }
 
 .app-navbar-msg-time {
     font-size: 0.75rem;
-    color: #666;
-    margin-left: auto;
+    color: #888;
     font-weight: 500;
+    flex-shrink: 0;
+    white-space: nowrap;
 }
 
 @media (max-width: 768px) {
@@ -512,9 +695,49 @@ a.app-navbar-icon-btn:hover {
     }
     .app-navbar-side-panel {
         width: 100%;
-        right: -100%;
+        transform: translateX(100%);
     }
     .app-navbar-side-panel.open {
-        right: 0;
+        transform: translateX(0);
+    }
+}
+
+/* Narrow inbox: stack status + control so nothing clips */
+@media (max-width: 540px) {
+    .app-navbar-provider-chat-item {
+        flex-wrap: wrap;
+        align-items: flex-start;
+        padding: 14px 14px;
+        gap: 12px;
+    }
+
+    .app-navbar-msg-content--inbox {
+        flex: 1 1 calc(100% - 52px - 12px);
+        min-width: 0;
+    }
+
+    .app-navbar-inbox-actions {
+        flex: 1 1 100%;
+        width: 100%;
+        max-width: none;
+        min-width: 0;
+        border-left: none;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+        padding: 12px 0 0;
+        margin: 4px 0 0;
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: stretch;
+        gap: 10px;
+    }
+
+    .app-navbar-inbox-actions .app-navbar-status-pill {
+        flex: 1 1 auto;
+        min-width: min(100%, 160px);
+    }
+
+    .app-navbar-inbox-actions .app-navbar-inbox-status-select {
+        flex: 1 1 100%;
+        min-width: 0;
     }
 }
