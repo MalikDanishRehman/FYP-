@@ -1,11 +1,6 @@
 @page "/UserManagement"
 @using AI_Driven_Water_Supply.Application.Interfaces
 @using AI_Driven_Water_Supply.Domain.Entities
-@using Supabase.Postgrest.Models
-@inject Supabase.Client _supabase
-@inject IAuthService AuthService
-@inject NavigationManager Nav
-@rendermode InteractiveServer
 @layout AdminSidebar
 
 <div class="page-header">
@@ -17,7 +12,7 @@
     <div class="actions-wrapper">
         <div class="search-wrapper">
             <i class="fa-solid fa-search search-icon"></i>
-            <input type="text" class="custom-input" placeholder="Search users..." @bind="searchTerm" @bind:event="oninput">
+            <input type="text" class="custom-input" placeholder="Search users by name..." @bind="searchTerm" @bind:event="oninput">
         </div>
         <button class="btn-add">
             <i class="fa-solid fa-plus"></i> Add User
@@ -29,7 +24,7 @@
     <div class="stat-card">
         <div class="stat-info">
             <p>Total Users</p>
-            <h3>@dummyUsers.Count</h3>
+            <h3>@Users.Count</h3>
         </div>
         <div class="stat-icon" style="color: #fff;">
             <i class="fa-solid fa-users"></i>
@@ -39,7 +34,7 @@
     <div class="stat-card">
         <div class="stat-info">
             <p>Active Now</p>
-            <h3>@dummyUsers.Count(u => u.Status == "Active")</h3>
+            <h3>@Users.Count</h3>
         </div>
         <div class="stat-icon" style="color: #2ecc71;">
             <i class="fa-solid fa-circle-check"></i>
@@ -49,7 +44,7 @@
     <div class="stat-card">
         <div class="stat-info">
             <p>Banned</p>
-            <h3>@dummyUsers.Count(u => u.Status == "Banned")</h3>
+            <h3>0</h3>
         </div>
         <div class="stat-icon" style="color: #e74c3c;">
             <i class="fa-solid fa-ban"></i>
@@ -64,48 +59,62 @@
                 <th>User Details</th>
                 <th>Role</th>
                 <th>Status</th>
-                <th>Joined Date</th>
+                <th>Joined/Updated Date</th>
                 <th>Actions</th>
             </tr>
         </thead>
         <tbody>
-            @foreach (var user in FilteredUsers)
+            @if (IsLoading)
             {
                 <tr>
-                    <td>
-                        <div class="user-profile">
-                            <div class="user-avatar">
-                                @user.Name.Substring(0, 1).ToUpper()
-                            </div>
-                            <div class="user-info">
-                                <h4>@user.Name</h4>
-                                <small>@user.Email</small>
-                            </div>
-                        </div>
-                    </td>
-                    <td>
-                        <span class="badge @(user.Role == "Admin" ? "badge-admin" : "badge-customer")">
-                            @user.Role
-                        </span>
-                    </td>
-                    <td>
-                        @if (user.Status == "Active")
-                        {
-                            <span class="status-active"><i class="fa-solid fa-circle" style="font-size:6px;"></i> Active</span>
-                        }
-                        else
-                        {
-                            <span class="status-banned"><i class="fa-solid fa-circle" style="font-size:6px;"></i> Banned</span>
-                        }
-                    </td>
-                    <td style="color:#888;">@user.JoinDate</td>
-                    <td>
-                        <div class="action-group">
-                            <button class="btn-icon" title="Edit User"><i class="fa-solid fa-pen"></i></button>
-                            <button class="btn-icon btn-delete" title="Delete User"><i class="fa-solid fa-trash"></i></button>
-                        </div>
+                    <td colspan="5" style="text-align: center; padding: 20px;">
+                        <span style="color: #BFFF27;">Loading users from database...</span>
                     </td>
                 </tr>
+            }
+            else if (!FilteredUsers.Any())
+            {
+                <tr>
+                    <td colspan="5" style="text-align: center; padding: 20px; color: #888;">
+                        No consumers found.
+                    </td>
+                </tr>
+            }
+            else
+            {
+                @foreach (var user in FilteredUsers)
+                {
+                    <tr>
+                        <td>
+                            <div class="user-profile">
+                                <div class="user-avatar" style="background: linear-gradient(135deg, #e67e22, #d35400);">
+                                    @(string.IsNullOrEmpty(user.Username) ? "U" : user.Username.Substring(0, 1).ToUpper())
+                                </div>
+                                <div class="user-info">
+                                    <h4>@(string.IsNullOrEmpty(user.Username) ? "Unknown" : user.Username)</h4>
+                                    <small style="color: #888;">ID: @(user.Id.Length > 8 ? user.Id.Substring(0, 8) + "..." : user.Id)</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge badge-customer">
+                                @(string.IsNullOrEmpty(user.Role) ? "Consumer" : user.Role)
+                            </span>
+                        </td>
+                        <td>
+                            <span class="status-active"><i class="fa-solid fa-circle" style="font-size:6px;"></i> Active</span>
+                        </td>
+                        <td style="color:#888;">
+                            @(user.UpdatedAt.HasValue? user.UpdatedAt.Value.ToString("dd MMM yyyy") : "N/A")
+                        </td>
+                        <td>
+                            <div class="action-group">
+                                <button class="btn-icon" title="Edit User"><i class="fa-solid fa-pen"></i></button>
+                                <button class="btn-icon btn-delete" title="Delete User"><i class="fa-solid fa-trash"></i></button>
+                            </div>
+                        </td>
+                    </tr>
+                }
             }
         </tbody>
     </table>
