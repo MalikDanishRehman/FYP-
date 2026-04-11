@@ -23,6 +23,16 @@ namespace AI_Driven_Water_Supply.Presentation.Components.Pages
         private bool isLoading = false;
         private string? servicesParam = null;
 
+        // Yeh 4 lines add karni hain
+        protected bool showPassword = false;
+        protected string passwordInputType => showPassword ? "text" : "password";
+        protected string passwordIcon => showPassword ? "bi-eye-slash" : "bi-eye";
+
+        protected void TogglePasswordVisibility()
+        {
+            showPassword = !showPassword;
+        }
+
         [Table("profiles")]
         public class UserProfile : BaseModel
         {
