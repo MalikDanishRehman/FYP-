@@ -1,18 +1,25 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
+using Microsoft.JSInterop;
 using AI_Driven_Water_Supply.Application.Interfaces;
 using Supabase.Postgrest.Attributes;
 using Supabase.Postgrest.Models;
 using System.ComponentModel.DataAnnotations;
+using System.Net.Http;
+using System.Text.Json;
 using AI_Driven_Water_Supply.Domain.Entities;
 
 namespace AI_Driven_Water_Supply.Presentation.Components.Pages
 {
     public partial class SupplierDetails
     {
+        private const string ExternalHttpClientName = "ExternalHttp";
+
         [Inject] private Supabase.Client _supabase { get; set; } = default!;
         [Inject] private NavigationManager Nav { get; set; } = default!;
         [Inject] private IAuthService AuthService { get; set; } = default!;
+        [Inject] private IHttpClientFactory HttpClientFactory { get; set; } = default!;
+        [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
 
         [Parameter] public string? name { get; set; }
 
@@ -43,6 +50,13 @@ namespace AI_Driven_Water_Supply.Presentation.Components.Pages
             [Column("profilepic")] public string? ProfilePic { get; set; }
         }
 
+        [Table("profiles")]
+        private class ProfileTrustRow : BaseModel
+        {
+            [Column("id")] public string Id { get; set; } = "";
+            [Column("trust_score")] public double? TrustScore { get; set; }
+        }
+
         [Table("reviews")]
         public class ReviewModel : BaseModel
         {
@@ -52,6 +66,9 @@ namespace AI_Driven_Water_Supply.Presentation.Components.Pages
             [Column("rating")] public int Rating { get; set; }
             [Column("comment")] public string Comment { get; set; } = string.Empty;
             [Column("created_at")] public DateTime CreatedAt { get; set; }
+            [Column("ip_address")] public string? IpAddress { get; set; }
+            [Column("device_fingerprint")] public string? DeviceFingerprint { get; set; }
+            [Column("reviewer_id")] public string? ReviewerId { get; set; }
         }
 
         public class OrderRequestForm
@@ -204,13 +221,77 @@ namespace AI_Driven_Water_Supply.Presentation.Components.Pages
 
             if (string.IsNullOrEmpty(providerId)) return;
 
+            var reviewerId = session.User?.Id;
+            if (string.IsNullOrEmpty(reviewerId))
+            {
+                ToastService.ShowToast("Login Required", "Please login to submit a review.", "error");
+                return;
+            }
+
             isSubmittingReview = true;
             try
             {
+                var supplierName = (name ?? "").Trim();
+                var consumerName = (orderFormModel.ConsumerName ?? "").Trim();
+                if (!await HasCompletedOrderWithProviderAsync(supplierName, consumerName))
+                {
+                    ToastService.ShowToast(
+                        "Review not allowed",
+                        "You can only review after a completed order with this provider.",
+                        "error");
+                    return;
+                }
+
+                var publicIp = await TryGetPublicIpAsync();
+                if (string.IsNullOrWhiteSpace(publicIp))
+                {
+                    ToastService.ShowToast("Network verification failed", "Could not verify network; try again.", "error");
+                    return;
+                }
+
+                string deviceFingerprint;
+                try
+                {
+                    deviceFingerprint = await JSRuntime.InvokeAsync<string>("getDeviceFingerprint");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Fingerprint JSInterop: {ex.Message}");
+                    deviceFingerprint = "";
+                }
+
+                if (string.IsNullOrWhiteSpace(deviceFingerprint))
+                {
+                    ToastService.ShowToast("Network verification failed", "Could not verify network; try again.", "error");
+                    return;
+                }
+
+                var sinceUtc = DateTime.UtcNow.AddHours(-24);
+                var existingForProvider = await _supabase.From<ReviewModel>()
+                    .Where(x => x.ProviderId == providerId)
+                    .Get();
+                var recent = existingForProvider.Models.Where(r => r.CreatedAt >= sinceUtc).ToList();
+
+                var sameIpCount = recent.Count(r =>
+                    !string.IsNullOrEmpty(r.IpAddress) &&
+                    string.Equals(r.IpAddress.Trim(), publicIp.Trim(), StringComparison.OrdinalIgnoreCase));
+                var sameFpCount = recent.Count(r =>
+                    !string.IsNullOrEmpty(r.DeviceFingerprint) &&
+                    string.Equals(r.DeviceFingerprint.Trim(), deviceFingerprint.Trim(), StringComparison.Ordinal));
+
+                if (sameIpCount >= 2 || sameFpCount >= 2)
+                {
+                    ToastService.ShowToast("Suspicious activity detected", "Suspicious activity detected", "error");
+                    return;
+                }
+
                 newReview.Id = Guid.NewGuid().ToString();
                 newReview.ProviderId = providerId;
-                newReview.ConsumerName = orderFormModel.ConsumerName ?? "Anonymous";
+                newReview.ConsumerName = string.IsNullOrEmpty(consumerName) ? "Anonymous" : consumerName;
                 newReview.CreatedAt = DateTime.UtcNow;
+                newReview.IpAddress = publicIp.Trim();
+                newReview.DeviceFingerprint = deviceFingerprint.Trim();
+                newReview.ReviewerId = reviewerId;
 
                 await _supabase.From<ReviewModel>().Insert(newReview);
 
@@ -219,12 +300,8 @@ namespace AI_Driven_Water_Supply.Presentation.Components.Pages
                     .Get();
 
                 var allReviews = response.Models;
-
-                double newAverageRating = 0;
-                if (allReviews.Count > 0)
-                {
-                    newAverageRating = allReviews.Average(r => r.Rating);
-                }
+                var trustMap = await LoadReviewerTrustScoresAsync(allReviews.Select(r => r.ReviewerId));
+                var newAverageRating = ComputeWeightedRating(allReviews, trustMap);
 
                 await _supabase.From<ProviderDetailProfile>()
                     .Where(x => x.Id == providerId)
@@ -244,6 +321,90 @@ namespace AI_Driven_Water_Supply.Presentation.Components.Pages
                 ToastService.ShowToast("Error", "Something went wrong. Please try again.", "error");
             }
             finally { isSubmittingReview = false; }
+        }
+
+        private async Task<bool> HasCompletedOrderWithProviderAsync(string supplierName, string consumerName)
+        {
+            if (string.IsNullOrEmpty(supplierName) || string.IsNullOrEmpty(consumerName))
+                return false;
+
+            var res = await _supabase.From<Order>()
+                .Where(x => x.SupplierName == supplierName && x.ConsumerName == consumerName && x.Status == "Completed")
+                .Limit(1)
+                .Get();
+
+            return res.Models.Count > 0;
+        }
+
+        private async Task<string?> TryGetPublicIpAsync()
+        {
+            try
+            {
+                var client = HttpClientFactory.CreateClient(ExternalHttpClientName);
+                using var response = await client.GetAsync("https://api.ipify.org?format=json");
+                response.EnsureSuccessStatusCode();
+                var json = await response.Content.ReadAsStringAsync();
+                using var doc = JsonDocument.Parse(json);
+                if (doc.RootElement.TryGetProperty("ip", out var ipEl))
+                {
+                    var ip = ipEl.GetString();
+                    return string.IsNullOrWhiteSpace(ip) ? null : ip;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ipify error: {ex.Message}");
+            }
+
+            return null;
+        }
+
+        private async Task<IReadOnlyDictionary<string, double>> LoadReviewerTrustScoresAsync(IEnumerable<string?> reviewerIds)
+        {
+            var distinct = reviewerIds
+                .Where(id => !string.IsNullOrEmpty(id))
+                .Select(id => id!)
+                .Distinct(StringComparer.Ordinal)
+                .ToList();
+
+            if (distinct.Count == 0)
+                return new Dictionary<string, double>(StringComparer.Ordinal);
+
+            var tasks = distinct.Select(async id =>
+            {
+                var res = await _supabase.From<ProfileTrustRow>().Where(x => x.Id == id).Get();
+                var m = res.Models.FirstOrDefault();
+                var w = m?.TrustScore is double td && td > 0 ? td : 1.0;
+                return (id, w);
+            });
+
+            var pairs = await Task.WhenAll(tasks);
+            return pairs.ToDictionary(p => p.id, p => p.w, StringComparer.Ordinal);
+        }
+
+        private static double ComputeWeightedRating(IReadOnlyList<ReviewModel> reviews, IReadOnlyDictionary<string, double> trustByReviewerId)
+        {
+            double sumW = 0;
+            double sumRW = 0;
+
+            foreach (var r in reviews)
+            {
+                double w = 1.0;
+                if (!string.IsNullOrEmpty(r.ReviewerId) &&
+                    trustByReviewerId.TryGetValue(r.ReviewerId, out var t) &&
+                    t > 0)
+                {
+                    w = t;
+                }
+
+                sumRW += r.Rating * w;
+                sumW += w;
+            }
+
+            if (sumW <= 0)
+                return reviews.Count == 0 ? 0 : reviews.Average(x => x.Rating);
+
+            return sumRW / sumW;
         }
     }
 }

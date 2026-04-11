@@ -18,6 +18,9 @@ namespace AI_Driven_Water_Supply.Domain.Entities
         [Column("rating")]
         public double? Rating { get; set; }
 
+        [Column("trust_score")]
+        public double? TrustScore { get; set; }
+
         [Column("services")]
         public string Services { get; set; } = null!;
 

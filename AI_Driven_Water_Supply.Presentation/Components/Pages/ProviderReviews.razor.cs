@@ -28,7 +28,8 @@ namespace AI_Driven_Water_Supply.Presentation.Components.Pages
             [Column("provider_id")] public string ProviderId { get; set; } = "";
             [Column("comment")] public string Comment { get; set; } = "";
             [Column("rating")] public int Rating { get; set; }
-            [Column("user_name")] public string UserName { get; set; } = "";
+            [Column("consumer_name")] public string ConsumerName { get; set; } = "";
+            [Column("reviewer_id")] public string? ReviewerId { get; set; }
             [Column("created_at")] public DateTime CreatedAt { get; set; }
         }
 
@@ -37,6 +38,13 @@ namespace AI_Driven_Water_Supply.Presentation.Components.Pages
         {
             [Column("id")] public string Id { get; set; } = null!;
             [Column("rating")] public double Rating { get; set; }
+        }
+
+        [Table("profiles")]
+        private class ProfileTrustRow : BaseModel
+        {
+            [Column("id")] public string Id { get; set; } = "";
+            [Column("trust_score")] public double? TrustScore { get; set; }
         }
 
         protected override async Task OnInitializedAsync()
@@ -88,7 +96,8 @@ namespace AI_Driven_Water_Supply.Presentation.Components.Pages
 
                         if (averageRating == 0)
                         {
-                            averageRating = reviewsList.Average(r => r.Rating);
+                            var trustMap = await LoadReviewerTrustScoresAsync(reviewsList.Select(r => r.ReviewerId));
+                            averageRating = ComputeWeightedRating(reviewsList, trustMap);
                         }
                     }
                     else
@@ -110,6 +119,57 @@ namespace AI_Driven_Water_Supply.Presentation.Components.Pages
             {
                 Nav.NavigateTo("/login");
             }
+        }
+
+        private async Task<Dictionary<string, double>> LoadReviewerTrustScoresAsync(IEnumerable<string?> reviewerIds)
+        {
+            var distinct = reviewerIds
+                .Where(id => !string.IsNullOrEmpty(id))
+                .Select(id => id!)
+                .Distinct(StringComparer.Ordinal)
+                .ToList();
+
+            var dict = new Dictionary<string, double>(StringComparer.Ordinal);
+            if (distinct.Count == 0)
+                return dict;
+
+            var tasks = distinct.Select(async id =>
+            {
+                var res = await _supabase.From<ProfileTrustRow>().Where(x => x.Id == id).Get();
+                var m = res.Models.FirstOrDefault();
+                var w = m?.TrustScore is double td && td > 0 ? td : 1.0;
+                return (id, w);
+            });
+
+            foreach (var pair in await Task.WhenAll(tasks))
+                dict[pair.id] = pair.w;
+
+            return dict;
+        }
+
+        private static double ComputeWeightedRating(IReadOnlyList<ReviewModel> reviews, IReadOnlyDictionary<string, double> trustByReviewerId)
+        {
+            double sumW = 0;
+            double sumRW = 0;
+
+            foreach (var r in reviews)
+            {
+                double w = 1.0;
+                if (!string.IsNullOrEmpty(r.ReviewerId) &&
+                    trustByReviewerId.TryGetValue(r.ReviewerId, out var t) &&
+                    t > 0)
+                {
+                    w = t;
+                }
+
+                sumRW += r.Rating * w;
+                sumW += w;
+            }
+
+            if (sumW <= 0)
+                return reviews.Count == 0 ? 0 : reviews.Average(x => x.Rating);
+
+            return sumRW / sumW;
         }
 
         private string GetStarHtml(double rating)

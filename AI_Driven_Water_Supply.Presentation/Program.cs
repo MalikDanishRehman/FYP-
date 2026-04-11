@@ -33,6 +33,11 @@ builder.Services.AddControllers();
 builder.Services.AddHttpContextAccessor();  
 builder.Services.AddHttpClient();
 
+builder.Services.AddHttpClient("ExternalHttp", client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(15);
+});
+
 builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("http://127.0.0.1:8000/") });
 var options = new SupabaseOptions
 {
