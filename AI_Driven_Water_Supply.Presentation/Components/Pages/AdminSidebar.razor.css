@@ -131,6 +131,50 @@ body, html {
     color: white;
     flex-grow: 1; /* Ensures content stretches properly */
 }
+/* --- SIDEBAR NAVLINKS STYLING --- */
+/* --- SIDEBAR NAVLINKS STYLING FIX --- */
+a.menu-link,
+::deep a.menu-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 15px;
+    color: #8b92b2 !important; /* Forcefully removes default blue color */
+    text-decoration: none !important; /* Forcefully removes underline */
+    border-radius: 8px;
+    transition: all 0.2s ease-in-out;
+    font-weight: 500;
+}
+
+    /* Icons ko center aur align karne ke liye */
+    a.menu-link i,
+    ::deep a.menu-link i {
+        font-size: 1.2rem;
+        width: 24px;
+        text-align: center;
+    }
+
+    /* Hover effect */
+    a.menu-link:hover,
+    ::deep a.menu-link:hover {
+        background-color: rgba(255, 255, 255, 0.05);
+        color: #fff !important; /* White color on hover */
+    }
+
+    /* BLAZOR ACTIVE STATE */
+    a.menu-link.active,
+    ::deep a.menu-link.active {
+        background-color: rgba(191, 255, 39, 0.1);
+        color: #BFFF27 !important; /* Brand Yellow/Green */
+        border-left: 4px solid #BFFF27;
+    }
+
+    /* BLAZOR ACTIVE STATE (Automatically applied when URL matches) */
+    .menu-link.active {
+        background-color: rgba(191, 255, 39, 0.1); /* Soft background of your brand color */
+        color: #BFFF27; /* Your brand Green/Yellow color */
+        border-left: 4px solid #BFFF27; /* Left indicator line */
+    }
 
 /* === RESPONSIVE DESIGN === */
 @media (max-width: 768px) {

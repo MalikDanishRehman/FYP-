@@ -1,36 +1,73 @@
 using Microsoft.AspNetCore.Components;
+using Supabase;
 using System.Collections.Generic;
+using System.Threading.Tasks;
+using System;
 using System.Linq;
 
 namespace AI_Driven_Water_Supply.Presentation.Components.Pages
 {
-    public partial class Admin_UserManage
+    public partial class Admin_UserManage : ComponentBase
     {
-        private string searchTerm = "";
+        [Inject] private Supabase.Client _supabase { get; set; } = default!;
 
-        public class UserViewModel
+        protected List<ConsumerModel> Users { get; set; } = new();
+        protected bool IsLoading { get; set; } = true;
+        protected string searchTerm = "";
+
+        protected override async Task OnInitializedAsync()
         {
-            public int Id { get; set; }
-            public string Name { get; set; } = "";
-            public string Email { get; set; } = "";
-            public string Role { get; set; } = "Customer";
-            public string Status { get; set; } = "Active";
-            public string JoinDate { get; set; } = "";
+            await FetchConsumersFromDb();
         }
 
-        private List<UserViewModel> dummyUsers = new List<UserViewModel>
+        private async Task FetchConsumersFromDb()
         {
-            new UserViewModel { Id = 1, Name = "Ali Khan", Email = "ali.khan@gmail.com", Role = "Customer", Status = "Active", JoinDate = "10 Feb 2024" },
-            new UserViewModel { Id = 2, Name = "Admin User", Email = "admin@system.com", Role = "Admin", Status = "Active", JoinDate = "01 Jan 2024" },
-            new UserViewModel { Id = 3, Name = "Sara Ahmed", Email = "sara123@hotmail.com", Role = "Customer", Status = "Banned", JoinDate = "15 Mar 2024" },
-            new UserViewModel { Id = 4, Name = "Bilal Raza", Email = "bilal.raza@yahoo.com", Role = "Customer", Status = "Active", JoinDate = "22 Mar 2024" },
-            new UserViewModel { Id = 5, Name = "Zain Malik", Email = "zain.malik@gmail.com", Role = "Customer", Status = "Active", JoinDate = "05 Apr 2024" },
-        };
+            IsLoading = true;
+            try
+            {
+                // DB se un users ko laayein jinka role 'Consumer' hai
+                var response = await _supabase.From<ConsumerModel>()
+                                              .Where(x => x.Role == "Consumer")
+                                              .Get();
 
-        private IEnumerable<UserViewModel> FilteredUsers =>
+                if (response.Models != null)
+                {
+                    Users = response.Models;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error fetching consumers: {ex.Message}");
+            }
+            finally
+            {
+                IsLoading = false;
+            }
+        }
+
+        // Search box ki logic
+        protected IEnumerable<ConsumerModel> FilteredUsers =>
             string.IsNullOrWhiteSpace(searchTerm)
-                ? dummyUsers
-                : dummyUsers.Where(u => u.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
-                                        u.Email.Contains(searchTerm, StringComparison.OrdinalIgnoreCase));
+                ? Users
+                : Users.Where(u =>
+                    !string.IsNullOrEmpty(u.Username) &&
+                    u.Username.Contains(searchTerm, StringComparison.OrdinalIgnoreCase));
+    }
+
+    // Supabase DB Mapping
+    [Supabase.Postgrest.Attributes.Table("profiles")]
+    public class ConsumerModel : Supabase.Postgrest.Models.BaseModel
+    {
+        [Supabase.Postgrest.Attributes.Column("id")]
+        public string Id { get; set; } = string.Empty;
+
+        [Supabase.Postgrest.Attributes.Column("username")]
+        public string? Username { get; set; }
+
+        [Supabase.Postgrest.Attributes.Column("role")]
+        public string? Role { get; set; }
+
+        [Supabase.Postgrest.Attributes.Column("updated_at")]
+        public DateTime? UpdatedAt { get; set; }
     }
 }
