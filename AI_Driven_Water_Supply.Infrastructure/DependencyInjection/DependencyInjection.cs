@@ -33,6 +33,7 @@ namespace AI_Driven_Water_Supply.Infrastructure.DependencyInjection
             services.AddSingleton(client);
             services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<IToastService, ToastService>();
+            services.AddScoped<IOrderStatusService, OrderStatusService>();
 
             return services;
         }
