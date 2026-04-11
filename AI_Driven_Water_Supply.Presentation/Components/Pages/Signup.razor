@@ -31,7 +31,10 @@
 
             <div class="mb-3 text-start">
                 <label class="form-label">Password</label>
-                <InputText @bind-Value="signupModel.Password" class="form-control" type="password" placeholder="••••••••" />
+                <div class="password-wrapper">
+                    <InputText @bind-Value="signupModel.Password" class="form-control pr-icon" type="@passwordInputType" placeholder="••••••••" />
+                    <i class="bi @passwordIcon password-toggle-icon" @onclick="TogglePasswordVisibility"></i>
+                </div>
                 <ValidationMessage For="@(() => signupModel.Password)" class="text-danger small" />
             </div>
 

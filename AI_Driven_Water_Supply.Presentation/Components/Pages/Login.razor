@@ -23,7 +23,10 @@
 
             <div class="form-group">
                 <label>Password</label>
-                <InputText @bind-Value="loginModel.Password" class="form-control" type="password" placeholder="Enter password" />
+                <div class="password-wrapper">
+                    <InputText @bind-Value="loginModel.Password" class="form-control pr-icon" type="@passwordInputType" placeholder="Enter password" />
+                    <i class="bi @passwordIcon password-toggle-icon" @onclick="TogglePasswordVisibility"></i>
+                </div>
                 <ValidationMessage For="@(() => loginModel.Password)" />
             </div>
 

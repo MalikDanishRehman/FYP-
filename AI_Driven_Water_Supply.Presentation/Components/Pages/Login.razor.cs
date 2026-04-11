@@ -29,6 +29,17 @@ namespace AI_Driven_Water_Supply.Presentation.Components.Pages
             [Column("role")] public string Role { get; set; } = "";
         }
 
+        // ✅ YAHAN ADD KARNE HAIN VARIABLES AUR FUNCTION (Method se bahar)
+        protected bool showPassword = false;
+        protected string passwordInputType => showPassword ? "text" : "password";
+        protected string passwordIcon => showPassword ? "bi-eye-slash" : "bi-eye";
+
+        protected void TogglePasswordVisibility()
+        {
+            showPassword = !showPassword;
+        }
+        // ✅ -----------------------------------------------------------
+
         protected async Task HandleLogin()
         {
             isLoading = true;
@@ -53,7 +64,6 @@ namespace AI_Driven_Water_Supply.Presentation.Components.Pages
 
                         if (profile != null)
                         {
-                            // ✅ Updated call using _toastService
                             _toastService.ShowToast("Welcome Back", "Login successful.", "success");
 
                             if (profile.Role == "Consumer")
