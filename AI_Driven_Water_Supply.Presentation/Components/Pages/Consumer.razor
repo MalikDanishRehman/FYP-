@@ -2,56 +2,259 @@
 @rendermode InteractiveServer
 @using AI_Driven_Water_Supply.Application.Interfaces
 
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Poppins:wght@500;700&display=swap" rel="stylesheet">
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<div class="consumer-page-root">
 
-<div class="page-container">
-
-    <div class="container mb-5">
-        <h2 class="mb-2 fw-bold">Welcome back, @MyName! 👋</h2>
-        <p class="mb-0 opacity-75">Manage your water supply and track your orders easily.</p>
-    </div>
-
-    
-    <section class="container pb-5">
-        <div class="row g-4 justify-content-center">
-            <div class="col-md-4 col-lg-3">
-                <div class="glass-card text-center">
-                    <div class="img-wrapper">
-                        <img src="/images/bottle.jpg" alt="1 Litre Bottle" />
-                    </div>
-                    <h5 class="card-title">1 Litre Bottle</h5>
-                    <a class="btn-neon" href="/order/bottle">Order Now</a>
-                </div>
+    <header class="consumer-hero-split" aria-label="HydroAI dashboard hero">
+        <div class="consumer-hero-split__inner">
+            <div class="consumer-hero-split__copy">
+                <p class="consumer-hero-split__eyebrow">AI-driven water supply</p>
+                <h1 class="consumer-hero-split__title">Pure water, delivered smarter</h1>
+                <p class="consumer-hero-split__lead">
+                    Connect with trusted bottle, tanker, and RO plant suppliers in one place — search, compare, and order with intelligence built in.
+                </p>
+                <p class="consumer-hero-split__welcome">
+                    @if (!string.IsNullOrEmpty(MyName))
+                    {
+                        <span>Welcome back, <strong>@MyName</strong>. Your suppliers are ready below.</span>
+                    }
+                    else
+                    {
+                        <span><strong>HydroAI</strong> — monitor supply, spot the best-rated providers, and move from browse to order in seconds.</span>
+                    }
+                </p>
+                <a class="consumer-hero-split__cta" href="#sv-overview-title">Browse suppliers</a>
             </div>
-            <div class="col-md-4 col-lg-3">
-                <div class="glass-card text-center">
-                    <div class="img-wrapper">
-                        <img src="/images/plant.jpg" alt="Plant Water" />
-                    </div>
-                    <h5 class="card-title">Plant Water Supply</h5>
-                    <a class="btn-neon" href="/order/plant">Order Now</a>
-                </div>
-            </div>
-            <div class="col-md-4 col-lg-3">
-                <div class="glass-card text-center">
-                    <div class="img-wrapper">
-                        <img src="/images/tanker.jpg" alt="Tanker Supply" />
-                    </div>
-                    <h5 class="card-title">Tanker Water Supply</h5>
-                    <a class="btn-neon" href="/order/tanker">Order Now</a>
-                </div>
+            <div class="consumer-hero-split__visual" aria-hidden="true">
+                <figure class="consumer-hero-split__frame">
+                    <img class="consumer-hero-split__img"
+                         src="/images/kobu-agency-TWIRIAizZFU-unsplash.jpg"
+                         alt="Clear water pouring into a glass — purity and quality"
+                         width="1200"
+                         height="1800"
+                         fetchpriority="high"
+                         loading="eager" />
+                </figure>
             </div>
         </div>
-    </section>
+    </header>
 
+    <div class="consumer-light-shell">
+        <div class="container-fluid consumer-overview-stack px-3 px-md-4 py-4 py-md-5">
+
+            <section class="sv-overview-card sv-fade-in" aria-labelledby="sv-overview-title">
+                <div class="sv-toolbar">
+                    <div class="sv-toolbar__title">
+                        <h1 id="sv-overview-title" class="sv-title">Supplier overview</h1>
+                        <p class="sv-subtitle text-muted small mb-0">Live providers from your network — search by name or supply type.</p>
+                    </div>
+                    <div class="sv-toolbar__actions">
+                        <div class="sv-search-wrap">
+                            <i class="bi bi-search sv-search-wrap__icon" aria-hidden="true"></i>
+                            <input type="search"
+                                   class="sv-search-input"
+                                   placeholder="Search suppliers…"
+                                   autocomplete="off"
+                                   value="@_searchQuery"
+                                   @oninput="OnSearchQueryInput"
+                                   @onkeydown="OnSearchKeyDown"
+                                   aria-label="Search by supplier name" />
+                        </div>
+                        <div class="sv-filter-wrap">
+                            <label class="visually-hidden" for="sv-supply-filter">Filter by supply</label>
+                            <select id="sv-supply-filter" class="sv-select" value="@(_serviceFilterToken ?? "")" @onchange="OnServiceFilterChange">
+                                <option value="">All supplies</option>
+                                <option value="Bottle">Bottle</option>
+                                <option value="Tanker">Tanker</option>
+                                <option value="Plant">RO plant</option>
+                            </select>
+                            <i class="bi bi-chevron-down sv-select-chevron" aria-hidden="true"></i>
+                        </div>
+                        @if (!string.IsNullOrEmpty(_serviceFilterToken))
+                        {
+                            <button type="button" class="btn sv-btn-secondary" @onclick="OpenOrderMapForFilter">
+                                <i class="bi bi-map me-1" aria-hidden="true"></i> Map
+                            </button>
+                        }
+                        <a href="#consumer-quick" class="btn sv-btn-primary">Order water</a>
+                    </div>
+                </div>
+
+                <div class="sv-tabs" role="tablist">
+                    <button type="button"
+                            role="tab"
+                            class="sv-tab @(_overviewTab == SupplierOverviewTab.All ? "sv-tab--active" : null)"
+                            aria-selected="@(_overviewTab == SupplierOverviewTab.All)"
+                            @onclick="@(() => SetOverviewTab(SupplierOverviewTab.All))">All</button>
+                    <button type="button"
+                            role="tab"
+                            class="sv-tab @(_overviewTab == SupplierOverviewTab.Active ? "sv-tab--active" : null)"
+                            aria-selected="@(_overviewTab == SupplierOverviewTab.Active)"
+                            @onclick="@(() => SetOverviewTab(SupplierOverviewTab.Active))">Active suppliers</button>
+                    <button type="button"
+                            role="tab"
+                            class="sv-tab @(_overviewTab == SupplierOverviewTab.TopRated ? "sv-tab--active" : null)"
+                            aria-selected="@(_overviewTab == SupplierOverviewTab.TopRated)"
+                            @onclick="@(() => SetOverviewTab(SupplierOverviewTab.TopRated))">Top 20 suppliers</button>
+                </div>
+
+                <div class="sv-table-scroll">
+                    @if (_supplierSearchLoading && _supplierResults.Count == 0)
+                    {
+                        <div class="sv-table-skeleton p-3" aria-busy="true">
+                            @for (var s = 0; s < 8; s++)
+                            {
+                                <div class="sv-skel-row"></div>
+                            }
+                        </div>
+                    }
+                    else if (!_supplierSearchLoading && _supplierResults.Count == 0)
+                    {
+                        <div class="sv-empty sv-empty--pop py-5 text-center">
+                            <i class="bi bi-inbox sv-empty__icon" aria-hidden="true"></i>
+                            <p class="fw-semibold mb-1">No suppliers match</p>
+                            <p class="text-muted small mb-0">Adjust search, supply filter, or tabs above.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <table class="sv-table">
+                            <thead>
+                                <tr>
+                                    <th class="sv-th sv-th--check" scope="col">
+                                        <span class="visually-hidden">Select</span>
+                                    </th>
+                                    <th class="sv-th" scope="col">
+                                        <button type="button" class="sv-th-btn" @onclick="@(() => SetSort("username"))" disabled="@(_overviewTab == SupplierOverviewTab.TopRated)">
+                                            Supplier
+                                            <i class="bi @SortIconUsername()" aria-hidden="true"></i>
+                                        </button>
+                                    </th>
+                                    <th class="sv-th sv-th--services" scope="col">Services</th>
+                                    <th class="sv-th" scope="col">Status</th>
+                                    <th class="sv-th" scope="col">
+                                        <button type="button" class="sv-th-btn" @onclick="@(() => SetSort("rating"))" disabled="@(_overviewTab == SupplierOverviewTab.TopRated)">
+                                            Rating
+                                            <i class="bi @SortIconRating()" aria-hidden="true"></i>
+                                        </button>
+                                    </th>
+                                    <th class="sv-th" scope="col">Classification</th>
+                                    <th class="sv-th sv-th--actions text-end" scope="col">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @for (var i = 0; i < _supplierResults.Count; i++)
+                                {
+                                    var row = _supplierResults[i];
+                                    <tr class="sv-tr sv-tr--enter" style="--sv-i: @i">
+                                        <td class="sv-td sv-td--check">
+                                            <input type="checkbox"
+                                                   class="sv-check"
+                                                   checked="@IsRowSelected(row.Username)"
+                                                   @onchange="@(e => ToggleRowSelected(row.Username, e))"
+                                                   aria-label="Select @row.Username" />
+                                        </td>
+                                        <td class="sv-td">
+                                            <div class="sv-supplier-cell">
+                                                <img class="sv-supplier-cell__logo" src="@row.ImageUrl" alt="" loading="lazy" onerror="this.src='/images/fallback-image.jpg';" />
+                                                <span class="sv-supplier-cell__name">@row.Username</span>
+                                            </div>
+                                        </td>
+                                        <td class="sv-td sv-td--services">
+                                            @if (row.ServiceLabels.Count == 0)
+                                            {
+                                                <span class="text-muted small">—</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="sv-services-text">@string.Join(" · ", row.ServiceLabels)</span>
+                                            }
+                                        </td>
+                                        <td class="sv-td">
+                                            <span class="sv-badge sv-badge--active">Active</span>
+                                        </td>
+                                        <td class="sv-td">
+                                            <span class="sv-rating @RatingToneClass(row.Rating)">@row.Rating.ToString("0.0")</span>
+                                        </td>
+                                        <td class="sv-td">
+                                            <span class="sv-classification">@ClassificationLabel(row.Rating)</span>
+                                        </td>
+                                        <td class="sv-td text-end">
+                                            <button type="button" class="btn btn-sm sv-link-btn" @onclick="@(() => OpenSupplier(row.Username))">View</button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                </div>
+
+                <div class="sv-table-footer">
+                    <nav class="sv-pager" aria-label="Pagination">
+                        <button type="button" class="sv-pager__btn" disabled aria-hidden="true">&laquo;</button>
+                        <button type="button" class="sv-pager__btn" disabled aria-hidden="true">&lsaquo;</button>
+                        <span class="sv-pager__page sv-pager__page--active" aria-current="page">1</span>
+                        <button type="button" class="sv-pager__btn" disabled aria-hidden="true">&rsaquo;</button>
+                        <button type="button" class="sv-pager__btn" disabled aria-hidden="true">&raquo;</button>
+                    </nav>
+                    @if (_hasMoreSuppliers && _overviewTab != SupplierOverviewTab.TopRated)
+                    {
+                        <button type="button"
+                                class="btn sv-btn-outline"
+                                @onclick="LoadMoreSuppliers"
+                                disabled="@(_supplierLoadMoreLoading || _supplierSearchLoading)">
+                            @if (_supplierLoadMoreLoading)
+                            {
+                                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                            }
+                            Load more
+                        </button>
+                    }
+                    @if (_supplierResults.Count > 0)
+                    {
+                        <span class="sv-footer-meta text-muted small">Showing @_supplierResults.Count@((_hasMoreSuppliers && _overviewTab != SupplierOverviewTab.TopRated) ? "+" : "") suppliers</span>
+                    }
+                </div>
+            </section>
+
+            <section id="consumer-quick" class="consumer-quick-light sv-fade-in sv-fade-in--delay mt-4">
+                <h2 class="sv-quick-title h5 mb-3">Quick order</h2>
+                <div class="row g-3 g-md-4">
+                    <div class="col-md-4">
+                        <div class="sv-quick-tile">
+                            <img src="/images/bottle.jpg" alt="" class="sv-quick-tile__img" />
+                            <div class="sv-quick-tile__body">
+                                <h3 class="h6 mb-2">1 litre bottle</h3>
+                                <a class="btn sv-btn-primary w-100" href="/order/bottle">Order now</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="sv-quick-tile">
+                            <img src="/images/plant.jpg" alt="" class="sv-quick-tile__img" />
+                            <div class="sv-quick-tile__body">
+                                <h3 class="h6 mb-2">RO plant</h3>
+                                <a class="btn sv-btn-primary w-100" href="/order/plant">Order now</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="sv-quick-tile">
+                            <img src="/images/tanker.jpg" alt="" class="sv-quick-tile__img" />
+                            <div class="sv-quick-tile__body">
+                                <h3 class="h6 mb-2">Tanker</h3>
+                                <a class="btn sv-btn-primary w-100" href="/order/tanker">Order now</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    </div>
 </div>
 
-<div class="ai-widget-container">
-
-    <div class="ai-trigger-card" @onclick="GoToBotPage">
+<div class="ai-widget-container consumer-ai-widget">
+    <div class="ai-trigger-card consumer-ai-float" @onclick="GoToBotPage">
         <div class="orb-container">
             <div class="video-wrapper">
                 <video id="myVideo" class="ai-video-element" autoplay muted playsinline loop>
@@ -66,25 +269,18 @@
             </div>
         </div>
     </div>
-
 </div>
+
 <script>
     function startVideoLoop() {
         const video = document.getElementById('myVideo');
         if(!video) return;
         video.playbackRate = 1;
-        // Handling promise to avoid console errors if interaction is needed
-        video.play().catch(e => console.log("Autoplay blocked, waiting for interaction"));
+        video.play().catch(() => {});
     }
-    // Try to start immediately
     setTimeout(startVideoLoop, 1000);
-
-    // Also try on click just in case
     document.addEventListener('click', function() {
         const video = document.getElementById('myVideo');
-        if(video && video.paused) {
-            video.play();
-        }
+        if(video && video.paused) video.play();
     }, { once: true });
 </script>
-
