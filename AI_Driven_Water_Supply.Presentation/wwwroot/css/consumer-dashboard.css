@@ -10,6 +10,16 @@
     --glass-border: rgba(255, 255, 255, 0.1);
 }
 
+/* In-page anchors: smooth scroll + room under sticky navbar */
+html {
+    scroll-behavior: smooth;
+}
+
+#sv-overview-title,
+#consumer-quick {
+    scroll-margin-top: 5.5rem;
+}
+
 @keyframes floatUp {
     from { opacity: 0; transform: translateY(12px); }
     to { opacity: 1; transform: translateY(0); }
