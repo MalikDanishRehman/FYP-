@@ -1,21 +1,19 @@
 @page "/attendance"
-@using AI_Driven_Water_Supply.Application.Interfaces
 @using AI_Driven_Water_Supply.Domain.Entities
-@using Supabase.Postgrest.Models
 @rendermode InteractiveServer
 
 <div class="page-container">
 
-    <div class="container" style="max-width: 800px;">
+    <div class="attendance-page-inner">
         <div class="header-row">
-            <h2 class="page-title"><i class="fa-solid fa-clipboard-user me-2"></i> Attendance</h2>
-            <div class="text-end">
-                <span class="d-block text-muted small">Today's Date</span>
-                <span class="fw-bold">@todayDate</span>
+            <h2 class="page-title"><i class="fa-solid fa-clipboard-user me-2" aria-hidden="true"></i> Attendance</h2>
+            <div class="header-date">
+                <span class="text-muted small header-date-label">Today's date</span>
+                <span class="fw-bold header-date-value">@todayDate</span>
             </div>
         </div>
 
-        <button class="btn btn-outline-light w-100 mb-4 py-3" style="border-style: dashed;" @onclick="() => showAddModal = true">
+        <button type="button" class="btn btn-outline-light w-100 mb-4 py-3 add-worker-dash" @onclick="() => showAddModal = true">
             <i class="fa-solid fa-plus me-2"></i> Add New Worker
         </button>
 
@@ -34,24 +32,32 @@
         @foreach (var worker in workers)
         {
             <div class="worker-card" @onclick="() => OpenDetailModal(worker)">
-                <div class="d-flex align-items-center">
-                    <div class="avatar-circle">
-                        @worker.Name.Substring(0, 1).ToUpper()
+                <div class="worker-card-main">
+                    <div class="avatar-circle flex-shrink-0">
+                        @WorkerInitial(worker.Name)
                     </div>
-                    <div>
-                        <h5 class="m-0 fw-bold">@worker.Name</h5>
-                        <small class="text-muted">@worker.Role</small>
+                    <div class="worker-card-text">
+                        <h5 class="worker-name">@(string.IsNullOrWhiteSpace(worker.Name) ? "Unnamed" : worker.Name)</h5>
+                        <span class="worker-role">@(string.IsNullOrWhiteSpace(worker.Role) ? "—" : worker.Role)</span>
+                        <span class="text-salary">Rs @worker.BaseSalary.ToString("N0") / mo</span>
                     </div>
                 </div>
 
                 <div class="btn-action-group" @onclick:stopPropagation="true">
-                    <button class="att-btn present @(worker.TodayStatus == "Present" ? "active" : "")"
+                    <button type="button" class="att-btn present @(worker.TodayStatus == "Present" ? "active" : "")"
+                            title="Present"
                             @onclick='() => MarkStatus(worker, "Present")'>
                         <i class="fa-solid fa-check"></i>
                     </button>
-                    <button class="att-btn absent @(worker.TodayStatus == "Absent" ? "active" : "")"
+                    <button type="button" class="att-btn absent @(worker.TodayStatus == "Absent" ? "active" : "")"
+                            title="Absent"
                             @onclick='() => MarkStatus(worker, "Absent")'>
                         <i class="fa-solid fa-xmark"></i>
+                    </button>
+                    <button type="button" class="att-btn pending @(worker.TodayStatus == "Pending" ? "active" : "")"
+                            title="Clear / Pending"
+                            @onclick='() => MarkStatus(worker, "Pending")'>
+                        <i class="fa-regular fa-circle"></i>
                     </button>
                 </div>
             </div>
@@ -62,54 +68,106 @@
 
 @if (showAddModal)
 {
-    <div class="custom-modal-overlay">
-        <div class="custom-modal">
-            <button class="btn-close-custom" @onclick="() => showAddModal = false">&times;</button>
-            <h4 class="mb-4">Add Worker</h4>
+    <div class="custom-modal-overlay" @onclick="() => showAddModal = false">
+        <div class="custom-modal" @onclick:stopPropagation="true">
+            <button type="button" class="btn-close-custom" @onclick="() => showAddModal = false">&times;</button>
+            <h4 class="mb-2">Add Worker</h4>
+            <p class="text-muted small mb-4">Create a record; you can edit salary and role anytime from the worker card.</p>
 
-            <input type="text" class="form-control-dark" placeholder="Full Name" @bind="newWorker.Name" />
-            <input type="text" class="form-control-dark" placeholder="Role (e.g. Helper)" @bind="newWorker.Role" />
-            <input type="number" class="form-control-dark" placeholder="Monthly Salary (PKR)" @bind="newWorker.BaseSalary" />
+            <label class="form-label-dark">Full name</label>
+            <input type="text" class="form-control-dark" placeholder="Full name" @bind="newWorker.Name" />
+            <label class="form-label-dark">Position / role</label>
+            <input type="text" class="form-control-dark" placeholder="e.g. Helper, Driver" @bind="newWorker.Role" />
+            <label class="form-label-dark">Monthly salary (PKR)</label>
+            <input type="number" class="form-control-dark" placeholder="0" @bind="newWorker.BaseSalary" min="0" />
 
-            <button class="btn-neon" @onclick="SaveWorker">Save Record</button>
+            <div class="modal-actions mt-2">
+                <button type="button" class="btn-outline-muted" @onclick="() => showAddModal = false">Cancel</button>
+                <button type="button" class="btn-neon btn-neon-inline" @onclick="SaveWorker">Save</button>
+            </div>
         </div>
     </div>
 }
 
-@if (showDetailModal)
+@if (showDetailModal && editDraft != null)
 {
-    <div class="custom-modal-overlay">
-        <div class="custom-modal text-center">
-            <button class="btn-close-custom" @onclick="() => showDetailModal = false">&times;</button>
+    <div class="custom-modal-overlay" @onclick="CloseDetailModal">
+        <div class="custom-modal custom-modal--detail" @onclick:stopPropagation="true">
+            <button type="button" class="btn-close-custom" @onclick="CloseDetailModal">&times;</button>
 
-            <div class="avatar-circle mx-auto mb-3" style="width: 70px; height: 70px; font-size: 2rem;">
-                @selectedWorker.Name.Substring(0, 1).ToUpper()
+            <div class="avatar-circle mx-auto mb-3 avatar-large">
+                @WorkerInitial(editDraft.Name)
             </div>
-            <h3>@selectedWorker.Name</h3>
-            <p class="text-muted">@selectedWorker.Role</p>
+            <h3 class="text-center mb-1">@(string.IsNullOrWhiteSpace(editDraft.Name) ? "Worker" : editDraft.Name)</h3>
+            <p class="text-muted text-center small mb-4">Tap fields below to update; save when finished.</p>
 
-            <div class="row g-2 mt-4">
-                <div class="col-6">
-                    <div class="p-3 border border-secondary rounded">
-                        <small class="text-muted d-block">Days Present</small>
-                        <h2 class="text-success m-0">@totalPresentDays</h2>
-                    </div>
+            <label class="form-label-dark">Name</label>
+            <input type="text" class="form-control-dark" @bind="editDraft.Name" @bind:event="oninput" />
+
+            <label class="form-label-dark">Position</label>
+            <input type="text" class="form-control-dark" @bind="editDraft.Role" @bind:event="oninput" />
+
+            <label class="form-label-dark" for="edit-salary-input">Monthly salary (PKR)</label>
+            <input id="edit-salary-input"
+                   type="number"
+                   class="form-control-dark form-control-salary"
+                   inputmode="numeric"
+                   min="0"
+                   step="1"
+                   placeholder="0"
+                   @bind="editDraft.BaseSalary"
+                   @bind:after="() => RecalculateEarnings(editDraft.BaseSalary)" />
+            <p class="field-hint">Enter the full monthly amount in rupees. Estimated pay below updates as you type.</p>
+
+            <label class="form-label-dark mt-2">Today's status</label>
+            <div class="status-picker">
+                <button type="button" class="att-btn present @(editDraft.TodayStatus == "Present" ? "active" : "")"
+                        @onclick='() => MarkStatusForEdit("Present")'>
+                    Present
+                </button>
+                <button type="button" class="att-btn absent @(editDraft.TodayStatus == "Absent" ? "active" : "")"
+                        @onclick='() => MarkStatusForEdit("Absent")'>
+                    Absent
+                </button>
+                <button type="button" class="att-btn pending @(editDraft.TodayStatus == "Pending" ? "active" : "")"
+                        @onclick='() => MarkStatusForEdit("Pending")'>
+                    Pending
+                </button>
+            </div>
+
+            <div class="stat-row">
+                <div class="stat-tile">
+                    <small class="text-muted d-block">Days present</small>
+                    <p class="stat-value stat-value--success m-0">@totalPresentDays</p>
                 </div>
-                <div class="col-6">
-                    <div class="p-3 border border-secondary rounded">
-                        <small class="text-muted d-block">Base Salary</small>
-                        <h4 class="text-white m-0">@selectedWorker.BaseSalary</h4>
-                    </div>
+                <div class="stat-tile">
+                    <small class="text-muted d-block">Base salary</small>
+                    <p class="stat-value m-0">@editDraft.BaseSalary.ToString("N0")</p>
                 </div>
             </div>
 
-            <div class="p-3 rounded mt-3" style="background: rgba(191, 255, 39, 0.1); border: 1px solid #BFFF27;">
-                <small class="text-muted text-uppercase" style="letter-spacing:1px;">Calculated Salary</small>
-                <h1 style="color: #BFFF27; font-weight: 800; margin: 0;">Rs @totalEarned</h1>
+            <div class="earned-banner mt-3">
+                <small class="text-muted text-uppercase" style="letter-spacing:1px;">Calculated salary</small>
+                <h1 class="earned-amount m-0">Rs @totalEarned.ToString("N0")</h1>
+                <small class="text-muted">Based on present days × (monthly ÷ 30)</small>
             </div>
 
-            <button class="btn btn-outline-danger w-100 mt-4" @onclick="DeleteWorker">
-                <i class="fa-solid fa-trash me-2"></i> Delete Record
+            <div class="modal-actions mt-4">
+                <button type="button" class="btn-outline-muted" @onclick="CloseDetailModal">Close</button>
+                <button type="button" class="btn-neon btn-neon-inline" disabled="@isSavingWorker" @onclick="SaveWorkerEdits">
+                    @if (isSavingWorker)
+                    {
+                        <span>Saving…</span>
+                    }
+                    else
+                    {
+                        <span>Save changes</span>
+                    }
+                </button>
+            </div>
+
+            <button type="button" class="btn btn-outline-danger w-100 mt-3" @onclick="DeleteWorker">
+                <i class="fa-solid fa-trash me-2"></i> Delete worker
             </button>
         </div>
     </div>
