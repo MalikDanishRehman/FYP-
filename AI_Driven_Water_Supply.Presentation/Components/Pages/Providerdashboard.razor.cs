@@ -37,6 +37,28 @@ namespace AI_Driven_Water_Supply.Presentation.Components.Pages
         private int completedCount = 0;
         private string activeTab = "Week";
         private ChartDataDto? chartData;
+        private string? expandedStat;
+        private List<Order> activeOrdersList = new();
+        private List<Order> completedOrdersList = new();
+
+        private void ToggleStatDetail(string stat)
+        {
+            expandedStat = expandedStat == stat ? null : stat;
+        }
+
+        private void OpenChatForOrder(long orderId) => Nav.NavigateTo($"/chat/{orderId}");
+
+        private static string OrderStatusCssClass(string status)
+        {
+            return status?.Trim() switch
+            {
+                "Pending" => "stat-order-status--pending",
+                "Accepted" => "stat-order-status--accepted",
+                "Out for Delivery" => "stat-order-status--delivery",
+                "Completed" => "stat-order-status--completed",
+                _ => "stat-order-status--default"
+            };
+        }
 
         protected override async Task OnInitializedAsync()
         {
@@ -86,8 +108,19 @@ namespace AI_Driven_Water_Supply.Presentation.Components.Pages
                     .Get();
                 var orders = response.Models;
 
-                activeOrdersCount = orders.Count(o => o.Status != "Completed" && o.Status != "Cancelled");
-                completedCount = orders.Count(o => o.Status == "Completed");
+                activeOrdersList = orders
+                    .Where(o => o.Status != "Completed" && o.Status != "Cancelled")
+                    .OrderByDescending(o => o.CreatedAt)
+                    .ToList();
+
+                activeOrdersCount = activeOrdersList.Count;
+
+                completedOrdersList = orders
+                    .Where(o => o.Status == "Completed")
+                    .OrderByDescending(o => o.CreatedAt)
+                    .ToList();
+                completedCount = completedOrdersList.Count;
+
                 totalRevenue = orders.Sum(o => o.TotalPrice);
 
                 var today = System.DateTime.UtcNow.Date;
@@ -130,6 +163,10 @@ namespace AI_Driven_Water_Supply.Presentation.Components.Pages
             catch
             {
                 chartData = GetDefaultChartData();
+                activeOrdersList = new List<Order>();
+                activeOrdersCount = 0;
+                completedOrdersList = new List<Order>();
+                completedCount = 0;
             }
         }
 
