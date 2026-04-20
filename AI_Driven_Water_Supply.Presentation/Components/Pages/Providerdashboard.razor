@@ -6,10 +6,11 @@
 @using Supabase.Postgrest.Models
 @rendermode InteractiveServer
 
+<link rel="stylesheet" href="css/provider-dashboard-page.css" />
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-<div class="page-wrapper">
+<div class="page-wrapper provider-dashboard-page">
     <div class="container">
 
         <div class="header-section">
@@ -46,15 +47,123 @@
             </div>
         </div>
 
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-value text-primary">@activeOrdersCount</div>
-                <div class="stat-label">Active Orders</div>
+        <div class="stats-section">
+            <p class="stats-hint text-muted small mb-2">Tap <strong>Active Orders</strong> or <strong>Completed</strong> for your lists. Tap any row to open chat for that order.</p>
+            <div class="stats-grid">
+                <button type="button"
+                        class="stat-card stat-card--interactive @(expandedStat == "active" ? "stat-card--expanded" : "")"
+                        @onclick='() => ToggleStatDetail("active")'
+                        aria-expanded="@(expandedStat == "active")">
+                    <div class="stat-value text-primary">@activeOrdersCount</div>
+                    <div class="stat-label">Active Orders</div>
+                    <span class="stat-chevron" aria-hidden="true"><i class="fa-solid fa-chevron-down"></i></span>
+                </button>
+                <button type="button"
+                        class="stat-card stat-card--interactive @(expandedStat == "completed" ? "stat-card--expanded" : "")"
+                        @onclick='() => ToggleStatDetail("completed")'
+                        aria-expanded="@(expandedStat == "completed")">
+                    <div class="stat-value text-warning">@completedCount</div>
+                    <div class="stat-label">Completed</div>
+                    <span class="stat-chevron" aria-hidden="true"><i class="fa-solid fa-chevron-down"></i></span>
+                </button>
             </div>
-            <div class="stat-card">
-                <div class="stat-value text-warning">@completedCount</div>
-                <div class="stat-label">Completed</div>
-            </div>
+
+            @if (expandedStat == "active")
+            {
+                <div class="stat-detail-panel stat-detail-panel--primary" role="region" aria-label="Active orders list">
+                    <h3 class="stat-detail-title">Active orders</h3>
+                    <p class="stat-detail-subhint mb-3">Tap an order to open its chat with the customer.</p>
+                    @if (activeOrdersList.Count == 0)
+                    {
+                        <p class="stat-detail-text mb-0">No active orders right now. New requests will show up here.</p>
+                    }
+                    else
+                    {
+                        <div class="stat-order-stack">
+                            @foreach (var order in activeOrdersList)
+                            {
+                                <button type="button"
+                                        class="stat-order-row stat-order-row--accent-primary"
+                                        @onclick="@(() => OpenChatForOrder(order.Id))"
+                                        title="Open chat for this order">
+                                    <div class="stat-order-row-body">
+                                        <div class="stat-order-row-top">
+                                            <span class="stat-order-name">@(string.IsNullOrWhiteSpace(order.ConsumerName) ? "Customer" : order.ConsumerName)</span>
+                                            <span class="stat-order-status @OrderStatusCssClass(order.Status)">@order.Status</span>
+                                        </div>
+                                        <div class="stat-order-meta-line">
+                                            <span class="stat-order-chip">#@order.Id</span>
+                                            @if (!string.IsNullOrWhiteSpace(order.ItemName))
+                                            {
+                                                <span class="stat-order-chip stat-order-chip--muted">@order.ItemName</span>
+                                            }
+                                        </div>
+                                        <div class="stat-order-meta-line stat-order-meta-line--dense">
+                                            <span>Qty @order.Quantity</span>
+                                            <span class="stat-order-dot" aria-hidden="true"></span>
+                                            <span class="stat-order-price">Rs @order.TotalPrice</span>
+                                            <span class="stat-order-dot" aria-hidden="true"></span>
+                                            <span>@order.CreatedAt.ToLocalTime().ToString("MMM d, h:mm tt")</span>
+                                        </div>
+                                    </div>
+                                    <div class="stat-order-chat-action" aria-hidden="true">
+                                        <i class="fa-regular fa-comment-dots stat-order-chat-action-icon"></i>
+                                        <span class="stat-order-chat-action-label">Chat</span>
+                                    </div>
+                                </button>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+            else if (expandedStat == "completed")
+            {
+                <div class="stat-detail-panel stat-detail-panel--warning" role="region" aria-label="Completed orders list">
+                    <h3 class="stat-detail-title">Completed orders</h3>
+                    <p class="stat-detail-subhint mb-3">Tap a row to open chat and view the full thread for that delivery.</p>
+                    @if (completedOrdersList.Count == 0)
+                    {
+                        <p class="stat-detail-text mb-0">No completed orders yet. Finished jobs will appear here.</p>
+                    }
+                    else
+                    {
+                        <div class="stat-order-stack">
+                            @foreach (var order in completedOrdersList)
+                            {
+                                <button type="button"
+                                        class="stat-order-row stat-order-row--accent-warning"
+                                        @onclick="@(() => OpenChatForOrder(order.Id))"
+                                        title="Open chat for this order">
+                                    <div class="stat-order-row-body">
+                                        <div class="stat-order-row-top">
+                                            <span class="stat-order-name">@(string.IsNullOrWhiteSpace(order.ConsumerName) ? "Customer" : order.ConsumerName)</span>
+                                            <span class="stat-order-status @OrderStatusCssClass(order.Status)">@order.Status</span>
+                                        </div>
+                                        <div class="stat-order-meta-line">
+                                            <span class="stat-order-chip">#@order.Id</span>
+                                            @if (!string.IsNullOrWhiteSpace(order.ItemName))
+                                            {
+                                                <span class="stat-order-chip stat-order-chip--muted">@order.ItemName</span>
+                                            }
+                                        </div>
+                                        <div class="stat-order-meta-line stat-order-meta-line--dense">
+                                            <span>Qty @order.Quantity</span>
+                                            <span class="stat-order-dot" aria-hidden="true"></span>
+                                            <span class="stat-order-price">Rs @order.TotalPrice</span>
+                                            <span class="stat-order-dot" aria-hidden="true"></span>
+                                            <span>@order.CreatedAt.ToLocalTime().ToString("MMM d, h:mm tt")</span>
+                                        </div>
+                                    </div>
+                                    <div class="stat-order-chat-action" aria-hidden="true">
+                                        <i class="fa-regular fa-comment-dots stat-order-chat-action-icon"></i>
+                                        <span class="stat-order-chat-action-label">Chat</span>
+                                    </div>
+                                </button>
+                            }
+                        </div>
+                    }
+                </div>
+            }
         </div>
     </div>
 </div>
