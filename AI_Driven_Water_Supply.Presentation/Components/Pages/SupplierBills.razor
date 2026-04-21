@@ -42,7 +42,20 @@
                     <div class="bill-icon"><i class="fa-solid fa-hand-holding-dollar"></i></div>
                     <div class="bill-details">
                         <h6>Consumer: @bill.ConsumerName</h6>
-                        <p>Order #@bill.OrderId • @bill.CreatedAt.ToLocalTime().ToString("dd MMM")</p>
+                        <p class="bill-meta">Order #@bill.OrderId • Bill @bill.CreatedAt.ToLocalTime().ToString("dd MMM yyyy")</p>
+                        @if (OrderFor(bill.OrderId) is { } ord)
+                        {
+                            <p class="bill-order-line"><i class="fa-solid fa-droplet me-1"></i>@ord.ItemName × @ord.Quantity</p>
+                            @if (!string.IsNullOrWhiteSpace(ord.Address))
+                            {
+                                <p class="bill-order-address">@ShortAddress(ord.Address)</p>
+                            }
+                            <p class="bill-order-status">Order status: <span class="bill-order-status-val">@ord.Status</span></p>
+                        }
+                        else
+                        {
+                            <p class="bill-order-line text-muted">Order details loading or unavailable.</p>
+                        }
                     </div>
                 </div>
                 <div class="bill-action">
@@ -54,24 +67,36 @@
     }
 
     <div class="section-title mt-5">Recent Transactions (Received)</div>
-    @foreach (var bill in history)
+    <small class="text-muted d-block mb-3">Tap a row to view the full payment record for that order.</small>
+    @if (history.Count == 0)
     {
-        <div class="bill-card" style="opacity: 0.8;">
-            <div class="bill-info">
-                <div class="bill-icon" style="color: #24FE41;"><i class="fa-solid fa-sack-dollar"></i></div>
-                <div class="bill-details">
-                    <h6>Consumer: @bill.ConsumerName</h6>
-                    <p>
-                        Order #@bill.OrderId
-                        <br /><span style="font-size:0.8rem; color:#aaa;">Via: @(bill.PaymentMethod ?? "Unknown")</span>
-                    </p>
+        <p class="text-center text-muted py-3">No completed payments yet.</p>
+    }
+    else
+    {
+        @foreach (var bill in history)
+        {
+            <div class="bill-card clickable-card history-card" @onclick="() => OpenReceiptModal(bill)">
+                <div class="bill-info">
+                    <div class="bill-icon" style="color: #24FE41;"><i class="fa-solid fa-sack-dollar"></i></div>
+                    <div class="bill-details">
+                        <h6>Consumer: @bill.ConsumerName</h6>
+                        <p class="bill-meta">
+                            Order #@bill.OrderId • @(bill.PaymentMethod ?? "Method not set")
+                        </p>
+                        @if (OrderFor(bill.OrderId) is { } hOrd)
+                        {
+                            <p class="bill-order-line"><i class="fa-solid fa-droplet me-1"></i>@hOrd.ItemName × @hOrd.Quantity</p>
+                        }
+                    </div>
+                </div>
+                <div class="bill-action">
+                    <span class="bill-amount text-muted">Rs @bill.Amount</span>
+                    <span class="status-badge status-received">Received</span>
+                    <span class="receipt-hint"><i class="fa-solid fa-receipt me-1"></i>View record</span>
                 </div>
             </div>
-            <div class="bill-action">
-                <span class="bill-amount text-muted">Rs @bill.Amount</span>
-                <span class="status-badge status-received">Received</span>
-            </div>
-        </div>
+        }
     }
 </div>
 
@@ -80,7 +105,22 @@
     <div class="custom-modal-overlay">
         <div class="custom-modal fade-in">
             <h4 class="text-white mb-1">Receive Payment?</h4>
-            <p class="text-muted mb-4">Amount: <strong class="text-white">Rs @selectedBill.Amount</strong><br />Consumer: @selectedBill.ConsumerName</p>
+            <p class="text-muted mb-2">Amount: <strong class="text-white">Rs @selectedBill.Amount</strong><br />Consumer: @selectedBill.ConsumerName</p>
+            @if (OrderFor(selectedBill.OrderId) is { } mOrd)
+            {
+                <div class="modal-order-box text-start mb-4">
+                    <div class="modal-order-label">Order</div>
+                    <div class="text-white small">#@mOrd.Id — @mOrd.ItemName × @mOrd.Quantity</div>
+                    @if (!string.IsNullOrWhiteSpace(mOrd.Address))
+                    {
+                        <div class="text-muted small mt-1">@mOrd.Address</div>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(mOrd.Phone))
+                    {
+                        <div class="text-muted small"><i class="fa-solid fa-phone me-1"></i>@mOrd.Phone</div>
+                    }
+                </div>
+            }
 
             <button class="btn-mode btn-cash" @onclick='() => ProcessPayment("Cash")'>
                 <i class="fa-solid fa-money-bill-wave"></i> Cash Received
@@ -91,6 +131,55 @@
             </button>
 
             <button class="btn-mode btn-cancel" @onclick="CloseModal">Cancel</button>
+        </div>
+    </div>
+}
+
+@if (showReceiptModal && receiptBill != null)
+{
+    <div class="custom-modal-overlay" @onclick="CloseReceiptModal">
+        <div class="custom-modal custom-modal-wide fade-in text-start" @onclick:stopPropagation="true">
+            <div class="d-flex align-items-start justify-content-between gap-2 mb-3">
+                <div>
+                    <h4 class="text-white mb-1"><i class="fa-solid fa-receipt me-2 text-earn"></i>Payment record</h4>
+                    <p class="text-muted small mb-0">Paid — saved when you confirmed collection on this page.</p>
+                </div>
+                <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="CloseReceiptModal" aria-label="Close">✕</button>
+            </div>
+
+            <dl class="receipt-dl mb-0">
+                <dt>Amount received</dt>
+                <dd class="text-white fw-bold">Rs @receiptBill.Amount</dd>
+                <dt>Payment method</dt>
+                <dd>@(receiptBill.PaymentMethod ?? "—")</dd>
+                <dt>Consumer</dt>
+                <dd>@receiptBill.ConsumerName</dd>
+                <dt>Bill / order</dt>
+                <dd>Bill #@receiptBill.Id · Order #@receiptBill.OrderId</dd>
+                <dt>Bill created</dt>
+                <dd>@receiptBill.CreatedAt.ToLocalTime().ToString("dd MMM yyyy, hh:mm tt")</dd>
+            </dl>
+
+            @if (OrderFor(receiptBill.OrderId) is { } ro)
+            {
+                <div class="modal-order-box mt-3">
+                    <div class="modal-order-label">What they ordered</div>
+                    <ul class="receipt-order-list mb-0">
+                        <li><span class="text-muted">Item</span> @ro.ItemName</li>
+                        <li><span class="text-muted">Quantity</span> @ro.Quantity</li>
+                        <li><span class="text-muted">Delivery address</span> @(string.IsNullOrWhiteSpace(ro.Address) ? "—" : ro.Address)</li>
+                        <li><span class="text-muted">Phone</span> @(string.IsNullOrWhiteSpace(ro.Phone) ? "—" : ro.Phone)</li>
+                        <li><span class="text-muted">Order status</span> @ro.Status</li>
+                        <li><span class="text-muted">Order placed</span> @ro.CreatedAt.ToLocalTime().ToString("dd MMM yyyy, hh:mm tt")</li>
+                    </ul>
+                </div>
+            }
+            else
+            {
+                <p class="text-muted small mt-3 mb-0">Linked order could not be loaded; amounts and method above still apply.</p>
+            }
+
+            <button type="button" class="btn-mode btn-cancel mt-4 mb-0" @onclick="CloseReceiptModal">Close</button>
         </div>
     </div>
 }
