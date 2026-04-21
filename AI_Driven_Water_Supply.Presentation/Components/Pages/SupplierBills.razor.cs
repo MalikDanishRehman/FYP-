@@ -16,12 +16,15 @@ namespace AI_Driven_Water_Supply.Presentation.Components.Pages
 
         private List<Bill> collections = new();
         private List<Bill> history = new();
+        private readonly Dictionary<long, Order> ordersById = new();
         private float TotalEarnings = 0;
         private float PendingAmount = 0;
         private string MyName = "";
         private bool isLoading = true;
         private bool showModal = false;
+        private bool showReceiptModal = false;
         private Bill? selectedBill = null;
+        private Bill? receiptBill = null;
 
         protected override async Task OnInitializedAsync()
         {
@@ -60,14 +63,45 @@ namespace AI_Driven_Water_Supply.Presentation.Components.Pages
 
             var allBills = response.Models;
             collections = allBills.Where(b => b.Status == "Unpaid").ToList();
-            history = allBills.Where(b => b.Status == "Paid").ToList();
+            history = allBills.Where(b => b.Status == "Paid").OrderByDescending(b => b.CreatedAt).ToList();
             TotalEarnings = (float)history.Sum(x => x.Amount);
             PendingAmount = (float)collections.Sum(x => x.Amount);
+            await LoadOrdersForBills(allBills.Select(b => b.OrderId));
             StateHasChanged();
+        }
+
+        private async Task LoadOrdersForBills(IEnumerable<long> orderIds)
+        {
+            ordersById.Clear();
+            var distinct = orderIds.Distinct().ToList();
+            if (distinct.Count == 0) return;
+
+            var tasks = distinct.Select(async id =>
+            {
+                var r = await _supabase.From<Order>().Where(x => x.Id == id).Get();
+                return (id, order: r.Models.FirstOrDefault());
+            });
+            var results = await Task.WhenAll(tasks);
+            foreach (var (id, order) in results)
+            {
+                if (order != null)
+                    ordersById[id] = order;
+            }
+        }
+
+        private Order? OrderFor(long orderId) =>
+            ordersById.TryGetValue(orderId, out var o) ? o : null;
+
+        private static string ShortAddress(string? address, int maxLen = 48)
+        {
+            if (string.IsNullOrWhiteSpace(address)) return "";
+            var t = address.Trim();
+            return t.Length <= maxLen ? t : t[..maxLen] + "…";
         }
 
         private void OpenPaymentModal(Bill bill)
         {
+            CloseReceiptModal();
             selectedBill = bill;
             showModal = true;
         }
@@ -76,6 +110,19 @@ namespace AI_Driven_Water_Supply.Presentation.Components.Pages
         {
             showModal = false;
             selectedBill = null;
+        }
+
+        private void OpenReceiptModal(Bill bill)
+        {
+            CloseModal();
+            receiptBill = bill;
+            showReceiptModal = true;
+        }
+
+        private void CloseReceiptModal()
+        {
+            showReceiptModal = false;
+            receiptBill = null;
         }
 
         private async Task ProcessPayment(string method)

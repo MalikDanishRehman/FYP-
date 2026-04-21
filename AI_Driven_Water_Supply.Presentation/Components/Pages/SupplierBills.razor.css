@@ -52,6 +52,138 @@ body {
     margin: 0 auto;
 }
 
+.bills-intro {
+    background: rgba(36, 254, 65, 0.06);
+    border: 1px solid rgba(36, 254, 65, 0.2);
+    border-radius: 16px;
+    padding: 16px 18px;
+    color: #c8c8c8;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.bills-intro-title {
+    color: #e8e8e8;
+    font-weight: 600;
+    margin-bottom: 10px;
+    font-size: 0.95rem;
+}
+
+.bills-intro-list {
+    margin: 0;
+    padding-left: 1.15rem;
+}
+
+    .bills-intro-list li {
+        margin-bottom: 8px;
+    }
+
+        .bills-intro-list li:last-child {
+            margin-bottom: 0;
+        }
+
+.bill-meta {
+    font-size: 0.8rem;
+    color: #a0a0a0;
+}
+
+.bill-order-line {
+    margin: 6px 0 0 0;
+    font-size: 0.85rem;
+    color: #e0e0e0;
+}
+
+.bill-order-address {
+    margin: 4px 0 0 0;
+    font-size: 0.78rem;
+    color: #888;
+}
+
+.bill-order-status {
+    margin: 6px 0 0 0;
+    font-size: 0.78rem;
+    color: #909090;
+}
+
+.bill-order-status-val {
+    color: #24FE41;
+    font-weight: 600;
+}
+
+.history-card {
+    opacity: 0.92;
+}
+
+.receipt-hint {
+    display: block;
+    font-size: 0.72rem;
+    color: #6a9;
+    margin-top: 6px;
+    font-weight: 500;
+}
+
+.custom-modal-wide {
+    max-width: 420px;
+    text-align: left;
+}
+
+.modal-order-box {
+    background: #141414;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    padding: 12px 14px;
+}
+
+.modal-order-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #24FE41;
+    font-weight: 700;
+    margin-bottom: 6px;
+}
+
+.receipt-dl {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 6px 16px;
+    font-size: 0.88rem;
+}
+
+    .receipt-dl dt {
+        color: #888;
+        font-weight: 500;
+        margin: 0;
+    }
+
+    .receipt-dl dd {
+        margin: 0;
+        color: #ccc;
+    }
+
+.receipt-order-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    font-size: 0.85rem;
+}
+
+    .receipt-order-list li {
+        padding: 6px 0;
+        border-bottom: 1px solid rgba(255,255,255,0.06);
+        color: #e0e0e0;
+    }
+
+        .receipt-order-list li:last-child {
+            border-bottom: none;
+        }
+
+    .receipt-order-list .text-muted {
+        display: inline-block;
+        min-width: 7.5rem;
+        margin-right: 6px;
+    }
+
 /* SUMMARY CARDS */
 .summary-grid {
     display: grid;
