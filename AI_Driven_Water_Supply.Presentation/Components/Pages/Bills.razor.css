@@ -52,6 +52,151 @@ body {
     margin: 0 auto;
 }
 
+/* Bootstrap utilities on this page: keep muted text readable on dark background. */
+.container-bills .text-muted {
+    color: #9a9a9a !important;
+}
+
+.bill-meta {
+    font-size: 0.8rem;
+    color: #a0a0a0;
+}
+
+.bill-order-line {
+    margin: 6px 0 0 0;
+    font-size: 0.85rem;
+    color: #e0e0e0;
+}
+
+.bill-order-address {
+    margin: 4px 0 0 0;
+    font-size: 0.78rem;
+    color: #888;
+}
+
+.bill-order-status {
+    margin: 6px 0 0 0;
+    font-size: 0.78rem;
+    color: #909090;
+}
+
+.bill-order-status-val {
+    color: #92FE9D;
+    font-weight: 600;
+}
+
+.clickable-card {
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+    .clickable-card:active {
+        transform: scale(0.98);
+    }
+
+.receipt-hint {
+    display: block;
+    font-size: 0.72rem;
+    color: #6bc;
+    margin-top: 6px;
+    font-weight: 500;
+}
+
+.modal-order-box {
+    background: #141414;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    padding: 12px 14px;
+    text-align: left;
+}
+
+.modal-order-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #00C9FF;
+    font-weight: 700;
+    margin-bottom: 6px;
+}
+
+.receipt-modal-head h4 {
+    font-size: 1.15rem;
+}
+
+.btn-receipt-close {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.2);
+    color: #aaa;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    line-height: 1;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+    .btn-receipt-close:hover {
+        color: #fff;
+        border-color: rgba(255,255,255,0.4);
+    }
+
+.receipt-dl {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 6px 16px;
+    font-size: 0.88rem;
+}
+
+    .receipt-dl dt {
+        color: #888;
+        font-weight: 500;
+        margin: 0;
+    }
+
+    .receipt-dl dd {
+        margin: 0;
+        color: #ccc;
+    }
+
+.receipt-order-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    font-size: 0.85rem;
+}
+
+    .receipt-order-list li {
+        padding: 6px 0;
+        border-bottom: 1px solid rgba(255,255,255,0.06);
+        color: #e0e0e0;
+    }
+
+        .receipt-order-list li:last-child {
+            border-bottom: none;
+        }
+
+    .receipt-order-list .text-muted {
+        display: inline-block;
+        min-width: 7.5rem;
+        margin-right: 6px;
+    }
+
+.btn-receipt-done {
+    width: 100%;
+    margin-top: 20px;
+    padding: 12px;
+    border-radius: 12px;
+    border: none;
+    background: #333;
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+    .btn-receipt-done:hover {
+        background: #444;
+    }
+
 /* SUMMARY CARDS */
 .summary-grid {
     display: grid;
@@ -229,6 +374,31 @@ body {
     animation: slideUp 0.3s ease-out;
 }
 
+/* Receipt: base .payment-modal comes just above — same specificity wins by order, so use a compound selector. */
+.modal-overlay.receipt-modal-overlay {
+    z-index: 2000;
+}
+
+.payment-modal.payment-modal-receipt {
+    max-width: 420px;
+    text-align: left;
+}
+
+    .payment-modal.payment-modal-receipt .receipt-modal-head,
+    .payment-modal.payment-modal-receipt .receipt-dl,
+    .payment-modal.payment-modal-receipt .modal-order-box,
+    .payment-modal.payment-modal-receipt .receipt-order-list {
+        text-align: left;
+    }
+
+    .payment-modal.payment-modal-receipt .text-muted {
+        color: #9a9a9a !important;
+    }
+
+    .payment-modal.payment-modal-receipt .receipt-dl {
+        justify-items: start;
+    }
+
 .modal-header h4 {
     color: white;
     margin-bottom: 5px;
@@ -300,7 +470,7 @@ body {
 }
 
 .bill-card.history-card {
-    opacity: 0.7;
+    opacity: 0.9;
 }
 
 .bill-icon.icon-paid {

@@ -4,6 +4,8 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Avoid CS2012 (output DLL locked) when dotnet watch rebuilds overlap the Roslyn compiler server (VBCSCompiler). -->
+    <UseSharedCompilation>false</UseSharedCompilation>
   </PropertyGroup>
 
   <ItemGroup>
