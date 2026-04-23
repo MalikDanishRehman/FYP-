@@ -17,7 +17,7 @@ namespace AI_Driven_Water_Supply.Infrastructure.Services
         public const string AlertTypeReviewSentimentMismatch = "review_sentiment_mismatch";
 
         private const string GeminiModel = "gemini-2.0-flash";
-        private const string GeminiApiKeyConfigKeys = "GEMINI_API_KEY";
+        private const string GeminiApiKeyConfigKey = "GEMINI_API_KEY";
 
         private readonly Supabase.Client _supabase;
         private readonly ILogger<ReviewModerationService> _logger;
@@ -83,7 +83,7 @@ namespace AI_Driven_Water_Supply.Infrastructure.Services
             string comment,
             CancellationToken cancellationToken)
         {
-            var apiKey = _configuration[GeminiApiKeyConfigKeys]
+            var apiKey = _configuration[GeminiApiKeyConfigKey]
                 ?? Environment.GetEnvironmentVariable("GEMINI_API_KEY");
 
             if (string.IsNullOrWhiteSpace(apiKey))
