@@ -20,6 +20,7 @@ namespace AI_Driven_Water_Supply.Presentation.Components.Pages
         [Inject] private IAuthService AuthService { get; set; } = default!;
         [Inject] private IHttpClientFactory HttpClientFactory { get; set; } = default!;
         [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
+        [Inject] private IReviewModerationService ReviewModeration { get; set; } = default!;
 
         [Parameter] public string? name { get; set; }
 
@@ -292,6 +293,19 @@ namespace AI_Driven_Water_Supply.Presentation.Components.Pages
                 newReview.IpAddress = publicIp.Trim();
                 newReview.DeviceFingerprint = deviceFingerprint.Trim();
                 newReview.ReviewerId = reviewerId;
+
+                var moderation = await ReviewModeration.EvaluateAsync(new ReviewModerationRequest(
+                    newReview.Comment,
+                    newReview.Rating,
+                    reviewerId,
+                    providerId,
+                    string.IsNullOrEmpty(consumerName) ? null : consumerName));
+
+                if (moderation.Decision != ReviewModerationDecision.Accept)
+                {
+                    ToastService.ShowToast("Review not posted", moderation.UserFacingMessage, "warning");
+                    return;
+                }
 
                 await _supabase.From<ReviewModel>().Insert(newReview);
 
