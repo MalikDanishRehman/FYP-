@@ -38,6 +38,11 @@ builder.Services.AddHttpClient("ExternalHttp", client =>
     client.Timeout = TimeSpan.FromSeconds(15);
 });
 
+builder.Services.AddHttpClient("Gemini", client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
+
 builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("http://127.0.0.1:8000/") });
 var options = new SupabaseOptions
 {
@@ -55,6 +60,7 @@ builder.Services.AddScoped<Supabase.Client>(provider =>
 builder.Services.AddScoped<AI_Driven_Water_Supply.Application.Interfaces.IAuthService, AI_Driven_Water_Supply.Infrastructure.Services.AuthService>();
 builder.Services.AddScoped<AI_Driven_Water_Supply.Application.Interfaces.IToastService, AI_Driven_Water_Supply.Infrastructure.Services.ToastService>();
 builder.Services.AddScoped<AI_Driven_Water_Supply.Application.Interfaces.IOrderStatusService, AI_Driven_Water_Supply.Infrastructure.Services.OrderStatusService>();
+builder.Services.AddScoped<AI_Driven_Water_Supply.Application.Interfaces.IReviewModerationService, AI_Driven_Water_Supply.Infrastructure.Services.ReviewModerationService>();
 
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
