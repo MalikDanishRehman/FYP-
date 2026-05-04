@@ -1,5 +1,6 @@
 ﻿using Supabase.Gotrue;
-using System; // 👈 Yeh zaroori hai 'Action' ke liye
+using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace AI_Driven_Water_Supply.Application.Interfaces
@@ -16,5 +17,7 @@ namespace AI_Driven_Water_Supply.Application.Interfaces
         event Action OnChange;
 
         Task TryRefreshSession();
+
+        Task<bool> UpdatePasswordAsync(string newPassword, CancellationToken cancellationToken = default);
     }
 }

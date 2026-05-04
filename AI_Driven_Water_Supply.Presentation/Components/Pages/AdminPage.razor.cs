@@ -1,8 +1,8 @@
-using Microsoft.AspNetCore.Components;
+using AI_Driven_Water_Supply.Application.DTOs;
 using AI_Driven_Water_Supply.Application.Interfaces;
 using AI_Driven_Water_Supply.Domain.Entities;
-using Supabase.Postgrest.Models;
-using Supabase.Postgrest.Attributes;
+using Microsoft.AspNetCore.Components;
+using Supabase;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -11,39 +11,38 @@ namespace AI_Driven_Water_Supply.Presentation.Components.Pages
 {
     public partial class AdminPage
     {
-        [Inject] private Supabase.Client _supabase { get; set; } = default!;
+        [Inject] private Client SupabaseClient { get; set; } = default!;
         [Inject] private IAuthService AuthService { get; set; } = default!;
+        [Inject] private IAdminDashboardService Dashboard { get; set; } = default!;
+        [Inject] private IToastService Toast { get; set; } = default!;
         [Inject] private NavigationManager Nav { get; set; } = default!;
 
         private string UserName = "Loading...";
         private string ProfileImageUrl = "/images/fallbackimg.jpg";
-        private int totalRevenue = 0;
-        private List<Message> chatList = new List<Message>();
-
-        [Table("profiles")]
-        public class Profile : BaseModel
-        {
-            [Column("id")] public string Id { get; set; } = "";
-            [Column("username")] public string Username { get; set; } = "";
-            [Column("profilepic")] public string ProfilePic { get; set; } = "";
-        }
+        private AdminDashboardMetricsDto? metrics;
+        private List<AdminOrderRowDto> recentOrders = new();
+        private string statusFilter = "";
+        private string searchOrderId = "";
+        private bool isLoadingMetrics = true;
+        private bool isLoadingOrders = true;
 
         protected override async Task OnInitializedAsync()
         {
             var user = AuthService.CurrentUser;
-            if (user == null) { await AuthService.TryRefreshSession(); user = AuthService.CurrentUser; }
-
-            if (user != null)
+            if (user == null)
             {
-                await SetDynamicData(user);
-                StateHasChanged();
-                await LoadMessages();
-                StateHasChanged();
+                await AuthService.TryRefreshSession();
+                user = AuthService.CurrentUser;
             }
-            else
+
+            if (user == null)
             {
                 Nav.NavigateTo("/login");
+                return;
             }
+
+            await SetDynamicData(user);
+            await LoadDashboardAsync();
         }
 
         private async Task SetDynamicData(Supabase.Gotrue.User user)
@@ -51,38 +50,72 @@ namespace AI_Driven_Water_Supply.Presentation.Components.Pages
             string fetchedName = "";
             try
             {
-                var response = await _supabase.From<Profile>().Where(x => x.Id == user.Id).Get();
+                var response = await SupabaseClient.From<Profile>().Where(x => x.Id == user.Id).Get();
                 var profile = response.Models.FirstOrDefault();
                 if (profile != null)
                 {
                     fetchedName = profile.Username;
                     if (!string.IsNullOrEmpty(profile.ProfilePic))
                     {
-                        ProfileImageUrl = _supabase.Storage.From("Avatar").GetPublicUrl(profile.ProfilePic);
+                        ProfileImageUrl = SupabaseClient.Storage.From("Avatar").GetPublicUrl(profile.ProfilePic) ?? ProfileImageUrl;
                     }
                 }
             }
-            catch { }
+            catch { /* ignore */ }
 
             if (string.IsNullOrEmpty(fetchedName) && user.UserMetadata != null)
-                if (user.UserMetadata.TryGetValue("username", out var nameObj)) fetchedName = nameObj?.ToString();
+                if (user.UserMetadata.TryGetValue("username", out var nameObj))
+                    fetchedName = nameObj?.ToString() ?? "";
 
             if (string.IsNullOrEmpty(fetchedName) && !string.IsNullOrEmpty(user.Email))
                 fetchedName = user.Email.Split('@')[0];
 
-            UserName = string.IsNullOrEmpty(fetchedName) ? "Provider" : fetchedName;
+            UserName = string.IsNullOrEmpty(fetchedName) ? "Admin" : fetchedName;
         }
 
-        private async Task LoadMessages()
+        private async Task LoadDashboardAsync()
         {
-            try
-            {
-                if (UserName == "Loading..." || UserName == "Provider") return;
-                var response = await _supabase.From<Message>().Where(x => x.ReceiverName == UserName).Order("created_at", Supabase.Postgrest.Constants.Ordering.Descending).Get();
-                chatList = response.Models.GroupBy(m => m.OrderId).Select(g => g.First()).ToList();
-                totalRevenue = chatList.Count * 1200;
-            }
-            catch { }
+            isLoadingMetrics = true;
+            isLoadingOrders = true;
+            StateHasChanged();
+
+            metrics = await Dashboard.GetMetricsAsync();
+            isLoadingMetrics = false;
+            StateHasChanged();
+
+            var ordersPage = await Dashboard.GetRecentOrdersAsync(
+                1,
+                25,
+                string.IsNullOrWhiteSpace(statusFilter) ? null : statusFilter.Trim(),
+                string.IsNullOrWhiteSpace(searchOrderId) ? null : searchOrderId.Trim(),
+                default);
+
+            recentOrders = ordersPage.Items.ToList();
+            isLoadingOrders = false;
+            StateHasChanged();
+        }
+
+        private async Task RefreshAsync()
+        {
+            await LoadDashboardAsync();
+            Toast.ShowToast("Dashboard", "Refreshed.", "success");
+        }
+
+        private async Task ClearFiltersAsync()
+        {
+            statusFilter = "";
+            searchOrderId = "";
+            await LoadDashboardAsync();
+        }
+
+        private async Task ApplyFiltersAsync()
+        {
+            await LoadDashboardAsync();
+        }
+
+        private void StubNotConfigured(string title)
+        {
+            Toast.ShowToast(title, "This action is not configured yet.", "info");
         }
     }
 }

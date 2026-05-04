@@ -1,19 +1,19 @@
 @page "/AdminSetting"
 @using AI_Driven_Water_Supply.Application.Interfaces
-@using AI_Driven_Water_Supply.Domain.Entities
-@using Supabase.Postgrest.Models
-@inject Supabase.Client _supabase
-@inject IAuthService AuthService
-@inject NavigationManager Nav
 @rendermode InteractiveServer
 @layout AdminSidebar
-
 
 <div class="page-header">
     <h2>Settings</h2>
     <p>Manage your profile details and preferences.</p>
 </div>
 
+@if (isLoading)
+{
+    <p style="color:#888;">Loading…</p>
+}
+else
+{
 <div class="settings-grid">
 
     <div class="setting-card">
@@ -23,9 +23,9 @@
         </div>
 
         <div class="profile-section">
-            <div class="avatar-circle">A</div>
+            <div class="avatar-circle">@AvatarLetter()</div>
             <div class="profile-text">
-                <h4>Admin User</h4>
+                <h4>@(string.IsNullOrEmpty(adminName) ? "Admin" : adminName)</h4>
                 <span>Super Administrator</span>
             </div>
         </div>
@@ -37,15 +37,15 @@
 
         <div class="form-group">
             <label>Email Address</label>
-            <input type="email" class="form-control-dark" @bind="adminEmail" placeholder="admin@example.com" />
+            <input type="email" class="form-control-dark" value="@adminEmail" disabled placeholder="admin@example.com" />
         </div>
 
         <div class="form-group">
             <label>Phone</label>
-            <input type="text" class="form-control-dark" placeholder="+92 300 1234567" />
+            <input type="text" class="form-control-dark" @bind="adminPhone" placeholder="+92 300 1234567" />
         </div>
 
-        <button class="btn-save" @onclick="SaveChanges">
+        <button type="button" class="btn-save" @onclick="SaveProfileAsync">
             <i class="fa-solid fa-check"></i> Update Profile
         </button>
     </div>
@@ -57,21 +57,16 @@
         </div>
 
         <div class="form-group">
-            <label>Current Password</label>
-            <input type="password" class="form-control-dark" placeholder="••••••••" />
-        </div>
-
-        <div class="form-group">
             <label>New Password</label>
-            <input type="password" class="form-control-dark" placeholder="New strong password" />
+            <input type="password" class="form-control-dark" placeholder="New strong password" @bind="newPassword" />
         </div>
 
         <div class="form-group">
             <label>Confirm Password</label>
-            <input type="password" class="form-control-dark" placeholder="Repeat new password" />
+            <input type="password" class="form-control-dark" placeholder="Repeat new password" @bind="confirmPassword" />
         </div>
 
-        <button class="btn-save" style="background:transparent; border:1px solid #BFFF27; color:#BFFF27;" @onclick="SaveChanges">
+        <button type="button" class="btn-save" style="background:transparent; border:1px solid #BFFF27; color:#BFFF27;" @onclick="ChangePasswordAsync">
             <i class="fa-solid fa-key"></i> Change Password
         </button>
     </div>
@@ -88,7 +83,7 @@
                 <small style="color:#666;">Get emails for new disputes.</small>
             </div>
             <label class="switch">
-                <input type="checkbox" checked>
+                <input type="checkbox" @bind="emailAlerts">
                 <span class="slider"></span>
             </label>
         </div>
@@ -99,7 +94,7 @@
                 <small style="color:#666;">Popups when vendors sign up.</small>
             </div>
             <label class="switch">
-                <input type="checkbox" checked>
+                <input type="checkbox" @bind="desktopNotifications">
                 <span class="slider"></span>
             </label>
         </div>
@@ -110,7 +105,7 @@
                 <small style="color:#666;">Receive auto-generated PDF reports.</small>
             </div>
             <label class="switch">
-                <input type="checkbox">
+                <input type="checkbox" @bind="monthlyReports">
                 <span class="slider"></span>
             </label>
         </div>
@@ -121,22 +116,15 @@
                 <small style="color:#666;">Play sound on new orders.</small>
             </div>
             <label class="switch">
-                <input type="checkbox" checked>
+                <input type="checkbox" @bind="soundEffects">
                 <span class="slider"></span>
             </label>
         </div>
 
-        <button class="btn-save" @onclick="SaveChanges">
+        <button type="button" class="btn-save" @onclick="SavePreferencesAsync">
             <i class="fa-solid fa-floppy-disk"></i> Save Preferences
         </button>
     </div>
 
 </div>
-
-@* @if (showToast)
-{
-    <div class="toast-msg">
-        <i class="fa-solid fa-circle-check"></i>
-        <span>Settings updated successfully!</span>
-    </div>
-} *@
+}

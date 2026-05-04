@@ -1,8 +1,6 @@
 @page "/AdminPage"
 @using AI_Driven_Water_Supply.Application.Interfaces
-@using AI_Driven_Water_Supply.Domain.Entities
-@using Supabase.Postgrest.Models
-@using Supabase.Postgrest.Attributes
+@using AI_Driven_Water_Supply.Application.DTOs
 @rendermode InteractiveServer
 @layout AdminSidebar
 
@@ -12,37 +10,49 @@
 </div>
 
 <div class="action-row">
-    <button class="btn-action"><i class="fa-regular fa-envelope"></i> Email Config</button>
-    <button class="btn-action btn-primary-custom"><i class="fa-solid fa-crown"></i> Manage Subscriptions</button>
-    <button class="btn-action"><i class="fa-solid fa-rotate"></i> Refresh</button>
+    <button type="button" class="btn-action" @onclick='() => StubNotConfigured("Email Config")'><i class="fa-regular fa-envelope"></i> Email Config</button>
+    <button type="button" class="btn-action btn-primary-custom" @onclick='() => StubNotConfigured("Subscriptions")'><i class="fa-solid fa-crown"></i> Manage Subscriptions</button>
+    <button type="button" class="btn-action" @onclick="RefreshAsync"><i class="fa-solid fa-rotate"></i> Refresh</button>
 </div>
 
 <div class="stats-container">
     <div class="stat-box">
         <span class="stat-label">Total Revenue</span>
-        <h2 class="stat-value">Rs 1.2M</h2>
-        <span class="stat-sub"><i class="fa-solid fa-arrow-trend-up"></i> +12% this month</span>
+        <h2 class="stat-value">
+            @if (isLoadingMetrics) { <text>…</text> }
+            else { <text>Rs @(metrics?.TotalRevenuePkr.ToString("N0") ?? "0")</text> }
+        </h2>
+        <span class="stat-sub"><i class="fa-solid fa-wallet"></i> Sum of order totals</span>
         <i class="fa-solid fa-wallet stat-icon"></i>
     </div>
 
     <div class="stat-box">
         <span class="stat-label">Active Vendors</span>
-        <h2 class="stat-value">45</h2>
-        <span class="stat-sub" style="color:#2ecc71; background:rgba(46,204,113,0.1)">Online</span>
+        <h2 class="stat-value">
+            @if (isLoadingMetrics) { <text>…</text> }
+            else { <text>@(metrics?.ActiveVendors ?? 0)</text> }
+        </h2>
+        <span class="stat-sub" style="color:#2ecc71; background:rgba(46,204,113,0.1)">Providers (active)</span>
         <i class="fa-solid fa-store stat-icon"></i>
     </div>
 
     <div class="stat-box">
         <span class="stat-label">Success Rate</span>
-        <h2 class="stat-value">98.5%</h2>
-        <span class="stat-sub"><i class="fa-solid fa-check"></i> Processing</span>
+        <h2 class="stat-value">
+            @if (isLoadingMetrics) { <text>…</text> }
+            else { <text>@(metrics?.SuccessRatePercent.ToString("0.#") ?? "0")%</text> }
+        </h2>
+        <span class="stat-sub"><i class="fa-solid fa-check"></i> Delivered / completed vs all orders</span>
         <i class="fa-solid fa-chart-line stat-icon"></i>
     </div>
 
     <div class="stat-box">
-        <span class="stat-label">Issues Reported</span>
-        <h2 class="stat-value">3</h2>
-        <span class="stat-sub" style="color:#ff4d4d; background:rgba(255,77,77,0.1)">Action Required</span>
+        <span class="stat-label">Open disputes</span>
+        <h2 class="stat-value">
+            @if (isLoadingMetrics) { <text>…</text> }
+            else { <text>@(metrics?.PendingDisputes ?? 0)</text> }
+        </h2>
+        <span class="stat-sub" style="color:#ff4d4d; background:rgba(255,77,77,0.1)">Pending orders: @(metrics?.PendingOrders ?? 0)</span>
         <i class="fa-solid fa-triangle-exclamation stat-icon"></i>
     </div>
 </div>
@@ -51,10 +61,10 @@
     <h4 style="margin: 0 0 20px 0; color: white;">Recent Transactions</h4>
 
     <div class="filter-bar">
-        <input type="text" class="filter-input" placeholder="All Status">
-        <input type="text" class="filter-input" placeholder="Pick a date">
-        <input type="text" class="filter-input" placeholder="Search Order ID">
-        <button class="btn-action">Clear Filters</button>
+        <input type="text" class="filter-input" placeholder="Status (e.g. Pending)" @bind="statusFilter" />
+        <input type="text" class="filter-input" placeholder="Search Order ID" @bind="searchOrderId" />
+        <button type="button" class="btn-action" @onclick="ApplyFiltersAsync">Apply</button>
+        <button type="button" class="btn-action" @onclick="ClearFiltersAsync">Clear Filters</button>
     </div>
 
     <div class="table-responsive">
@@ -69,30 +79,31 @@
                 </tr>
             </thead>
             <tbody>
-                <tr>
-                    <td>#ORD-8821</td>
-                    <td>Ali Khan</td>
-                    <td>Aqua Pure</td>
-                    <td>Rs 500</td>
-                    <td><span class="status-dot st-completed"></span>Delivered</td>
-                </tr>
-                <tr>
-                    <td>#ORD-8822</td>
-                    <td>Sara Ahmed</td>
-                    <td>Blue Water</td>
-                    <td>Rs 1200</td>
-                    <td><span class="status-dot st-pending"></span>Pending</td>
-                </tr>
+                @if (isLoadingOrders)
+                {
+                    <tr><td colspan="5" style="text-align:center;color:#888;">Loading orders…</td></tr>
+                }
+                else if (!recentOrders.Any())
+                {
+                    <tr><td colspan="5" style="text-align:center;color:#888;">No orders found.</td></tr>
+                }
+                else
+                {
+                    @foreach (var o in recentOrders)
+                    {
+                        var st = (o.Status ?? "").Trim();
+                        var lower = st.ToLowerInvariant();
+                        var dotClass = lower is "pending" or "processing" ? "st-pending" : "st-completed";
+                        <tr>
+                            <td>#@o.Id</td>
+                            <td>@o.ConsumerName</td>
+                            <td>@o.SupplierName</td>
+                            <td>Rs @o.TotalPrice.ToString("N0")</td>
+                            <td><span class="status-dot @dotClass"></span>@o.Status</td>
+                        </tr>
+                    }
+                }
             </tbody>
         </table>
     </div>
 </div>
-
-@code {
-    private bool isSidebarOpen = true;
-
-    private void ToggleSidebar()
-    {
-        isSidebarOpen = !isSidebarOpen;
-    }
-}

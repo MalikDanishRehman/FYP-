@@ -1,66 +1,115 @@
-using Microsoft.AspNetCore.Components;
+using AI_Driven_Water_Supply.Application.DTOs;
 using AI_Driven_Water_Supply.Application.Interfaces;
+using Microsoft.AspNetCore.Components;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace AI_Driven_Water_Supply.Presentation.Components.Pages
 {
     public partial class Admin_Dispute
     {
-        [Inject] public Supabase.Client _supabase { get; set; } = null!;
-        [Inject] public IAuthService AuthService { get; set; } = null!;
-        [Inject] public NavigationManager Nav { get; set; } = null!;
+        [Inject] private IAdminDisputeService Disputes { get; set; } = default!;
+        [Inject] private IAdminDashboardService Dashboard { get; set; } = default!;
+        [Inject] private IToastService Toast { get; set; } = default!;
+        [Inject] private IAuthService AuthService { get; set; } = default!;
+        [Inject] private NavigationManager Nav { get; set; } = default!;
 
         private string activeTab = "All";
-        private bool showModal = false;
-        private DisputeTicket selectedTicket = null!;
+        private bool showModal;
+        private AdminDisputeRowDto? selectedTicket;
+        private string resolutionDraft = "";
+        private bool isLoading = true;
+        private bool isSubmitting;
+        private List<AdminDisputeRowDto> tickets = new();
+        private long pendingFromMetrics;
 
-        public class DisputeTicket
-        {
-            public string TicketId { get; set; } = null!;
-            public string UserName { get; set; } = null!;
-            public string VendorName { get; set; } = null!;
-            public string IssueType { get; set; } = null!;
-            public string Description { get; set; } = null!;
-            public string Priority { get; set; } = null!;
-            public string Date { get; set; } = null!;
-            public string Status { get; set; } = null!;
-        }
-
-        private List<DisputeTicket> tickets = new List<DisputeTicket>
-        {
-            new DisputeTicket { TicketId = "9012", UserName = "Ahmed Ali", VendorName = "Aqua Pure", IssueType = "Water Quality", Description = "Water smells weird and tastes salty.", Priority = "High", Date = "10 Feb", Status = "Pending" },
-            new DisputeTicket { TicketId = "9013", UserName = "Sara Khan", VendorName = "Blue Drop", IssueType = "Late Delivery", Description = "Order was delayed by 4 hours without notice.", Priority = "Med", Date = "09 Feb", Status = "Pending" },
-            new DisputeTicket { TicketId = "8840", UserName = "Bilal", VendorName = "Clean Sip", IssueType = "Rude Behavior", Description = "Delivery guy was very rude.", Priority = "Low", Date = "05 Feb", Status = "Resolved" },
-            new DisputeTicket { TicketId = "8845", UserName = "Usman", VendorName = "QuickWater", IssueType = "Payment Issue", Description = "Charged double for single refill.", Priority = "High", Date = "01 Feb", Status = "Resolved" },
-        };
-
-        private IEnumerable<DisputeTicket> FilteredTickets
+        private IEnumerable<AdminDisputeRowDto> FilteredTickets
         {
             get
             {
                 if (activeTab == "All") return tickets;
-                return tickets.Where(t => t.Status == activeTab);
+                if (activeTab == "Pending") return tickets.Where(t => t.Status == "Pending");
+                return tickets.Where(t => t.Status is "Resolved" or "Closed");
             }
         }
 
-        private string GetPriorityClass(string priority)
+        protected override async Task OnInitializedAsync()
         {
-            return priority switch
+            var user = AuthService.CurrentUser;
+            if (user == null)
+            {
+                await AuthService.TryRefreshSession();
+                user = AuthService.CurrentUser;
+            }
+
+            if (user == null)
+            {
+                Nav.NavigateTo("/login");
+                return;
+            }
+
+            await ReloadAsync();
+        }
+
+        protected async Task ReloadAsync()
+        {
+            isLoading = true;
+            StateHasChanged();
+
+            var tab = activeTab == "All" ? null : activeTab;
+            var page = await Disputes.ListAsync(tab, 1, 100, default);
+            tickets = page.Items.ToList();
+
+            var metrics = await Dashboard.GetMetricsAsync();
+            pendingFromMetrics = metrics?.PendingDisputes ?? tickets.Count(t => t.Status == "Pending");
+
+            isLoading = false;
+            StateHasChanged();
+        }
+
+        private string GetPriorityClass(string priority) =>
+            priority switch
             {
                 "High" => "p-high",
                 "Med" => "p-med",
                 _ => "p-low"
             };
-        }
 
-        private void OpenTicket(DisputeTicket ticket)
+        private void OpenTicket(AdminDisputeRowDto ticket)
         {
             selectedTicket = ticket;
+            resolutionDraft = "";
             showModal = true;
         }
 
         private void CloseModal()
         {
             showModal = false;
+            selectedTicket = null;
+        }
+
+        private async Task SubmitResolveAsync()
+        {
+            if (selectedTicket == null || selectedTicket.Status != "Pending") return;
+
+            isSubmitting = true;
+            StateHasChanged();
+
+            var ok = await Disputes.ResolveAsync(selectedTicket.Id, resolutionDraft, default);
+            isSubmitting = false;
+
+            if (ok)
+            {
+                Toast.ShowToast("Dispute", "Marked as resolved.", "success");
+                CloseModal();
+                await ReloadAsync();
+            }
+            else
+            {
+                Toast.ShowToast("Dispute", "Could not resolve. Check database RPC and permissions.", "error");
+            }
         }
     }
 }

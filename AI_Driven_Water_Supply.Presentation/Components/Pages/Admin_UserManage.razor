@@ -1,6 +1,7 @@
 @page "/UserManagement"
 @using AI_Driven_Water_Supply.Application.Interfaces
 @using AI_Driven_Water_Supply.Domain.Entities
+@rendermode InteractiveServer
 @layout AdminSidebar
 
 <div class="page-header">
@@ -14,7 +15,7 @@
             <i class="fa-solid fa-search search-icon"></i>
             <input type="text" class="custom-input" placeholder="Search users by name..." @bind="searchTerm" @bind:event="oninput">
         </div>
-        <button class="btn-add">
+        <button type="button" class="btn-add" @onclick="AddUserStub">
             <i class="fa-solid fa-plus"></i> Add User
         </button>
     </div>
@@ -24,7 +25,7 @@
     <div class="stat-card">
         <div class="stat-info">
             <p>Total Users</p>
-            <h3>@Users.Count</h3>
+            <h3>@(counts?.Consumers ?? Users.Count)</h3>
         </div>
         <div class="stat-icon" style="color: #fff;">
             <i class="fa-solid fa-users"></i>
@@ -33,8 +34,8 @@
 
     <div class="stat-card">
         <div class="stat-info">
-            <p>Active Now</p>
-            <h3>@Users.Count</h3>
+            <p>Active</p>
+            <h3>@(counts?.ActiveConsumers ?? Users.Count(u => string.IsNullOrEmpty(u.AccountStatus) || u.AccountStatus == "active"))</h3>
         </div>
         <div class="stat-icon" style="color: #2ecc71;">
             <i class="fa-solid fa-circle-check"></i>
@@ -44,7 +45,7 @@
     <div class="stat-card">
         <div class="stat-info">
             <p>Banned</p>
-            <h3>0</h3>
+            <h3>@(counts?.Banned ?? Users.Count(u => string.Equals(u.AccountStatus, "banned", StringComparison.OrdinalIgnoreCase)))</h3>
         </div>
         <div class="stat-icon" style="color: #e74c3c;">
             <i class="fa-solid fa-ban"></i>
@@ -84,6 +85,8 @@
             {
                 @foreach (var user in FilteredUsers)
                 {
+                    var st = string.IsNullOrEmpty(user.AccountStatus) ? "active" : user.AccountStatus;
+                    var isBanned = string.Equals(st, "banned", StringComparison.OrdinalIgnoreCase);
                     <tr>
                         <td>
                             <div class="user-profile">
@@ -102,15 +105,24 @@
                             </span>
                         </td>
                         <td>
-                            <span class="status-active"><i class="fa-solid fa-circle" style="font-size:6px;"></i> Active</span>
+                            @if (isBanned)
+                            {
+                                <span class="status-active" style="color:#e74c3c;"><i class="fa-solid fa-ban" style="font-size:6px;"></i> Banned</span>
+                            }
+                            else
+                            {
+                                <span class="status-active"><i class="fa-solid fa-circle" style="font-size:6px;"></i> @st</span>
+                            }
                         </td>
                         <td style="color:#888;">
-                            @(user.UpdatedAt.HasValue? user.UpdatedAt.Value.ToString("dd MMM yyyy") : "N/A")
+                            @(user.UpdatedAt.HasValue ? user.UpdatedAt.Value.ToString("dd MMM yyyy") : "N/A")
                         </td>
                         <td>
                             <div class="action-group">
-                                <button class="btn-icon" title="Edit User"><i class="fa-solid fa-pen"></i></button>
-                                <button class="btn-icon btn-delete" title="Delete User"><i class="fa-solid fa-trash"></i></button>
+                                <button type="button" class="btn-icon" title="Edit User" @onclick="() => EditUserStub(user)"><i class="fa-solid fa-pen"></i></button>
+                                <button type="button" class="btn-icon btn-delete" title="@(isBanned ? "Reactivate" : "Ban")" @onclick="@(async () => await ToggleBanAsync(user))">
+                                    <i class="fa-solid @(isBanned ? "fa-user-check" : "fa-ban")"></i>
+                                </button>
                             </div>
                         </td>
                     </tr>
