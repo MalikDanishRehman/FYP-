@@ -1,7 +1,6 @@
 @page "/AdminDispute"
 @using AI_Driven_Water_Supply.Application.Interfaces
-@using AI_Driven_Water_Supply.Domain.Entities
-@using Supabase.Postgrest.Models
+@using AI_Driven_Water_Supply.Application.DTOs
 @rendermode InteractiveServer
 @layout AdminSidebar
 
@@ -12,16 +11,16 @@
     </div>
 
     <div class="filter-tabs">
-        <button class="tab-btn @(activeTab == "All" ? "active" : "")" @onclick='() => activeTab = "All"'>All Tickets</button>
-        <button class="tab-btn @(activeTab == "Pending" ? "active" : "")" @onclick='() => activeTab = "Pending"'>Pending</button>
-        <button class="tab-btn @(activeTab == "Resolved" ? "active" : "")" @onclick='() => activeTab = "Resolved"'>Resolved</button>
+        <button type="button" class="tab-btn @(activeTab == "All" ? "active" : "")" @onclick='async () => { activeTab = "All"; await ReloadAsync(); }'>All Tickets</button>
+        <button type="button" class="tab-btn @(activeTab == "Pending" ? "active" : "")" @onclick='async () => { activeTab = "Pending"; await ReloadAsync(); }'>Pending</button>
+        <button type="button" class="tab-btn @(activeTab == "Resolved" ? "active" : "")" @onclick='async () => { activeTab = "Resolved"; await ReloadAsync(); }'>Resolved</button>
     </div>
 </div>
 
 <div class="stats-grid">
     <div class="stat-card">
         <div class="stat-info">
-            <p>Total Tickets</p>
+            <p>Tickets (loaded)</p>
             <h3>@tickets.Count</h3>
         </div>
         <div class="stat-icon" style="background: rgba(255,255,255,0.05); color: white;">
@@ -30,8 +29,8 @@
     </div>
     <div class="stat-card">
         <div class="stat-info">
-            <p>Pending Action</p>
-            <h3>@tickets.Count(t => t.Status == "Pending")</h3>
+            <p>Pending (system)</p>
+            <h3>@pendingFromMetrics</h3>
         </div>
         <div class="stat-icon" style="background: rgba(255, 165, 2, 0.1); color: #ffa502;">
             <i class="fa-solid fa-clock"></i>
@@ -39,7 +38,7 @@
     </div>
     <div class="stat-card">
         <div class="stat-info">
-            <p>Critical Issues</p>
+            <p>Critical (loaded)</p>
             <h3>@tickets.Count(t => t.Priority == "High")</h3>
         </div>
         <div class="stat-icon" style="background: rgba(231, 76, 60, 0.1); color: #e74c3c;">
@@ -49,71 +48,78 @@
 </div>
 
 <div class="table-card">
-    <table class="custom-table">
-        <thead>
-            <tr>
-                <th>Ticket ID</th>
-                <th>Involved Parties</th>
-                <th>Issue Details</th>
-                <th>Priority</th>
-                <th>Date</th>
-                <th>Status</th>
-                <th>Action</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var ticket in FilteredTickets)
-            {
+    @if (isLoading)
+    {
+        <p style="padding:20px;color:#888;">Loading disputes…</p>
+    }
+    else
+    {
+        <table class="custom-table">
+            <thead>
                 <tr>
-                    <td style="color:#666; font-family:monospace;">#@ticket.TicketId</td>
-                    <td>
-                        <div style="font-weight:600;">@ticket.UserName</div>
-                        <small style="color:#888;">vs @ticket.VendorName</small>
-                    </td>
-                    <td>
-                        <div style="color:#ddd;">@ticket.IssueType</div>
-                        <small style="color:#666; display:block; max-width:200px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-                            @ticket.Description
-                        </small>
-                    </td>
-                    <td>
-                        <span class="@GetPriorityClass(ticket.Priority)" style="font-weight:600; font-size:0.9rem;">
-                            <span class="priority-dot"></span> @ticket.Priority
-                        </span>
-                    </td>
-                    <td style="color:#888;">@ticket.Date</td>
-                    <td>
-                        <span class="badge-status @(ticket.Status == "Pending" ? "status-pending" : "status-resolved")">
-                            @if (ticket.Status == "Pending")
-                            {
-                                <i class="fa-solid fa-circle-exclamation"></i>
-                            }
-                            else
-                            {
-                                <i class="fa-solid fa-check"></i>
-                            }
-                            @ticket.Status
-                        </span>
-                    </td>
-                    <td>
-                        <button class="btn-action" @onclick="() => OpenTicket(ticket)">
-                            @(ticket.Status == "Pending" ? "Resolve" : "Details")
-                        </button>
-                    </td>
+                    <th>Ticket ID</th>
+                    <th>Involved Parties</th>
+                    <th>Issue Details</th>
+                    <th>Priority</th>
+                    <th>Date</th>
+                    <th>Status</th>
+                    <th>Action</th>
                 </tr>
-            }
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                @foreach (var ticket in FilteredTickets)
+                {
+                    <tr>
+                        <td style="color:#666; font-family:monospace;">#@ticket.Id.ToString("N")[..8]</td>
+                        <td>
+                            <div style="font-weight:600;">@(ticket.ConsumerName ?? "—")</div>
+                            <small style="color:#888;">vs @(ticket.ProviderName ?? "—")</small>
+                        </td>
+                        <td>
+                            <div style="color:#ddd;">@ticket.IssueType</div>
+                            <small style="color:#666; display:block; max-width:200px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                                @ticket.Description
+                            </small>
+                        </td>
+                        <td>
+                            <span class="@GetPriorityClass(ticket.Priority)" style="font-weight:600; font-size:0.9rem;">
+                                <span class="priority-dot"></span> @ticket.Priority
+                            </span>
+                        </td>
+                        <td style="color:#888;">@ticket.CreatedAt.ToString("dd MMM yyyy")</td>
+                        <td>
+                            <span class="badge-status @(ticket.Status == "Pending" ? "status-pending" : "status-resolved")">
+                                @if (ticket.Status == "Pending")
+                                {
+                                    <i class="fa-solid fa-circle-exclamation"></i>
+                                }
+                                else
+                                {
+                                    <i class="fa-solid fa-check"></i>
+                                }
+                                @ticket.Status
+                            </span>
+                        </td>
+                        <td>
+                            <button type="button" class="btn-action" @onclick="() => OpenTicket(ticket)">
+                                @(ticket.Status == "Pending" ? "Resolve" : "Details")
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
 </div>
 
 @if (showModal && selectedTicket != null)
 {
     <div class="modal-overlay" @onclick="CloseModal">
         <div class="modal-content" @onclick:stopPropagation="true">
-            <button class="close-btn" @onclick="CloseModal"><i class="fa-solid fa-xmark"></i></button>
+            <button type="button" class="close-btn" @onclick="CloseModal"><i class="fa-solid fa-xmark"></i></button>
 
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; padding-right: 25px;">
-                <h3 style="margin:0; font-weight:700;">Ticket #@selectedTicket.TicketId</h3>
+                <h3 style="margin:0; font-weight:700;">Ticket #@selectedTicket.Id.ToString("N")[..8]</h3>
                 <span class="badge-status @(selectedTicket.Status == "Pending" ? "status-pending" : "status-resolved")">
                     @selectedTicket.Status
                 </span>
@@ -139,11 +145,11 @@
             <div class="info-group" style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
                 <div>
                     <span class="info-label">Customer</span>
-                    <div class="info-value">@selectedTicket.UserName</div>
+                    <div class="info-value">@(selectedTicket.ConsumerName ?? "—")</div>
                 </div>
                 <div>
                     <span class="info-label">Vendor</span>
-                    <div class="info-value">@selectedTicket.VendorName</div>
+                    <div class="info-value">@(selectedTicket.ProviderName ?? "—")</div>
                 </div>
             </div>
 
@@ -153,9 +159,9 @@
             {
                 <div>
                     <span class="info-label">Admin Resolution</span>
-                    <textarea class="admin-textarea" rows="3" placeholder="Enter resolution notes or outcome..."></textarea>
+                    <textarea class="admin-textarea" rows="3" placeholder="Enter resolution notes or outcome..." @bind="resolutionDraft"></textarea>
 
-                    <button class="btn-resolve-submit">
+                    <button type="button" class="btn-resolve-submit" disabled="@isSubmitting" @onclick="SubmitResolveAsync">
                         <i class="fa-solid fa-gavel"></i> Mark as Resolved
                     </button>
                 </div>
@@ -170,6 +176,6 @@
                     </div>
                 </div>
             }
+        </div>
     </div>
-</div>
 }

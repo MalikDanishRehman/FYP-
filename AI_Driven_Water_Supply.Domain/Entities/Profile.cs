@@ -35,5 +35,14 @@ namespace AI_Driven_Water_Supply.Domain.Entities
 
         [Column("profilepic")]
         public string ProfilePic { get; set; } = null!;
+
+        [Column("phone")]
+        public string? Phone { get; set; }
+
+        [Column("account_status")]
+        public string? AccountStatus { get; set; }
+
+        [Column("updated_at")]
+        public DateTime? UpdatedAt { get; set; }
     }
 }

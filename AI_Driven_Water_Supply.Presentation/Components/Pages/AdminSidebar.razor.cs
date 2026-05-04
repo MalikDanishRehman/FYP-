@@ -8,8 +8,24 @@ namespace AI_Driven_Water_Supply.Presentation.Components.Pages
     {
         [Inject] private NavigationManager Nav { get; set; } = default!;
         [Inject] private IAuthService AuthService { get; set; } = default!;
+        [Inject] private IAdminAccessService AdminAccess { get; set; } = default!;
 
         protected bool isSidebarOpen = true;
+
+        protected override async Task OnInitializedAsync()
+        {
+            await AuthService.TryRefreshSession();
+            if (AuthService.CurrentUser == null)
+            {
+                Nav.NavigateTo("/login", forceLoad: true);
+                return;
+            }
+
+            if (!await AdminAccess.IsCurrentUserAdminAsync())
+            {
+                Nav.NavigateTo("/", forceLoad: true);
+            }
+        }
 
         protected void ToggleSidebar()
         {
@@ -19,7 +35,6 @@ namespace AI_Driven_Water_Supply.Presentation.Components.Pages
         protected async Task HandleLogout()
         {
             await AuthService.SignOut();
-            // ForceLoad true rakha hai taake logout ke baad page poora refresh ho aur user login par jaye
             Nav.NavigateTo("/login", forceLoad: true);
         }
     }

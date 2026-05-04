@@ -1,0 +1,30 @@
+Admin panel QA checklist (run after applying supabase_admin_panel.sql in Supabase SQL Editor)
+
+1) Database
+   - Run Scripts/supabase_admin_panel.sql (and supabase_admin_alerts.sql if not already applied).
+   - Confirm tables exist: disputes, admin_audit_log, admin_preferences; profiles has phone, account_status, updated_at.
+   - Confirm RPCs exist: admin_dashboard_metrics, admin_profile_counts, admin_set_account_status, admin_resolve_dispute.
+
+2) Admin session
+   - Log in as a user with profiles.role = admin (lowercase, as in Login.razor.cs).
+   - Open /AdminPage, /VendorManagement, /UserManagement, /AdminDispute, /AdminSetting; all should load.
+   - Log in as Consumer or Provider; navigating to any admin URL should redirect to / (AdminSidebar guard).
+
+3) Dashboard
+   - Metrics tiles show numbers (or zeros if empty); Recent Transactions lists orders when data exists.
+   - Status filter and Order ID search apply; Refresh shows toast.
+
+4) Disputes
+   - Insert a test dispute row (or use consumer flow when implemented) with consumer_id/provider_id set.
+   - Admin list shows names; Resolve updates status and writes admin_audit_log.
+
+5) Users / Vendors
+   - Ban toggles account_status via RPC; banned user shows in stats; reactivate restores active.
+
+6) Settings
+   - Profile name/phone save to profiles; notification toggles persist in admin_preferences JSON.
+   - Password change succeeds for valid password length (Supabase Auth session required).
+
+7) RLS smoke (second browser / incognito)
+   - Non-admin authenticated user: SELECT on admin_audit_log and disputes (not party) should return no rows.
+   - Admin: can select disputes and audit log as applicable.

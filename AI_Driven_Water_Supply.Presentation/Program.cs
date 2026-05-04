@@ -62,6 +62,14 @@ builder.Services.AddScoped<AI_Driven_Water_Supply.Application.Interfaces.IToastS
 builder.Services.AddScoped<AI_Driven_Water_Supply.Application.Interfaces.IOrderStatusService, AI_Driven_Water_Supply.Infrastructure.Services.OrderStatusService>();
 builder.Services.AddScoped<AI_Driven_Water_Supply.Application.Interfaces.IReviewModerationService, AI_Driven_Water_Supply.Infrastructure.Services.ReviewModerationService>();
 
+builder.Services.AddScoped<AI_Driven_Water_Supply.Application.Interfaces.IAdminAccessService, AI_Driven_Water_Supply.Infrastructure.Services.AdminAccessService>();
+builder.Services.AddScoped<AI_Driven_Water_Supply.Application.Interfaces.IAdminAuditService, AI_Driven_Water_Supply.Infrastructure.Services.AdminAuditService>();
+builder.Services.AddScoped<AI_Driven_Water_Supply.Application.Interfaces.IAdminDashboardService, AI_Driven_Water_Supply.Infrastructure.Services.AdminDashboardService>();
+builder.Services.AddScoped<AI_Driven_Water_Supply.Application.Interfaces.IAdminDisputeService, AI_Driven_Water_Supply.Infrastructure.Services.AdminDisputeService>();
+builder.Services.AddScoped<AI_Driven_Water_Supply.Application.Interfaces.IAdminProfileModerationService, AI_Driven_Water_Supply.Infrastructure.Services.AdminProfileModerationService>();
+builder.Services.AddScoped<AI_Driven_Water_Supply.Application.Interfaces.IAdminPreferencesService, AI_Driven_Water_Supply.Infrastructure.Services.AdminPreferencesService>();
+builder.Services.AddScoped<AI_Driven_Water_Supply.Application.Interfaces.IAdminSelfProfileService, AI_Driven_Water_Supply.Infrastructure.Services.AdminSelfProfileService>();
+
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 

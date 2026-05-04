@@ -1,6 +1,7 @@
 @page "/VendorManagement"
 @using AI_Driven_Water_Supply.Application.Interfaces
 @using AI_Driven_Water_Supply.Domain.Entities
+@rendermode InteractiveServer
 @layout AdminSidebar
 
 <div class="page-header">
@@ -11,7 +12,7 @@
 
     <div class="search-wrapper">
         <i class="fa-solid fa-search search-icon"></i>
-        <input type="text" class="custom-input" placeholder="Search vendor by name...">
+        <input type="text" class="custom-input" placeholder="Search vendor by name..." @bind="searchTerm" @bind:event="oninput">
     </div>
 </div>
 
@@ -35,7 +36,7 @@
                     </td>
                 </tr>
             }
-            else if (!Vendors.Any())
+            else if (!FilteredVendors.Any())
             {
                 <tr>
                     <td colspan="5" style="text-align: center; padding: 20px;">
@@ -45,8 +46,10 @@
             }
             else
             {
-                @foreach (var vendor in Vendors)
+                @foreach (var vendor in FilteredVendors)
                 {
+                    var st = string.IsNullOrEmpty(vendor.AccountStatus) ? "active" : vendor.AccountStatus;
+                    var isBanned = string.Equals(st, "banned", StringComparison.OrdinalIgnoreCase);
                     <tr>
                         <td>
                             <div class="vendor-profile">
@@ -55,24 +58,33 @@
                                 </div>
                                 <div class="vendor-details">
                                     <h4>@(string.IsNullOrEmpty(vendor.Username) ? "Unknown" : vendor.Username)</h4>
-                                    <p style="font-size: 0.8rem; color: #888;">ID: @vendor.Id.Substring(0, 8)...</p>
+                                    <p style="font-size: 0.8rem; color: #888;">ID: @IdPreview(vendor.Id)</p>
                                 </div>
                             </div>
                         </td>
                         <td>
-                            <span style="display:block; color:#eee;">@(string.IsNullOrEmpty(vendor.Address) ? "Location not updated" : vendor.Address)</span>
+                            <span style="display:block; color:#eee;">@(string.IsNullOrEmpty(vendor.Location) ? "Location not updated" : vendor.Location)</span>
                         </td>
                         <td>
                             <div class="rating-box">
                                 <i class="fa-solid fa-star" style="color: gold;"></i>
-                                <span class="rating-text">(@(vendor.Rating ?? 0.0f))</span>
+                                <span class="rating-text">(@(vendor.Rating ?? 0.0))</span>
                             </div>
                         </td>
-                        <td><span class="status-badge badge-verified">Active</span></td>
+                        <td>
+                            @if (isBanned)
+                            {
+                                <span class="status-badge" style="background:#c0392b;">Banned</span>
+                            }
+                            else
+                            {
+                                <span class="status-badge badge-verified">@st</span>
+                            }
+                        </td>
                         <td>
                             <div class="action-group">
-                                <button class="btn-icon" title="View Profile"><i class="fa-regular fa-eye"></i></button>
-                                <button class="btn-icon btn-ban" title="Ban Vendor"><i class="fa-solid fa-ban"></i></button>
+                                <button type="button" class="btn-icon" title="View Profile" @onclick="() => ViewVendorStub(vendor)"><i class="fa-regular fa-eye"></i></button>
+                                <button type="button" class="btn-icon btn-ban" title="@(isBanned ? "Reactivate" : "Ban")" @onclick="@(async () => await ToggleBanAsync(vendor))"><i class="fa-solid @(isBanned ? "fa-user-check" : "fa-ban")"></i></button>
                             </div>
                         </td>
                     </tr>

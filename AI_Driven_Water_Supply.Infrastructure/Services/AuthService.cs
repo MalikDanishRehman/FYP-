@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.JSInterop;
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using SupabaseClient = Supabase.Client;
 
@@ -146,6 +147,26 @@ namespace AI_Driven_Water_Supply.Infrastructure.Services
                 return true;
             }
             catch { return false; }
+        }
+
+        public async Task<bool> UpdatePasswordAsync(string newPassword, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(newPassword) || newPassword.Length < 6)
+                return false;
+
+            try
+            {
+                if (_client.Auth.CurrentUser == null)
+                    return false;
+
+                var attrs = new UserAttributes { Password = newPassword };
+                await _client.Auth.Update(attrs);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
         }
     }
 }
