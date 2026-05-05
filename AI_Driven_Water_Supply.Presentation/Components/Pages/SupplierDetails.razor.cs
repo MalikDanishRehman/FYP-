@@ -210,6 +210,12 @@ namespace AI_Driven_Water_Supply.Presentation.Components.Pages
             var session = _supabase.Auth.CurrentSession;
             if (session == null || session.ExpiresAt() < DateTime.UtcNow)
             {
+                await AuthService.TryRefreshSession();
+                session = _supabase.Auth.CurrentSession;
+            }
+
+            if (session == null || session.ExpiresAt() < DateTime.UtcNow)
+            {
                 ToastService.ShowToast("Login Required", "Please login to submit a review.", "error");
                 return;
             }
@@ -342,8 +348,12 @@ namespace AI_Driven_Water_Supply.Presentation.Components.Pages
             if (string.IsNullOrEmpty(supplierName) || string.IsNullOrEmpty(consumerName))
                 return false;
 
+            // Chained Where (not a single lambda with &&): PostgREST otherwise can emit invalid logic like "and.(...)",
+            // causing PGRST100 "failed to parse logic tree".
             var res = await _supabase.From<Order>()
-                .Where(x => x.SupplierName == supplierName && x.ConsumerName == consumerName && x.Status == "Completed")
+                .Where(x => x.SupplierName == supplierName)
+                .Where(x => x.ConsumerName == consumerName)
+                .Where(x => x.Status == "Completed")
                 .Limit(1)
                 .Get();
 

@@ -1,8 +1,11 @@
+using System.Globalization;
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using AI_Driven_Water_Supply.Application.Interfaces;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Supabase.Postgrest;
 using Supabase.Postgrest.Attributes;
 using Supabase.Postgrest.Models;
 
@@ -42,14 +45,23 @@ namespace AI_Driven_Water_Supply.Infrastructure.Services
         {
             var comment = request.Comment ?? string.Empty;
 
-            var (abuse, sentiment) = await ModerateWithGeminiAsync(comment, cancellationToken).ConfigureAwait(false);
+            var heuristicAbuse = DetectAbuseHeuristic(comment);
+            var (geminiAbuse, sentiment) = await ModerateWithGeminiAsync(comment, cancellationToken).ConfigureAwait(false);
+            var abuse = geminiAbuse || heuristicAbuse;
+
+            if (heuristicAbuse && !geminiAbuse)
+            {
+                _logger.LogInformation(
+                    "ReviewModeration: heuristic abuse flag fired (Gemini did not flag). Comment length={Length}",
+                    comment.Length);
+            }
 
             if (abuse)
             {
                 await SendWarningEmailAsync(request.ReviewerId, cancellationToken).ConfigureAwait(false);
                 await RecordAdminAlertAsync(
                     AlertTypeReviewAbuse,
-                    "Review blocked: profanity or abuse detected in comment (Gemini).",
+                    "Review blocked: profanity or abuse detected (model and/or heuristic check).",
                     BuildDetail(request, comment),
                     cancellationToken).ConfigureAwait(false);
 
@@ -100,9 +112,9 @@ namespace AI_Driven_Water_Supply.Infrastructure.Services
             var prompt =
                 "You moderate short customer reviews for a water delivery marketplace.\n\n" +
                 "Rules:\n" +
-                "1. abuse: true if the comment contains profanity, slurs, threats, harassment, abusive language, or graphic sexual content. Otherwise false.\n" +
-                "2. sentiment: how the customer describes their experience — \"positive\" (praising or satisfied), \"negative\" (complaints or dissatisfaction), or \"neutral\" (factual, mixed, or mild).\n\n" +
-                "Output ONLY valid JSON with keys \"abuse\" (boolean) and \"sentiment\" (string, exactly one of: positive, negative, neutral). No markdown, no code fences.\n\n" +
+                "1. abuse MUST be true if the comment contains ANY profanity or insult targeting someone (examples: variants of \"f***\", \"f you\", vulgar insults, slurs, threats, harassment, hate, graphic sexual language). Casual jokes WITHOUT profanity or insult can be abuse false.\n" +
+                "2. sentiment: how the customer describes their EXPERIENCE with the SERVICE — \"positive\" (praising or satisfied), \"negative\" (complaints about service), or \"neutral\" (factual, mixed, or mild).\n\n" +
+                "Output ONLY valid JSON object with lowercase keys \"abuse\" (boolean true/false only) and \"sentiment\" (string, exactly one of: positive, negative, neutral). No markdown, no code fences, no extra keys.\n\n" +
                 "Comment: " + JsonSerializer.Serialize(comment);
 
             var requestUri =
@@ -120,7 +132,7 @@ namespace AI_Driven_Water_Supply.Infrastructure.Services
                 },
                 generationConfig = new
                 {
-                    temperature = 0.15,
+                    temperature = 0.05,
                     responseMimeType = "application/json"
                 }
             };
@@ -165,17 +177,8 @@ namespace AI_Driven_Water_Supply.Infrastructure.Services
                 using var resultDoc = JsonDocument.Parse(text);
                 var root = resultDoc.RootElement;
 
-                var abuse = root.TryGetProperty("abuse", out var abuseEl) && abuseEl.ValueKind == JsonValueKind.True;
-                var sentiment = SentimentLabel.Neutral;
-                if (root.TryGetProperty("sentiment", out var sentEl) && sentEl.ValueKind == JsonValueKind.String)
-                {
-                    sentiment = sentEl.GetString()?.ToLowerInvariant() switch
-                    {
-                        "positive" => SentimentLabel.Positive,
-                        "negative" => SentimentLabel.Negative,
-                        _ => SentimentLabel.Neutral
-                    };
-                }
+                var abuse = ResolveAbuseFromRoot(root);
+                var sentiment = ResolveSentimentFromRoot(root);
 
                 return (abuse, sentiment);
             }
@@ -184,6 +187,147 @@ namespace AI_Driven_Water_Supply.Infrastructure.Services
                 _logger.LogWarning(ex, "ReviewModeration: Gemini call failed; skipping moderation for this request.");
                 return (false, SentimentLabel.Neutral);
             }
+        }
+
+        /// <summary>
+        /// Deterministic coarse filter when Gemini returns false negatives or skips classification.
+        /// </summary>
+        private static bool DetectAbuseHeuristic(string comment)
+        {
+            if (string.IsNullOrWhiteSpace(comment)) return false;
+
+            var lower = comment.ToLowerInvariant();
+
+            // Word-boundary style profanity / common insult stems (English).
+            if (ProfanityWordBoundaryRegex.IsMatch(lower))
+                return true;
+
+            var compactLetters = LettersOnlyRegex.Replace(lower, "");
+            foreach (var stem in ProfanityStems)
+            {
+                if (compactLetters.Contains(stem, StringComparison.Ordinal))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static readonly Regex LettersOnlyRegex = new(@"[^a-z]+", RegexOptions.Compiled | RegexOptions.CultureInvariant);
+        private static readonly Regex ProfanityWordBoundaryRegex = new(
+            @"\b(f+[\s\*\.\-_']*u+[\s\*\.\-_']*c+[\s\*\.\-_']*k+|s+h+[\s\*\.\-_']*i+[\s\*\.\-_']*t+|b+i+t+c+h+|a+s+s+h+o+l+e+|c+u+n+t+|d+i+c+k+|p+i+s+s+|w+h+o+r+e+)\b",
+            RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled);
+
+        private static readonly string[] ProfanityStems =
+        {
+            "fuckyou", "fuck", "motherfucker", "bullshit", "bitch"
+        };
+
+        private static bool ResolveAbuseFromRoot(JsonElement root)
+        {
+            if (ParseAbuseBool(root) == true)
+                return true;
+
+            if (root.ValueKind == JsonValueKind.Object)
+            {
+                foreach (var p in root.EnumerateObject())
+                {
+                    if (p.Value.ValueKind != JsonValueKind.Object)
+                        continue;
+                    if (ParseAbuseBool(p.Value) == true)
+                        return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <returns>true / false when present; null if no recognizable abuse flag.</returns>
+        private static bool? ParseAbuseBool(JsonElement root)
+        {
+            if (!TryGetPropertyIgnoreCase(root, "abuse", out var abuseEl))
+                return null;
+            return ParseLooseBool(abuseEl);
+        }
+
+        private static bool TryGetPropertyIgnoreCase(JsonElement obj, string name, out JsonElement value)
+        {
+            value = default;
+            if (obj.ValueKind != JsonValueKind.Object)
+                return false;
+
+            foreach (var p in obj.EnumerateObject())
+            {
+                if (string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase))
+                {
+                    value = p.Value;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool? ParseLooseBool(JsonElement el)
+        {
+            switch (el.ValueKind)
+            {
+                case JsonValueKind.True:
+                    return true;
+                case JsonValueKind.False:
+                    return false;
+                case JsonValueKind.String:
+                    var s = el.GetString()?.Trim();
+                    if (string.IsNullOrEmpty(s))
+                        return null;
+                    if (bool.TryParse(s, out var b))
+                        return b;
+                    if (string.Equals(s, "yes", StringComparison.OrdinalIgnoreCase)) return true;
+                    if (string.Equals(s, "no", StringComparison.OrdinalIgnoreCase)) return false;
+                    if (long.TryParse(s, NumberStyles.Integer, CultureInfo.InvariantCulture, out var n))
+                        return n != 0;
+                    return null;
+                case JsonValueKind.Number:
+                    if (el.TryGetInt64(out var num))
+                        return num != 0;
+                    return null;
+                default:
+                    return null;
+            }
+        }
+
+        private static SentimentLabel ResolveSentimentFromRoot(JsonElement root)
+        {
+            if (TryParseSentiment(root, out var s))
+                return s;
+
+            if (root.ValueKind == JsonValueKind.Object)
+            {
+                foreach (var p in root.EnumerateObject())
+                {
+                    if (p.Value.ValueKind != JsonValueKind.Object)
+                        continue;
+                    if (TryParseSentiment(p.Value, out var inner))
+                        return inner;
+                }
+            }
+
+            return SentimentLabel.Neutral;
+        }
+
+        private static bool TryParseSentiment(JsonElement root, out SentimentLabel sentiment)
+        {
+            sentiment = SentimentLabel.Neutral;
+            if (!TryGetPropertyIgnoreCase(root, "sentiment", out var sentEl) ||
+                sentEl.ValueKind != JsonValueKind.String)
+                return false;
+
+            sentiment = sentEl.GetString()?.ToLowerInvariant() switch
+            {
+                "positive" => SentimentLabel.Positive,
+                "negative" => SentimentLabel.Negative,
+                _ => SentimentLabel.Neutral
+            };
+            return true;
         }
 
         private static string ExtractGeminiResponseText(JsonElement root)
@@ -264,6 +408,14 @@ namespace AI_Driven_Water_Supply.Infrastructure.Services
         {
             try
             {
+                var currentUserId = _supabase.Auth.CurrentUser?.Id;
+                var hasSession = _supabase.Auth.CurrentSession != null;
+                _logger.LogInformation(
+                    "ReviewModeration: writing admin alert type={AlertType}, hasSession={HasSession}, userId={UserId}",
+                    alertType,
+                    hasSession,
+                    string.IsNullOrWhiteSpace(currentUserId) ? "<none>" : currentUserId);
+
                 var row = new AdminAlertRow
                 {
                     AlertType = alertType,
@@ -272,15 +424,20 @@ namespace AI_Driven_Water_Supply.Infrastructure.Services
                     Read = false
                 };
 
-                await _supabase.From<AdminAlertRow>().Insert(row, cancellationToken: cancellationToken)
+                // Request minimal response so reviewer inserts do not require SELECT on admin_alerts.
+                await _supabase.From<AdminAlertRow>().Insert(
+                        row,
+                        new QueryOptions { Returning = QueryOptions.ReturnType.Minimal },
+                        cancellationToken: cancellationToken)
                     .ConfigureAwait(false);
             }
             catch (Exception ex)
             {
                 _logger.LogWarning(
                     ex,
-                    "ReviewModeration: failed to insert admin_alerts row type={AlertType}. Falling back to log only.",
-                    alertType);
+                    "ReviewModeration: failed to insert admin_alerts row type={AlertType}. Error={Error}. Falling back to log only.",
+                    alertType,
+                    ex.Message);
                 _logger.LogInformation(
                     "ReviewModeration admin alert (fallback): {AlertType} | {Message} | {Detail}",
                     alertType,
