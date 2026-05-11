@@ -27,7 +27,35 @@
                     <img src="@msg.ImageUrl" class="chat-image-display" alt="Attached Image" />
                 }
 
-                @((MarkupString)msg.Text)
+                @if (msg.IsUser || msg.AssistantBlocks == null || msg.AssistantBlocks.Count == 0)
+                {
+                    @((MarkupString)msg.Text)
+                }
+                else
+                {
+                    @foreach (var block in msg.AssistantBlocks)
+                    {
+                        @if (block.Kind == AssistantBlockKind.SupplierCard)
+                        {
+                            <div class="helper-supplier-link-card"
+                                 role="button"
+                                 tabindex="0"
+                                 @onclick="@(() => NavigateToSupplier(block.SupplierRoute))"
+                                 @onkeydown="@(e => SupplierCardKeyNavigate(e, block.SupplierRoute))">
+                                <i class="fa-solid fa-droplet helper-supplier-link-card__icon"></i>
+                                <div class="helper-supplier-link-card__body">
+                                    <span class="helper-supplier-link-card__title">@block.CardLabel</span>
+                                    <span class="helper-supplier-link-card__hint">Open supplier profile</span>
+                                </div>
+                                <i class="fa-solid fa-chevron-right helper-supplier-link-card__chev"></i>
+                            </div>
+                        }
+                        else
+                        {
+                            @((MarkupString)block.Html)
+                        }
+                    }
+                }
             </div>
         }
 

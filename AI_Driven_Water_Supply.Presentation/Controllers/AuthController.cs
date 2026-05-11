@@ -11,8 +11,8 @@ namespace AI_Driven_Water_Supply.Presentation.Controllers
         {
             var cookieOptions = new CookieOptions
             {
-                HttpOnly = true,   // 🔒 JavaScript isay read nahi kar sakta
-                Secure = true,     // 🔒 Sirf HTTPS
+                HttpOnly = true,
+                Secure = Request.IsHttps,
                 SameSite = SameSiteMode.Strict,
                 Expires = DateTime.UtcNow.AddDays(7)
             };
@@ -26,8 +26,14 @@ namespace AI_Driven_Water_Supply.Presentation.Controllers
         [HttpPost("remove-cookie")]
         public IActionResult RemoveCookie()
         {
-            Response.Cookies.Delete("supabase_token");
-            Response.Cookies.Delete("supabase_refresh");
+            var deleteOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = Request.IsHttps,
+                SameSite = SameSiteMode.Strict
+            };
+            Response.Cookies.Delete("supabase_token", deleteOptions);
+            Response.Cookies.Delete("supabase_refresh", deleteOptions);
             return Ok();
         }
     }

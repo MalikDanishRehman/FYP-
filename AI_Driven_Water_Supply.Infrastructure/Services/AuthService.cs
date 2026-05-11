@@ -44,14 +44,14 @@ namespace AI_Driven_Water_Supply.Infrastructure.Services
 
                     try
                     {
-                        // JavaScript Helper call
                         await _js.InvokeVoidAsync("cookieHelper.setCookie", result.AccessToken, result.RefreshToken);
                         Console.WriteLine("🍪 Cookie Set Successfully!"); // Log 3
                     }
                     catch (Exception jsEx)
                     {
                         Console.WriteLine($"❌ JS Error (Cookie Set Fail): {jsEx.Message}");
-                        // Agar JS fail bhi ho jaye, to bhi true return karo taake login na ruke (Debugging ke liye)
+                        await _client.Auth.SignOut();
+                        return false;
                     }
 
                     NotifyStateChanged();

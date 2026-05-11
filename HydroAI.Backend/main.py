@@ -179,13 +179,14 @@ model = genai.GenerativeModel(
 class ChatRequest(BaseModel):
     message: Optional[str] = ""
     image: Optional[str] = None
+    user_email: Optional[str] = None
 
 
 @app.post("/chat")
 async def chat_endpoint(request: ChatRequest):
+    email = (request.user_email or "").strip()
+    session_id = email or "anonymous"
     try:
-        session_id = "default_user"
-
         # 1. Build user content (image + text)
         user_parts = []
         if request.image:
@@ -202,7 +203,14 @@ async def chat_endpoint(request: ChatRequest):
                 print(f"Image Error: {e}")
 
         if request.message:
-            user_parts.append(request.message)
+            if email:
+                user_parts.append(
+                    f"(The user is signed in to the app. Their account email is: {email}. "
+                    "Use this when personalizing replies or if they ask who is chatting.)\n\n"
+                    f"{request.message}"
+                )
+            else:
+                user_parts.append(request.message)
 
         if not user_parts:
             return {"response": "Please send a message or an image."}
@@ -254,8 +262,8 @@ async def chat_endpoint(request: ChatRequest):
 
     except Exception as e:
         print(f"Error: {str(e)}")
-        if "default_user" in chat_sessions:
-            del chat_sessions["default_user"]
+        if session_id in chat_sessions:
+            del chat_sessions[session_id]
         return {"response": f"System Error: {str(e)}"}
 
 
