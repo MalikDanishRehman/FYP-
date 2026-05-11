@@ -1,5 +1,5 @@
-using AI_Driven_Water_Supply.Infrastructure.DependencyInjection;
 using AI_Driven_Water_Supply.Presentation.Components;
+using Microsoft.Extensions.Configuration;
 using Supabase;
 using DotNetEnv; 
 
@@ -31,7 +31,6 @@ if (string.IsNullOrEmpty(supabaseUrl) || string.IsNullOrEmpty(supabaseKey))
 
 builder.Services.AddControllers();          
 builder.Services.AddHttpContextAccessor();  
-builder.Services.AddHttpClient();
 
 builder.Services.AddHttpClient("ExternalHttp", client =>
 {
@@ -43,7 +42,12 @@ builder.Services.AddHttpClient("Gemini", client =>
     client.Timeout = TimeSpan.FromSeconds(30);
 });
 
-builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("http://127.0.0.1:8000/") });
+var aiAgentBaseUrl = ResolveAiAgentBaseUrl(builder.Configuration);
+builder.Services.AddHttpClient("AiAgent", client =>
+{
+    client.BaseAddress = aiAgentBaseUrl;
+    client.Timeout = TimeSpan.FromMinutes(3);
+});
 var options = new SupabaseOptions
 {
     AutoRefreshToken = true,
@@ -95,3 +99,19 @@ app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode(); 
 
 app.Run();
+
+partial class Program
+{
+    private static Uri ResolveAiAgentBaseUrl(IConfiguration configuration)
+    {
+        var fromEnv = Environment.GetEnvironmentVariable("AI_AGENT_BASE_URL");
+        var url = !string.IsNullOrWhiteSpace(fromEnv)
+            ? fromEnv.Trim()
+            : configuration["AiAgent:BaseUrl"]?.Trim();
+        if (string.IsNullOrWhiteSpace(url))
+            url = "http://127.0.0.1:8000/";
+        if (!url.EndsWith('/'))
+            url += "/";
+        return new Uri(url, UriKind.Absolute);
+    }
+}

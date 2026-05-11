@@ -335,6 +335,64 @@ body {
     border: 1px solid rgba(255,255,255,0.2);
 }
 
+/* Clickable supplier profile card (from HydroAI markdown links) */
+.helper-supplier-link-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    max-width: 420px;
+    margin: 12px 0;
+    padding: 14px 16px;
+    border-radius: 16px;
+    cursor: pointer;
+    background: rgba(30, 35, 45, 0.95);
+    border: 1px solid rgba(0, 201, 255, 0.35);
+    box-shadow: 0 0 0 1px rgba(146, 254, 157, 0.08);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.helper-supplier-link-card:hover,
+.helper-supplier-link-card:focus {
+    transform: translateY(-2px);
+    border-color: rgba(146, 254, 157, 0.5);
+    box-shadow: 0 8px 24px rgba(0, 201, 255, 0.15);
+    outline: none;
+}
+
+.helper-supplier-link-card__icon {
+    font-size: 1.35rem;
+    color: var(--primary-glow);
+    flex-shrink: 0;
+}
+
+.helper-supplier-link-card__body {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    text-align: left;
+}
+
+.helper-supplier-link-card__title {
+    color: #fff;
+    font-weight: 600;
+    font-size: 0.95rem;
+    line-height: 1.35;
+}
+
+.helper-supplier-link-card__hint {
+    color: #8899a6;
+    font-size: 0.78rem;
+}
+
+.helper-supplier-link-card__chev {
+    color: var(--secondary-glow);
+    font-size: 0.85rem;
+    opacity: 0.85;
+    flex-shrink: 0;
+}
+
 @keyframes slideUp {
     to {
         opacity: 1;

@@ -6,9 +6,11 @@ using AI_Driven_Water_Supply.Application.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Timers;
 
@@ -16,10 +18,16 @@ namespace AI_Driven_Water_Supply.Presentation.Components.Pages
 {
     public partial class Helper_Agent
     {
+        private static readonly Regex SupplierMarkdownLink = new(
+            @"\[(?<label>[^\]]*)\]\(\s*(?<url>(?:https?://[^)\s]+)?/supplier/[^)\s]+)\s*\)",
+            RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
         [Inject] private NavigationManager Nav { get; set; } = default!;
         [Inject] private IAuthService AuthService { get; set; } = default!;
         [Inject] private IJSRuntime JS { get; set; } = default!;
-        [Inject] private HttpClient Http { get; set; } = default!;
+        [Inject] private IHttpClientFactory HttpClientFactory { get; set; } = default!;
+
+        private string? _userEmail;
 
         private string MyName = "User";
         private bool hasChatStarted = false;
@@ -32,11 +40,29 @@ namespace AI_Driven_Water_Supply.Presentation.Components.Pages
         private string inputFileId = Guid.NewGuid().ToString();
         private const long MaxFileSize = 5 * 1024 * 1024;
 
+        public enum AssistantBlockKind
+        {
+            Text,
+            SupplierCard,
+            RawHtml
+        }
+
+        public class AssistantContentBlock
+        {
+            public AssistantBlockKind Kind { get; set; }
+            /// <summary>Pre-escaped HTML for Text and RawHtml blocks.</summary>
+            public string Html { get; set; } = "";
+            public string? CardLabel { get; set; }
+            public string? SupplierRoute { get; set; }
+        }
+
         public class ChatMessage
         {
             public string Text { get; set; } = "";
             public bool IsUser { get; set; }
             public string? ImageUrl { get; set; }
+            /// <summary>Structured assistant content (e.g. supplier link cards). When null/empty, <see cref="Text"/> is used.</summary>
+            public List<AssistantContentBlock>? AssistantBlocks { get; set; }
         }
 
         private List<ChatMessage> CurrentConversation = new();
@@ -48,6 +74,7 @@ namespace AI_Driven_Water_Supply.Presentation.Components.Pages
 
             if (user != null)
             {
+                _userEmail = user.Email;
                 if (user.UserMetadata != null && user.UserMetadata.TryGetValue("full_name", out var nameObj))
                 {
                     MyName = nameObj?.ToString() ?? "User";
@@ -105,7 +132,7 @@ namespace AI_Driven_Water_Supply.Presentation.Components.Pages
 
             CurrentConversation.Add(new ChatMessage
             {
-                Text = msgText,
+                Text = WebUtility.HtmlEncode(msgText).Replace("\n", "<br>", StringComparison.Ordinal),
                 IsUser = true,
                 ImageUrl = imgData
             });
@@ -122,11 +149,13 @@ namespace AI_Driven_Water_Supply.Presentation.Components.Pages
                 var payload = new
                 {
                     message = msgText,
-                    image = imgData
+                    image = imgData,
+                    user_email = _userEmail
                 };
 
                 var jsonContent = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
-                var response = await Http.PostAsync("chat", jsonContent);
+                var http = HttpClientFactory.CreateClient("AiAgent");
+                var response = await http.PostAsync("chat", jsonContent);
 
                 if (response.IsSuccessStatusCode)
                 {
@@ -136,11 +165,13 @@ namespace AI_Driven_Water_Supply.Presentation.Components.Pages
                     if (doc.RootElement.TryGetProperty("response", out var respElement))
                     {
                         string botReply = respElement.GetString() ?? "";
-                        if (!botReply.Trim().StartsWith("<div"))
+                        var blocks = ParseAssistantReply(botReply);
+                        CurrentConversation.Add(new ChatMessage
                         {
-                            botReply = botReply.Replace("\n", "<br>");
-                        }
-                        CurrentConversation.Add(new ChatMessage { Text = botReply, IsUser = false });
+                            Text = blocks.Count == 0 ? WebUtility.HtmlEncode(botReply).Replace("\n", "<br>", StringComparison.Ordinal) : "",
+                            AssistantBlocks = blocks.Count > 0 ? blocks : null,
+                            IsUser = false
+                        });
                     }
                 }
                 else
@@ -160,9 +191,9 @@ namespace AI_Driven_Water_Supply.Presentation.Components.Pages
             }
         }
 
-    private void StartLoadingTimer()
-    {
-        _timer = new System.Timers.Timer(2000);
+        private void StartLoadingTimer()
+        {
+            _timer = new System.Timers.Timer(2000);
             _timer.Elapsed += (s, e) =>
             {
                 if (loadingText == "Processing...") loadingText = "Fetching Data...";
@@ -176,5 +207,107 @@ namespace AI_Driven_Water_Supply.Presentation.Components.Pages
         private async Task HandleKeyPress(KeyboardEventArgs e) { if (e.Key == "Enter") await SendMessage(); }
         private async Task ScrollToBottom() { await Task.Delay(100); await JS.InvokeVoidAsync("scrollToBottom", "chatContainer"); }
         private void CloseDropdowns() { }
+
+        private void NavigateToSupplier(string? route)
+        {
+            if (string.IsNullOrWhiteSpace(route)) return;
+            Nav.NavigateTo(route.Trim());
+        }
+
+        private void SupplierCardKeyNavigate(KeyboardEventArgs e, string? route)
+        {
+            if (e.Key == "Enter" || e.Key == " ")
+                NavigateToSupplier(route);
+        }
+
+        private static string FormatPlainAssistantHtml(string plain)
+        {
+            return WebUtility.HtmlEncode(plain).Replace("\n", "<br>", StringComparison.Ordinal);
+        }
+
+        private static string NormalizeSupplierAppPath(string urlOrPath)
+        {
+            var u = urlOrPath.Trim();
+            if (u.StartsWith("/supplier/", StringComparison.OrdinalIgnoreCase))
+                return Uri.UnescapeDataString(u);
+            if (Uri.TryCreate(u, UriKind.Absolute, out var abs))
+            {
+                var path = abs.AbsolutePath;
+                return path.StartsWith("/supplier/", StringComparison.OrdinalIgnoreCase)
+                    ? Uri.UnescapeDataString(path)
+                    : Uri.UnescapeDataString(path);
+            }
+            return Uri.UnescapeDataString(u);
+        }
+
+        private static List<AssistantContentBlock> ParseAssistantReply(string botReply)
+        {
+            var blocks = new List<AssistantContentBlock>();
+            if (string.IsNullOrEmpty(botReply))
+                return blocks;
+
+            var trimmedStart = botReply.TrimStart();
+            if (trimmedStart.StartsWith("<div", StringComparison.OrdinalIgnoreCase))
+            {
+                blocks.Add(new AssistantContentBlock { Kind = AssistantBlockKind.RawHtml, Html = botReply });
+                return blocks;
+            }
+
+            var matches = SupplierMarkdownLink.Matches(botReply);
+            if (matches.Count == 0)
+            {
+                blocks.Add(new AssistantContentBlock
+                {
+                    Kind = AssistantBlockKind.Text,
+                    Html = FormatPlainAssistantHtml(botReply)
+                });
+                return blocks;
+            }
+
+            var last = 0;
+            foreach (Match m in matches)
+            {
+                if (m.Index > last)
+                {
+                    var segment = botReply.Substring(last, m.Index - last);
+                    if (segment.Length > 0)
+                    {
+                        blocks.Add(new AssistantContentBlock
+                        {
+                            Kind = AssistantBlockKind.Text,
+                            Html = FormatPlainAssistantHtml(segment)
+                        });
+                    }
+                }
+
+                var route = NormalizeSupplierAppPath(m.Groups["url"].Value);
+                var label = m.Groups["label"].Value.Trim();
+                if (string.IsNullOrEmpty(label))
+                    label = "View supplier profile";
+
+                blocks.Add(new AssistantContentBlock
+                {
+                    Kind = AssistantBlockKind.SupplierCard,
+                    CardLabel = label,
+                    SupplierRoute = route
+                });
+                last = m.Index + m.Length;
+            }
+
+            if (last < botReply.Length)
+            {
+                var tail = botReply.Substring(last);
+                if (tail.Length > 0)
+                {
+                    blocks.Add(new AssistantContentBlock
+                    {
+                        Kind = AssistantBlockKind.Text,
+                        Html = FormatPlainAssistantHtml(tail)
+                    });
+                }
+            }
+
+            return blocks;
+        }
     }
 }
