@@ -22,6 +22,11 @@ namespace AI_Driven_Water_Supply.Presentation.Components.Pages
             @"\[(?<label>[^\]]*)\]\(\s*(?<url>(?:https?://[^)\s]+)?/supplier/[^)\s]+)\s*\)",
             RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
+        /// <summary>Opening tag for supplier grid HTML returned by HydroAI <c>find_water_providers</c>.</summary>
+        private static readonly Regex RowG3HtmlOpen = new(
+            @"<div\b[^>]*\bclass\s*=\s*[""'][^""']*\brow\s+g-3\b[^""']*[""'][^>]*>",
+            RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
         [Inject] private NavigationManager Nav { get; set; } = default!;
         [Inject] private IAuthService AuthService { get; set; } = default!;
         [Inject] private IJSRuntime JS { get; set; } = default!;
@@ -240,28 +245,20 @@ namespace AI_Driven_Water_Supply.Presentation.Components.Pages
             return Uri.UnescapeDataString(u);
         }
 
-        private static List<AssistantContentBlock> ParseAssistantReply(string botReply)
+        private static void AppendMarkdownSupplierSegments(List<AssistantContentBlock> blocks, string segment)
         {
-            var blocks = new List<AssistantContentBlock>();
-            if (string.IsNullOrEmpty(botReply))
-                return blocks;
+            if (string.IsNullOrEmpty(segment))
+                return;
 
-            var trimmedStart = botReply.TrimStart();
-            if (trimmedStart.StartsWith("<div", StringComparison.OrdinalIgnoreCase))
-            {
-                blocks.Add(new AssistantContentBlock { Kind = AssistantBlockKind.RawHtml, Html = botReply });
-                return blocks;
-            }
-
-            var matches = SupplierMarkdownLink.Matches(botReply);
+            var matches = SupplierMarkdownLink.Matches(segment);
             if (matches.Count == 0)
             {
                 blocks.Add(new AssistantContentBlock
                 {
                     Kind = AssistantBlockKind.Text,
-                    Html = FormatPlainAssistantHtml(botReply)
+                    Html = FormatPlainAssistantHtml(segment)
                 });
-                return blocks;
+                return;
             }
 
             var last = 0;
@@ -269,13 +266,13 @@ namespace AI_Driven_Water_Supply.Presentation.Components.Pages
             {
                 if (m.Index > last)
                 {
-                    var segment = botReply.Substring(last, m.Index - last);
-                    if (segment.Length > 0)
+                    var before = segment.Substring(last, m.Index - last);
+                    if (before.Length > 0)
                     {
                         blocks.Add(new AssistantContentBlock
                         {
                             Kind = AssistantBlockKind.Text,
-                            Html = FormatPlainAssistantHtml(segment)
+                            Html = FormatPlainAssistantHtml(before)
                         });
                     }
                 }
@@ -294,9 +291,9 @@ namespace AI_Driven_Water_Supply.Presentation.Components.Pages
                 last = m.Index + m.Length;
             }
 
-            if (last < botReply.Length)
+            if (last < segment.Length)
             {
-                var tail = botReply.Substring(last);
+                var tail = segment.Substring(last);
                 if (tail.Length > 0)
                 {
                     blocks.Add(new AssistantContentBlock
@@ -306,7 +303,144 @@ namespace AI_Driven_Water_Supply.Presentation.Components.Pages
                     });
                 }
             }
+        }
 
+        private static bool TryCloseDivAt(string s, int i, out int endAfterTag)
+        {
+            endAfterTag = i;
+            if (i >= s.Length || s[i] != '<')
+                return false;
+            if (i + 2 >= s.Length || s[i + 1] != '/')
+                return false;
+            var j = i + 2;
+            while (j < s.Length && char.IsWhiteSpace(s[j]))
+                j++;
+            if (j + 3 > s.Length || !s.AsSpan(j, 3).Equals("div", StringComparison.OrdinalIgnoreCase))
+                return false;
+            j += 3;
+            while (j < s.Length && char.IsWhiteSpace(s[j]))
+                j++;
+            if (j >= s.Length || s[j] != '>')
+                return false;
+            endAfterTag = j + 1;
+            return true;
+        }
+
+        private static bool TryOpenDivAt(string s, int i, out int endAfterTag, out bool selfClosing)
+        {
+            selfClosing = false;
+            endAfterTag = i;
+            if (i >= s.Length || s[i] != '<')
+                return false;
+            if (i + 4 > s.Length || !s.AsSpan(i, 4).Equals("<div", StringComparison.OrdinalIgnoreCase))
+                return false;
+            if (i + 4 < s.Length && char.IsLetterOrDigit(s[i + 4]))
+                return false;
+            var gt = s.IndexOf('>', i);
+            if (gt < 0)
+                return false;
+            var inner = s.AsSpan(i, gt - i + 1);
+            selfClosing = inner.IndexOf("/>".AsSpan(), StringComparison.Ordinal) >= 0
+                || (inner.Length >= 2 && inner[^2] == '/' && inner[^1] == '>');
+            endAfterTag = gt + 1;
+            return true;
+        }
+
+        private static int FindBalancedDivEndFromOpenDiv(string s, int openAngleIndex)
+        {
+            if (!TryOpenDivAt(s, openAngleIndex, out var afterOpen, out var selfClose))
+                return Math.Min(s.Length, openAngleIndex + 1);
+            if (selfClose)
+                return afterOpen;
+
+            var depth = 1;
+            var i = afterOpen;
+            while (i < s.Length)
+            {
+                if (i + 4 <= s.Length && s.AsSpan(i, 4).Equals("<!--", StringComparison.Ordinal))
+                {
+                    var endCom = s.IndexOf("-->", i + 4, StringComparison.Ordinal);
+                    i = endCom >= 0 ? endCom + 3 : s.Length;
+                    continue;
+                }
+
+                if (s[i] != '<')
+                {
+                    i++;
+                    continue;
+                }
+
+                if (TryCloseDivAt(s, i, out var afterClose))
+                {
+                    depth--;
+                    i = afterClose;
+                    if (depth == 0)
+                        return i;
+                    continue;
+                }
+
+                if (TryOpenDivAt(s, i, out var afterInnerOpen, out var innerSelfClose))
+                {
+                    if (!innerSelfClose)
+                        depth++;
+                    i = afterInnerOpen;
+                    continue;
+                }
+
+                var nextGt = s.IndexOf('>', i);
+                i = nextGt >= 0 ? nextGt + 1 : i + 1;
+            }
+
+            return s.Length;
+        }
+
+        private static List<AssistantContentBlock> ParseAssistantReply(string botReply)
+        {
+            var blocks = new List<AssistantContentBlock>();
+            if (string.IsNullOrEmpty(botReply))
+                return blocks;
+
+            if (RowG3HtmlOpen.IsMatch(botReply))
+            {
+                var cursor = 0;
+                while (cursor < botReply.Length)
+                {
+                    var m = RowG3HtmlOpen.Match(botReply, cursor);
+                    if (!m.Success)
+                    {
+                        AppendMarkdownSupplierSegments(blocks, botReply.Substring(cursor));
+                        return blocks;
+                    }
+
+                    if (m.Index > cursor)
+                        AppendMarkdownSupplierSegments(blocks, botReply.Substring(cursor, m.Index - cursor));
+
+                    var end = FindBalancedDivEndFromOpenDiv(botReply, m.Index);
+                    if (end <= m.Index)
+                    {
+                        cursor = m.Index + 1;
+                        continue;
+                    }
+
+                    blocks.Add(new AssistantContentBlock
+                    {
+                        Kind = AssistantBlockKind.RawHtml,
+                        Html = botReply.Substring(m.Index, end - m.Index)
+                    });
+                    cursor = end;
+                }
+
+                return blocks;
+            }
+
+            var trimmedStart = botReply.TrimStart();
+            if (trimmedStart.StartsWith("<div", StringComparison.OrdinalIgnoreCase))
+            {
+                blocks.Add(new AssistantContentBlock { Kind = AssistantBlockKind.RawHtml, Html = botReply });
+                return blocks;
+            }
+
+            AppendMarkdownSupplierSegments(blocks, botReply);
             return blocks;
         }
     }
